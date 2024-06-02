@@ -1,7 +1,8 @@
 import { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import './App.css';
 import { ThemeContext } from './context/ThemeContext';
-import { useTranslation } from 'react-i18next';
 
 function App() {
 	const { theme, toggleTheme } = useContext(ThemeContext);
