@@ -28,15 +28,13 @@ jobs:
         run: |
           cd frontend && npm run lint -- -f json -o eslint_report.json || echo "::set-output name=exitcode::$?"
 
-      - uses: CatChen/eslint-suggestion-action@v2
-        with:
-          directory: './frontend'
-          config-path: './frontend/.eslintrc'
+      - name: Format ESLint report
+        run: node .github/scripts/format-eslint-report.js
 
       - name: Comment on PR with ESLint report
-        if: steps.eslint.outputs.exitcode != '0'
+        if: steps.eslint.outputs.exitcode != 0
         continue-on-error: true
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          path: frontend/eslint_report.json
+          path: eslint_report.md
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
