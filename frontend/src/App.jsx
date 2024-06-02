@@ -1,7 +1,7 @@
 
 import { useContext } from 'react'
 import './App.css'
-import { ThemeContext } from '../context/ThemeContext'
+import { ThemeContext } from './context/ThemeContext'
 
 function App() {
 
