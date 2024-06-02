@@ -3,10 +3,9 @@ const path = require('node:path');
 const eslintReport = require('../../frontend/eslint_report.json');
 
 function formatEslintReport() {
-  const report = eslintReport;
   let output = '';
 
-  report.forEach(file => {
+  eslintReport.forEach(file => {
     if (!file.messages.length) return;
 
     const relativePath = path.relative(process.cwd(), file.filePath);
@@ -14,7 +13,7 @@ function formatEslintReport() {
     output += '| Rule | Message | Line | Column |\n';
     output += '| ---- | ------- | ---- | ------ |\n';
     output += file.messages.map(msg => `| **${msg.ruleId}** | ${msg.message} | ${msg.line} | ${msg.column} |`).join('\n');
-    output += '\n';
+    output += "\n";
   });
 
   fs.writeFileSync('eslint_report.md', output);

@@ -1,4 +1,4 @@
-name: Lint Check
+name: Lint Frontend directory
 
 on:
   pull_request:
