@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import './App.css';
+import "./App.css";
 import { ThemeContext } from './context/ThemeContext';
 
 function App() {
