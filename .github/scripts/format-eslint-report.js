@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 
 function formatEslintReport() {
-  const report = JSON.parse(fs.readFileSync('frontend/eslint-report.json', 'utf8'));
+  const report = JSON.parse(fs.readFileSync('frontend/eslint_report.json', 'utf8'));
   let output = '';
 
   report.forEach(file => {
