@@ -31,6 +31,7 @@ jobs:
       - uses: CatChen/eslint-suggestion-action@v2
         with:
           directory: './frontend'
+          config-path: './frontend/.eslintrc'
 
       - name: Comment on PR with ESLint report
         if: steps.eslint.outputs.exitcode != '0'
