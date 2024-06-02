@@ -1,0 +1,8 @@
+{
+  "name": "divsplit",
+  "private": true,
+  "version": "0.0.0",
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
