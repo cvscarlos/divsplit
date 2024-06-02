@@ -23,7 +23,7 @@ jobs:
       - name: Run ESLint
         id: eslint
         run: |
-          npx eslint . -f json -o eslint-report.json || true
+          cd frontend && npx eslint . -f json -o eslint-report.json || true
 
       - name: Comment on PR with ESLint report
         if: steps.eslint.outputs.exitcode != 0
