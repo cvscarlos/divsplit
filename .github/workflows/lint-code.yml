@@ -23,12 +23,12 @@ jobs:
       - name: Run ESLint
         id: eslint
         run: |
-          cd frontend && npx eslint . -f json -o eslint-report.json || true
-          echo "Report: $(cat frontend/eslint-report.json)"
-          exitcode=$?
+          cd frontend && npx eslint . -f json -o eslint-report.json
+          echo "::set-output name=exitcode::$?"
+          echo "Report: $(cat eslint-report.json)"
 
       - name: Comment on PR with ESLint report
-        if: steps.eslint.outputs.exitcode != 0
+        if: steps.eslint.outputs.exitcode != '0'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          path: eslint-report.json
+          path: frontend/eslint-report.json
