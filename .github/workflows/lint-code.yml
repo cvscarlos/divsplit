@@ -1,0 +1,38 @@
+name: Lint Check
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: Run lint
+        run: cd frontend && npm run lint
+
+      - name: PR Comment
+        uses: actions/github-script@v4
+        if: ${{ failure() }}
+        with:
+          script: |
+            const issue_number = context.payload.pull_request.number;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: 'Lint check failed. Please fix the issues and push again.'
+            });
