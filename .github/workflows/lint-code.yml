@@ -24,9 +24,7 @@ jobs:
         continue-on-error: true
         id: eslint
         run: |
-          cd frontend && npm run lint -- -f json -o eslint-report.json
-          echo "::set-output name=exitcode::$?"
-          echo "Report: $(cat eslint-report.json)"
+          cd frontend && npm run lint -- -f json -o eslint-report.json || echo "::set-output name=exitcode::$?"
 
       - name: Comment on PR with ESLint report
         if: steps.eslint.outputs.exitcode != '0'
