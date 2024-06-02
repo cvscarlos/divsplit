@@ -24,6 +24,8 @@ jobs:
         id: eslint
         run: |
           cd frontend && npx eslint . -f json -o eslint-report.json || true
+          echo "Report: $(cat frontend/eslint-report.json)"
+          exitcode=$?
 
       - name: Comment on PR with ESLint report
         if: steps.eslint.outputs.exitcode != 0
