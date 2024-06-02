@@ -33,8 +33,11 @@ jobs:
 
       - name: Comment on PR with ESLint report
         if: steps.eslint.outputs.exitcode != 0
-        continue-on-error: true
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: eslint_report.md
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail if linting fails
+        if: steps.eslint.outputs.exitcode != 0
+        run: exit 1
