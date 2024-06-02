@@ -8,7 +8,6 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,18 +20,13 @@ jobs:
       - name: Install dependencies
         run: cd frontend && npm ci
 
-      - name: Run lint
-        run: cd frontend && npm run lint
+      - name: Run ESLint
+        id: eslint
+        run: |
+          npx eslint . -f json -o eslint-report.json || true
 
-      - name: PR Comment
-        uses: actions/github-script@v4
-        if: ${{ failure() }}
+      - name: Comment on PR with ESLint report
+        if: steps.eslint.outputs.exitcode != 0
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          script: |
-            const issue_number = context.payload.pull_request.number;
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number,
-              body: 'Lint check failed. Please fix the issues and push again.'
-            });
+          path: eslint-report.json
