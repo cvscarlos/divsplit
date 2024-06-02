@@ -5,6 +5,9 @@ on:
     paths:
       - 'frontend/**'
 
+permissions:
+  pull-requests: write
+
 jobs:
   lint:
     runs-on: ubuntu-latest
