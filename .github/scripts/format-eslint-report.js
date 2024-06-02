@@ -1,16 +1,19 @@
 const fs = require('node:fs');
+const path = require('node:path');
+const eslintReport = require('../../frontend/eslint_report.json');
 
 function formatEslintReport() {
-  const report = JSON.parse(fs.readFileSync('frontend/eslint_report.json', 'utf8'));
+  const report = eslintReport;
   let output = '';
 
   report.forEach(file => {
     if (!file.messages.length) return;
 
-    output += `### ${file.filePath}\n`;
-    file.messages.forEach(msg => {
-      output += `- **${msg.ruleId}**: ${msg.message} (Line: ${msg.line}, Column: ${msg.column})\n`;
-    });
+    const relativePath = path.relative(process.cwd(), file.filePath);
+    output += `#### File: \`${relativePath}\`\n`;
+    output += '| Rule | Message | Line | Column |\n';
+    output += '| ---- | ------- | ---- | ------ |\n';
+    output += file.messages.map(msg => `| **${msg.ruleId}** | ${msg.message} | ${msg.line} | ${msg.column} |`).join('\n');
     output += '\n';
   });
 

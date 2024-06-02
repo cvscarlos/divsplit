@@ -8,6 +8,8 @@ node_modules/
 dist/
 dist-ssr/
 *.local/
+frontend/eslint_report.json
+eslint_report.md
 
 # Editor directories and files
 .vscode/*
