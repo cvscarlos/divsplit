@@ -23,7 +23,7 @@ jobs:
       - name: Run ESLint
         id: eslint
         run: |
-          cd frontend && npx eslint . -f json -o eslint-report.json
+          cd frontend && npm run lint -- -f json -o eslint-report.json
           echo "::set-output name=exitcode::$?"
           echo "Report: $(cat eslint-report.json)"
 
