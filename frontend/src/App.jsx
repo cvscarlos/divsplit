@@ -2,11 +2,11 @@ import './App.css';
 import IndexRouter from './routes/router';
 
 function App() {
-    return (
-        <>
-            <IndexRouter />
-        </>
-    );
+	return (
+		<>
+			<IndexRouter />
+		</>
+	);
 }
 
 export default App;
