@@ -1,21 +1,21 @@
+import { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { useContext } from 'react'
-import './App.css'
-import { ThemeContext } from './context/ThemeContext'
+import './App.css';
+import { ThemeContext } from './context/ThemeContext';
 
 function App() {
+	const { theme, toggleTheme } = useContext(ThemeContext);
+	const { t } = useTranslation();
 
-  const {theme,toggleTheme} = useContext(ThemeContext)
-
-  return (
-    <>
-      <div className={`background ${theme}`}>
-        <h1 className={theme}>olá mundo!</h1>
-        <button onClick={toggleTheme} className={theme}>tema</button>
-      </div>
-
-    </>
-  )
+	return (
+		<div className={`background ${theme}`}>
+			<h1 className={theme}>{t('helloWorld')}</h1>
+			<button onClick={toggleTheme} className={theme}>
+				{t('toggleTheme')}
+			</button>
+		</div>
+	);
 }
 
-export default App
+export default App;

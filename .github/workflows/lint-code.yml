@@ -1,0 +1,43 @@
+name: Lint Frontend directory
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci && cd frontend && npm ci
+
+      - name: Run ESLint
+        id: eslint
+        run: |
+          cd frontend && npm run lint -- -f json -o eslint_report.json || echo "::set-output name=exitcode::$?"
+
+      - name: Format ESLint report
+        run: node .github/scripts/format-eslint-report.js
+
+      - name: Comment on PR with ESLint report
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: eslint_report.md
+          delete: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail if linting fails
+        if: steps.eslint.outputs.exitcode != 0
+        run: exit 1
