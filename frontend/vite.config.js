@@ -4,12 +4,12 @@ import eslintPlugin from 'vite-plugin-eslint';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-	plugins: [
-		react(),
-		eslintPlugin({
-			cache: false,
-			include: ['./src/**/*.js', './src/**/*.jsx'],
-			exclude: [],
-		}),
-	],
+    plugins: [
+        react(),
+        eslintPlugin({
+            cache: false,
+            include: ['./src/**/*.js', './src/**/*.jsx'],
+            exclude: [],
+        }),
+    ],
 });

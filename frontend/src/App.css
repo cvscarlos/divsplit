@@ -1,11 +1,4 @@
-.background{
-  height: 100svh;
-  width: 100svw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-}
+
 
 .dark{
   background-color: black;

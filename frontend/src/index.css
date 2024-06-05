@@ -1,44 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+@font-face {
+  font-family: 'VarelaRound';
+  src: url(../public/fonts/VarelaRound-Regular.ttf);
 }
 
-body {
+* {
+  font-family: 'VarelaRound';
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  padding: 0;
 }
 
 
+.my-custom-container {
+  @apply flex flex-col justify-evenly items-center min-h-svh gap-10 transition duration-300 ease-in-out;
+}
+
+.my-custom-mainTitle {
+  @apply text-5xl text-black font-extrabold w-3/4 text-center m-5;
+}
+
+.custom-manage-groups {
+  @apply flex text-start w-full flex-col text-secondary text-xl font-bold px-10;
+}
+
+.my-custom-cardContainer {
+  @apply flex flex-wrap justify-center items-center w-full gap-3;
+  min-height: 300px;
+}
