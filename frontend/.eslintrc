@@ -7,13 +7,10 @@
     "plugin:react/recommended",
     "plugin:react/jsx-runtime",
     "plugin:react-hooks/recommended",
+    "plugin:jsx-a11y/recommended",
     "../.eslintrc"
   ],
-  "plugins": [ 
-    "react-refresh",
-    "prettier"
-  
-  ],
+  "plugins": [ "react-refresh", "prettier", "jsx-a11y" ],
   "ignorePatterns": [ "dist" ],
   "parserOptions": {
     "ecmaVersion": "latest",
@@ -23,10 +20,6 @@
     "react": { "version": "18.2" }
   },
   "rules": {
-    "react/jsx-no-target-blank": "off",
-    "react-refresh/only-export-components": [ "warn", { "allowConstantExport": true } ],
-    "prettier/prettier": [
-      "error"
-    ]
+    "react-refresh/only-export-components": [ "warn", { "allowConstantExport": true } ]
   }
 }
