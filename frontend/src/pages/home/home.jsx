@@ -31,8 +31,8 @@ function HomePage() {
 					<p>{t('loading')}</p>
 				) : (
 					<CardContainer>
-						{groups.map((group) => (
-							<CardGroup key={group.id} />
+						{groups.map(({ id }) => (
+							<CardGroup key={id} id={id} />
 						))}
 					</CardContainer>
 				)}

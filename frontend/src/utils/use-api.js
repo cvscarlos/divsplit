@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import localforage from 'localforage';
 
 /**
  * @typedef {Object} ApiGroup
- * @property {string} foo
+ * @property {string} id
  */
+
+const groupsStore = localforage.createInstance({ name: 'groupsStore' });
 
 /**
  * @returns {ApiGroup[]}
@@ -13,8 +16,11 @@ const useApiGroups = () => {
 
 	useEffect(() => {
 		const fetchData = async () => {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-			setData({ isLoading: false, groups: [{ foo: 'bar', id: 1 }] });
+			// For example only
+			await groupsStore.setItem('groups', [{ id: 'abc' }, { id: 'def' }, { id: 'ghi' }]);
+
+			const groups = (await groupsStore.getItem('groups')) || [];
+			setData({ isLoading: false, groups });
 		};
 		fetchData();
 	}, []);
