@@ -1,11 +1,11 @@
-import CardContainer from '../../components/CardContainer';
-import Header from '../../components/Header';
+import CardContainer from '../components/CardContainer';
+import Header from '../components/Header';
 
 import './home.css';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../context/ThemeContext';
 import { useContext } from 'react';
-import CardGroup from '../../components/CardGroup';
-import useApiGroups from '../../utils/use-api';
+import CardGroup from '../components/CardGroup';
+import useApiGroups from '../utils/use-api';
 import { useTranslation } from 'react-i18next';
 
 function HomePage() {
