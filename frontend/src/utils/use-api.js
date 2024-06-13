@@ -2,30 +2,43 @@ import { useEffect, useState } from 'react';
 import localforage from 'localforage';
 
 /**
- * @typedef {Object} ApiGroup
+ * @typedef {Object} ApiGroupListItem
  * @property {string} id
  */
 
-const groupsStore = localforage.createInstance({ name: 'groupsStore' });
+const groupListStore = localforage.createInstance({ name: 'groupList' });
+const groupStore = localforage.createInstance({ name: 'group' });
 
 /**
- * @returns {ApiGroup[]}
+ * @returns {ApiGroupListItem[]}
  */
-const useApiGroups = () => {
+export function useApiListGroups() {
 	const [data, setData] = useState({ isLoading: true, groups: [] });
 
 	useEffect(() => {
 		const fetchData = async () => {
 			// For example only
-			await groupsStore.setItem('groups', [{ id: 'abc' }, { id: 'def' }, { id: 'ghi' }]);
+			await groupListStore.setItem('groups', [{ id: 'abc' }, { id: 'def' }, { id: 'ghi' }]);
 
-			const groups = (await groupsStore.getItem('groups')) || [];
+			const groups = (await groupListStore.getItem('groups')) || [];
 			setData({ isLoading: false, groups });
 		};
 		fetchData();
 	}, []);
 
 	return data;
-};
+}
 
-export default useApiGroups;
+export function useApiGetGroup(groupId) {
+	const [data, setData] = useState({ isLoading: true, group: null });
+
+	useEffect(() => {
+		const fetchData = async () => {
+			const group = (await groupStore.getItem(groupId)) || {};
+			setData({ isLoading: false, group });
+		};
+		fetchData();
+	}, [groupId]);
+
+	return data;
+}

@@ -1,17 +1,17 @@
-import CardContainer from '../components/CardContainer';
-import Header from '../components/Header';
+import { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import './home.css';
+import CardContainer from '../components/CardContainer';
+import Header from '../components/Header';
 import { ThemeContext } from '../context/ThemeContext';
-import { useContext } from 'react';
 import CardGroup from '../components/CardGroup';
-import useApiGroups from '../utils/use-api';
-import { useTranslation } from 'react-i18next';
+import { useApiListGroups } from '../utils/use-api';
 
 function HomePage() {
 	const { t } = useTranslation();
 	const { theme } = useContext(ThemeContext);
-	const { groups, isLoading } = useApiGroups();
+	const { groups, isLoading } = useApiListGroups();
 
 	return (
 		<div data-theme={theme} className="my-custom-container">
