@@ -1,4 +1,5 @@
 {
 	"helloWorld": "Olá Mundo!",
-	"toggleTheme": "Alternar Tema"
+	"toggleTheme": "Alternar Tema",
+  "loading": "Carregando..."
 }
