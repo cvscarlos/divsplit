@@ -1,21 +1,21 @@
+import { BrowserRouter } from 'react-router-dom';
 
-import { useContext } from 'react'
-import './App.css'
-import { ThemeContext } from './context/ThemeContext'
+import './App.css';
+import './i18n.js';
+import IndexRouter from './routes/router.jsx';
+import ThemeProvider from './context/ThemeContext.jsx';
+import GroupProvider from './context/GroupContext.jsx';
 
 function App() {
-
-  const {theme,toggleTheme} = useContext(ThemeContext)
-
-  return (
-    <>
-      <div className={`background ${theme}`}>
-        <h1 className={theme}>olá mundo!</h1>
-        <button onClick={toggleTheme} className={theme}>tema</button>
-      </div>
-
-    </>
-  )
+	return (
+		<BrowserRouter>
+			<ThemeProvider>
+				<GroupProvider>
+					<IndexRouter />
+				</GroupProvider>
+			</ThemeProvider>
+		</BrowserRouter>
+	);
 }
 
-export default App
+export default App;

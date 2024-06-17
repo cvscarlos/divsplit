@@ -1,0 +1,25 @@
+{
+  "env": {
+    "browser": true,
+    "es2020": true
+  },
+  "extends": [
+    "plugin:react/recommended",
+    "plugin:react/jsx-runtime",
+    "plugin:react-hooks/recommended",
+    "plugin:jsx-a11y/recommended",
+    "../.eslintrc"
+  ],
+  "plugins": [ "react-refresh", "prettier", "jsx-a11y" ],
+  "ignorePatterns": [ "dist" ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "settings": {
+    "react": { "version": "18.2" }
+  },
+  "rules": {
+    "react-refresh/only-export-components": [ "warn", { "allowConstantExport": true } ]
+  }
+}
