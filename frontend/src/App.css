@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'VarelaRound';
-  src: url(../public/fonts/VarelaRound-Regular.ttf);
+  src: url(/fonts/VarelaRound-Regular.ttf);
 }
 
 * {
@@ -19,16 +19,21 @@
 }
 
 .my-custom-mainTitle {
-  @apply text-5xl text-black font-extrabold w-3/4 text-center m-5;
+  @apply text-2xl text-base-content font-extrabold w-3/4 text-center m-5 md:text-5xl;
 }
 
 .custom-manage-groups {
-  @apply flex text-start w-full flex-col text-secondary text-xl font-bold px-10;
+  @apply flex text-center w-full flex-col text-secondary text-lg font-bold px-10 md:text-start;
 }
 
 .my-custom-cardContainer {
-  @apply flex flex-wrap justify-center items-center w-full gap-3;
+  @apply flex flex-wrap justify-center items-center w-full p-10 gap-10;
   min-height: 300px;
+}
+
+.my-custom-cardWrap{
+  @apply card text-neutral bg-neutral-content shadow-xl;
+  min-width: 250px;
 }
 
 .dark{
