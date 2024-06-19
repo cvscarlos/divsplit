@@ -13,7 +13,7 @@ i18n.use(LanguageDetector)
 		interpolation: { escapeValue: false },
 		resources: {
 			en: { translation: en },
-			pt: { pt },
+			'pt-BR': { translation: pt },
 		},
 	});
 
