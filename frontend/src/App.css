@@ -1,4 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+@font-face {
+  font-family: 'VarelaRound';
+  src: url(../public/fonts/VarelaRound-Regular.ttf);
+}
+
+* {
+  font-family: 'VarelaRound';
+  margin: 0;
+  padding: 0;
+}
+
+
+.my-custom-container {
+  @apply flex flex-col justify-evenly items-center min-h-svh gap-10 transition duration-300 ease-in-out;
+}
+
+.my-custom-mainTitle {
+  @apply text-5xl text-black font-extrabold w-3/4 text-center m-5;
+}
+
+.custom-manage-groups {
+  @apply flex text-start w-full flex-col text-secondary text-xl font-bold px-10;
+}
+
+.my-custom-cardContainer {
+  @apply flex flex-wrap justify-center items-center w-full gap-3;
+  min-height: 300px;
+}
 
 .dark{
   background-color: black;
