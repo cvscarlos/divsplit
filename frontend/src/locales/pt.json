@@ -1,5 +1,8 @@
 {
-	"helloWorld": "Olá Mundo!",
+	"MainTitle": "Divida Suas Despesas em Grupo com Facilidade",
+	"MainSubTitle": "Evite preocupações na hora de dividir as despesas entre amigos",
+	"GenGroupTitle": "Seus Grupos de Gerenciamento de Despesas",
+	"GenGroupSubTitle": "Visualize e Gerencie os Seus Grupos Ativos",
 	"toggleTheme": "Alternar Tema",
   "loading": "Carregando..."
 }
