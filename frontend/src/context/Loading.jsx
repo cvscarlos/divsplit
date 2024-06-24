@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function Loading() {
-	return /*#__PURE__*/ React.createElement('div', null, 'Loading...');
+	return <span className="loading loading-spinner loading-lg">Loading ...</span>;
 }
