@@ -6,7 +6,7 @@ function Header() {
 
 	return (
 		<header className="w-full h-1/2">
-			<div className="flex justify-end p-10">
+			<div className="flex justify-end p-5">
 				<input
 					type="checkbox"
 					className="toggle"

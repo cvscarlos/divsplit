@@ -10,7 +10,7 @@ function CardGroup({ group }) {
 	const handleClick = () => navigate(`/group/${group.id}`);
 
 	return (
-		<div className="card w-96 text-neutral bg-neutral-content shadow-xl">
+		<div className="my-custom-cardWrap">
 			<div className="card-body">
 				<h2 className="card-title">{group.name}</h2>
 				<p>
