@@ -11,7 +11,7 @@ import { useApiListGroups } from '../utils/use-api';
 function HomePage() {
 	const { t } = useTranslation();
 	const { theme } = useContext(ThemeContext);
-	const { groups, isLoading } = useApiListGroups();
+	const { groupList, isLoading } = useApiListGroups();
 
 	return (
 		<div data-theme={theme} className="my-custom-container">
@@ -31,8 +31,8 @@ function HomePage() {
 					<p>{t('loading')}</p>
 				) : (
 					<CardContainer>
-						{groups.map(({ id }) => (
-							<CardGroup key={id} id={id} />
+						{groupList.map((groupItem) => (
+							<CardGroup key={groupItem.id} group={groupItem} />
 						))}
 					</CardContainer>
 				)}
