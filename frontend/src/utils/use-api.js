@@ -48,7 +48,16 @@ export function useApiListGroups() {
 	return { loading, groupList };
 }
 
+async function updateGroupName(newName, groupId) {
+	const groups = (await groupListStore.getItem('groups')) || [];
+	const groupIndex = groups.findIndex((group) => group.id === groupId);
+	if (groupIndex === -1) return;
+	groups[groupIndex].name = newName;
+	await groupListStore.setItem('groups', groups);
+}
+
 function groupStandardize(group = {}) {
+	group ||= {};
 	group.header ||= {}; // Initialize header if not present
 	return group;
 }
@@ -68,11 +77,12 @@ export function useApiGetGroup(groupId) {
 
 		const fetchData = async () => {
 			if (abort) return;
+			if (!groupId) return;
 
 			if (dataToSave) {
-				console.log('Saving data', dataToSave);
 				await groupStore.setItem(groupId, dataToSave);
 				if (!abort) setDataToSave(null);
+				if (!abort) await updateGroupName(dataToSave.header.name, groupId);
 			}
 
 			const group = groupStandardize(await groupStore.getItem(groupId));

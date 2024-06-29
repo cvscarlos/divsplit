@@ -12,12 +12,13 @@ GroupProvider.propTypes = {
 
 export default function GroupProvider({ children }) {
 	const { groupId } = useParams();
-	console.log('groupId', groupId);
 	const { data, loading, updateGroup } = useApiGetGroup(groupId);
-	const value = {
-		group: data,
-		updateGroup,
-	};
+	const value = [data, updateGroup];
 
-	return <GroupContext.Provider value={value}>{loading ? children : <Loading />}</GroupContext.Provider>;
+	return (
+		<GroupContext.Provider value={value}>
+			{children}
+			{loading ? <Loading /> : null}
+		</GroupContext.Provider>
+	);
 }
