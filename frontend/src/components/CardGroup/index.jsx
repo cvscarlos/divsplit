@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 
+import './index.css';
+
 CardGroup.propTypes = {
 	group: PropTypes.object.isRequired,
 };
@@ -10,7 +12,7 @@ function CardGroup({ group }) {
 	const handleClick = () => navigate(`/group/${group.id}`);
 
 	return (
-		<div className="my-custom-cardWrap">
+		<div className="card-wrap">
 			<div className="card-body">
 				<h2 className="card-title">{group.name}</h2>
 				<p>

@@ -1,0 +1,4 @@
+.card-wrap{
+  @apply card text-neutral bg-neutral-content shadow-xl;
+  min-width: 250px;
+}

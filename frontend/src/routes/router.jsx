@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
-import HomePage from '../pages/home';
-import { GroupPage } from '../pages/group';
+import HomePage from '../pages/HomePage';
+import { GroupPage } from '../pages/GroupPage';
 import GroupProvider from '../context/GroupContext';
 
 const IndexRouter = () => {
