@@ -2,10 +2,8 @@ import { useContext, useEffect, useState } from 'react';
 
 import { GroupContext } from '../context/GroupContext';
 import Header from '../components/Header';
-import { ThemeContext } from '../context/ThemeContext';
 
 export function GroupPage() {
-	const { theme } = useContext(ThemeContext);
 	const [group, updateGroup] = useContext(GroupContext);
 	const [formFields, setFormFields] = useState({ name: 'loading...' });
 
@@ -24,7 +22,7 @@ export function GroupPage() {
 	}
 
 	return (
-		<div data-theme={theme} className="divsplit-container">
+		<div className="divsplit-container">
 			<Header />
 			<h2>{group.header?.name}</h2>
 

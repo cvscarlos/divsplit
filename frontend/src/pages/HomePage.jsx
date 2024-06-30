@@ -1,20 +1,17 @@
-import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import './home.css';
+import './HomePage.css';
 import CardContainer from '../components/CardContainer';
 import Header from '../components/Header';
-import { ThemeContext } from '../context/ThemeContext';
 import CardGroup from '../components/CardGroup';
 import { useApiListGroups } from '../utils/use-api';
 
 function HomePage() {
 	const { t } = useTranslation();
-	const { theme } = useContext(ThemeContext);
 	const { groupList, isLoading } = useApiListGroups();
 
 	return (
-		<div data-theme={theme} className="divsplit-container">
+		<div className="divsplit-container">
 			<Header />
 			<div className="flex justify-center items-center flex-col h-4/5">
 				<h1 className="main-title">{t('MainTitle')}</h1>
