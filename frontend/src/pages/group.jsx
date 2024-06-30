@@ -24,12 +24,13 @@ export function GroupPage() {
 	}
 
 	return (
-		<div data-theme={theme} className="my-custom-container">
+		<div data-theme={theme} className="divsplit-container">
 			<Header />
 			<h2>{group.header?.name}</h2>
 
 			<form onSubmit={handleHeaderSubmit}>
 				<div className="col-span-full">
+					<h2>Group information</h2>
 					<div className="mb-4">
 						<label className="form-control ">
 							Group name:
@@ -43,6 +44,26 @@ export function GroupPage() {
 							/>
 						</label>
 					</div>
+				</div>
+
+				<div className="col-span-full">
+					<h2>Members</h2>
+					<div className="mb-4">
+						<label className="form-control ">
+							Member name:
+							<input
+								type="text"
+								placeholder="Type here"
+								className="input input-bordered"
+								value={formFields.memberName}
+								name="memberName"
+								onChange={handleFieldChange}
+							/>
+						</label>
+					</div>
+				</div>
+
+				<div className="col-span-full">
 					<div className="mb-4">
 						<button type="submit" className="btn btn-active btn-primary">
 							Save

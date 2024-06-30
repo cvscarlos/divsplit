@@ -14,26 +14,8 @@
 }
 
 
-.my-custom-container {
-  @apply flex flex-col justify-evenly items-center min-h-svh gap-10 transition duration-300 ease-in-out;
-}
-
-.my-custom-mainTitle {
-  @apply text-2xl text-base-content font-extrabold w-3/4 text-center m-5 md:text-5xl;
-}
-
-.custom-manage-groups {
-  @apply flex text-center w-full flex-col text-secondary text-lg font-bold px-10 md:text-start;
-}
-
-.my-custom-cardContainer {
-  @apply flex flex-wrap justify-center items-center w-full p-10 gap-10;
-  min-height: 300px;
-}
-
-.my-custom-cardWrap{
-  @apply card text-neutral bg-neutral-content shadow-xl;
-  min-width: 250px;
+.divsplit-container {
+  @apply transition duration-300 ease-in-out;
 }
 
 .dark{
