@@ -22,7 +22,7 @@ export function GroupPage() {
 	}
 
 	return (
-		<div className="divsplit-container">
+		<div>
 			<Header />
 			<h2>{group.header?.name}</h2>
 

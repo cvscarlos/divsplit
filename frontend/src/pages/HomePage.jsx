@@ -11,7 +11,7 @@ function HomePage() {
 	const { groupList, isLoading } = useApiListGroups();
 
 	return (
-		<div className="divsplit-container">
+		<div>
 			<Header />
 			<div className="flex justify-center items-center flex-col h-4/5">
 				<h1 className="main-title">{t('MainTitle')}</h1>

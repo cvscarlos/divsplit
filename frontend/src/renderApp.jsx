@@ -6,7 +6,7 @@ import ReactDOM from 'react-dom/client';
 
 import App from './App.jsx';
 
-ReactDOM.createRoot(document.getElementById('render-app')).render(
+ReactDOM.createRoot(document.body).render(
 	<React.StrictMode>
 		<App />
 	</React.StrictMode>,
