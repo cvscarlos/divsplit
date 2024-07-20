@@ -5,14 +5,23 @@ function Header() {
 	const { theme, toggleTheme } = useContext(ThemeContext);
 
 	return (
-		<header className="w-full h-1/2">
-			<div className="flex justify-end p-5">
-				<input
-					type="checkbox"
-					className="toggle"
-					defaultChecked={theme === 'light' ? false : true}
-					onClick={() => toggleTheme()}
-				/>
+		<header>
+			<div className="navbar bg-base-100">
+				<div className="flex-1">
+					<a href="/" className="btn btn-ghost text-xl">
+						DivSplit
+					</a>
+				</div>
+				<div className="flex-none">
+					<div className="flex justify-end p-5">
+						<input
+							type="checkbox"
+							className="toggle"
+							defaultChecked={theme === 'light' ? false : true}
+							onClick={() => toggleTheme()}
+						/>
+					</div>
+				</div>
 			</div>
 		</header>
 	);
