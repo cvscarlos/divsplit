@@ -5,5 +5,11 @@
 	"GenGroupSubTitle": "Visualize e Gerencie os Seus Grupos Ativos",
 	"toggleTheme": "Alternar Tema",
 	"loading": "Carregando...",
-	"create-text": "+ Criar Grupo"
+	"create-text": "+ Criar Grupo",
+	"GroupInformation":"Informações do grupo",
+	"GroupName":"Nome do Grupo",
+	"Members":"Membros",
+	"MembersName":"Nome dos Membros",
+	"PrepaidValue":"Valor Pré-Pago",
+	"Save":"Salvar"
 }
