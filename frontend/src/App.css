@@ -16,6 +16,7 @@
 html, body, [data-theme] {
 
   width: 100%;
+  @apply bg-base-200
 }
 
 h6{
