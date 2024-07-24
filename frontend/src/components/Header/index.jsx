@@ -6,7 +6,7 @@ function Header() {
 
 	return (
 		<header>
-			<div className="navbar bg-base-100">
+			<div className="navbar bg-base-100 transition duration-300 ease-in-out">
 				<div className="flex-1">
 					<a href="/" className="btn btn-ghost text-xl">
 						DivSplit

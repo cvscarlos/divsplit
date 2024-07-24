@@ -4,5 +4,6 @@
 	"GenGroupTitle": "Seus Grupos de Gerenciamento de Despesas",
 	"GenGroupSubTitle": "Visualize e Gerencie os Seus Grupos Ativos",
 	"toggleTheme": "Alternar Tema",
-  "loading": "Carregando..."
+	"loading": "Carregando...",
+	"create-text": "+ Criar Grupo"
 }
