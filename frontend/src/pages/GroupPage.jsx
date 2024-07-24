@@ -25,10 +25,10 @@ export function GroupPage() {
 	return (
 		<>
 			<Header />
-			<div className="p-3 m-3 border bg-base-100">
+			<div className="p-3 m-3 border bg-base-100 md:flex md:flex-col md:justify-center md:items-center md:border-0">
 				<h2>{group.header?.name}</h2>
 
-				<form onSubmit={handleHeaderSubmit}>
+				<form onSubmit={handleHeaderSubmit} className="md:border md:p-5 md:w-96">
 					<div className="">
 						<h3>{t('GroupInformation')}</h3>
 						<div className="mb-4">
