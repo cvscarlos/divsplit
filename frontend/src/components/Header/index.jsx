@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { ThemeContext } from '../../context/ThemeContext';
+import { Link } from 'react-router-dom';
 
 function Header() {
 	const { theme, toggleTheme } = useContext(ThemeContext);
@@ -8,9 +9,9 @@ function Header() {
 		<header>
 			<div className="navbar bg-base-100 transition duration-300 ease-in-out">
 				<div className="flex-1">
-					<a href="/" className="btn btn-ghost text-xl">
+					<Link to="/" className="btn btn-ghost text-xl">
 						DivSplit
-					</a>
+					</Link>
 				</div>
 				<div className="flex-none">
 					<div className="flex justify-end p-5">
