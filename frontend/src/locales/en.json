@@ -4,5 +4,13 @@
 	"GenGroupTitle": "Your Expense Management Groups",
 	"GenGroupSubTitle": "View and Manage Your Active Groups",
 	"toggleTheme": "Toggle Theme",
-	"loading": "Loading..."
+	"loading": "Loading...",
+	"create-text": " + Create a Group",
+	"GroupInformation":"Group Information",
+	"GroupName":"Group Name",
+	"TypeHere":"Digite Aqui",
+	"Members":"Members",
+	"MembersName":"Members Name",
+	"PrepaidValue":"Pre Paid Value",
+	"Save":"Save"
 }
