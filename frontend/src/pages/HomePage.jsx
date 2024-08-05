@@ -11,18 +11,23 @@ function HomePage() {
 	const { groupList, isLoading } = useApiListGroups();
 
 	return (
-		<div>
+		<div className=" h-full">
 			<Header />
-			<div className="flex justify-center items-center flex-col h-4/5">
-				<h1 className="main-title">{t('MainTitle')}</h1>
-				<p className="text-secondary text-lg text-center font-bold w-80 md:w-auto md:text-2xl">
-					{t('MainSubTitle')}
-				</p>
+			<div className="main-title-div">
+				<div className="flex justify-center items-center flex-col h-1/2 ">
+					<h1 className="main-title">{t('MainTitle')}</h1>
+					<p className="text-secondary text-lg text-center font-bold w-80 md:w-auto md:text-2xl">
+						{t('MainSubTitle')}
+					</p>
+				</div>
 			</div>
 
 			<div className="manage-groups">
 				<p className="text-xl text-base-content md:text-2xl">{t('GenGroupTitle')}</p>
 				<p>{t('GenGroupSubTitle')}</p>
+				<div className="flex justify-center items-center m-5">
+					<button className="btn btn-secondary w-64">{t('create-text')}</button>
+				</div>
 
 				{isLoading ? (
 					<p>{t('loading')}</p>

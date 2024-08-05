@@ -1,5 +1,10 @@
+.main-title-div{
+  @apply flex justify-center items-center flex-col;
+   height: 50svh;
+}
+
 .main-title {
-  @apply text-2xl text-base-content font-extrabold w-3/4 text-center m-5 md:text-5xl;
+  @apply text-2xl text-base-content font-extrabold w-3/4 text-center m-2 md:text-5xl;
 }
 
 .manage-groups {

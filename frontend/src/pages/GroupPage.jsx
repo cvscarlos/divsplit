@@ -1,11 +1,12 @@
 import { useContext, useEffect, useState } from 'react';
-
+import { useTranslation } from 'react-i18next';
 import { GroupContext } from '../context/GroupContext';
 import Header from '../components/Header';
 
 export function GroupPage() {
 	const [group, updateGroup] = useContext(GroupContext);
 	const [formFields, setFormFields] = useState({ name: 'loading...' });
+	const { t } = useTranslation();
 
 	useEffect(() => {
 		setFormFields({ name: group.header?.name || '' });
@@ -24,18 +25,18 @@ export function GroupPage() {
 	return (
 		<>
 			<Header />
-			<div className="p-3 m-3 border bg-base-100">
+			<div className="p-3 m-3 border bg-base-100 md:flex md:flex-col md:justify-center md:items-center md:border-0">
 				<h2>{group.header?.name}</h2>
 
-				<form onSubmit={handleHeaderSubmit}>
+				<form onSubmit={handleHeaderSubmit} className="md:border md:p-5 md:w-96">
 					<div className="">
-						<h3>Group information</h3>
+						<h3>{t('GroupInformation')}</h3>
 						<div className="mb-4">
 							<label className="form-control ">
-								Group name:
+								{t('GroupName')}:
 								<input
 									type="text"
-									placeholder="Type here"
+									placeholder={t('TypeHere')}
 									className="input input-bordered"
 									value={formFields.name}
 									name="name"
@@ -46,13 +47,13 @@ export function GroupPage() {
 					</div>
 
 					<div className="">
-						<h3>Members</h3>
+						<h3>{t('Members')}</h3>
 						<div className="mb-4">
 							<label className="form-control ">
-								Member name:
+								{t('MembersName')}:
 								<input
 									type="text"
-									placeholder="Type here"
+									placeholder={t('TypeHere')}
 									className="input input-bordered"
 									value={formFields.memberName}
 									name="memberName"
@@ -60,7 +61,7 @@ export function GroupPage() {
 								/>
 							</label>
 							<label className="form-control ">
-								Prepaid value:
+								{t('PrepaidValue')}:
 								<input
 									type="number"
 									placeholder="$"
@@ -76,7 +77,7 @@ export function GroupPage() {
 					<div className="">
 						<div className="mb-4">
 							<button type="submit" className="btn btn-active btn-primary">
-								Save
+								{t('Save')}
 							</button>
 						</div>
 					</div>

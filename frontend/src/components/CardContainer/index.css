@@ -1,4 +1,3 @@
 .card-container {
-  @apply flex flex-wrap justify-center items-center w-full p-10 gap-10;
-  min-height: 300px;
+  @apply flex flex-wrap justify-center items-center w-full p-10 gap-10 md:min-h-32;
 }

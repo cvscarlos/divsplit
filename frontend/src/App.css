@@ -14,7 +14,7 @@
 }
 
 html, body, [data-theme] {
-  height: 100%;
+
   width: 100%;
   @apply bg-base-200
 }
