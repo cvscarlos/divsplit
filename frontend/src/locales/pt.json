@@ -6,11 +6,11 @@
 	"toggleTheme": "Alternar Tema",
 	"loading": "Carregando...",
 	"create-text": "+ Criar Grupo",
-	"GroupInformation":"Informações do grupo",
-	"GroupName":"Nome do Grupo",
-	"TypeHere":"Digite Aqui",
-	"Members":"Membros",
-	"MembersName":"Nome dos Membros",
-	"PrepaidValue":"Valor Pré-Pago",
-	"Save":"Salvar"
+	"GroupInformation": "Informações do grupo",
+	"GroupName": "Nome do Grupo",
+	"TypeHere": "Digite Aqui",
+	"Members": "Membros",
+	"MembersName": "Nome dos Membros",
+	"PrepaidValue": "Valor Pré-Pago",
+	"Save": "Salvar"
 }

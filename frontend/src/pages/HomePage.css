@@ -1,13 +1,12 @@
-.main-title-div{
-  @apply flex justify-center items-center flex-col;
-   height: 50svh;
+.main-title-div {
+	@apply flex justify-center items-center flex-col;
+	height: 50svh;
 }
 
 .main-title {
-  @apply text-2xl text-base-content font-extrabold w-3/4 text-center m-2 md:text-5xl;
+	@apply text-2xl text-base-content font-extrabold w-3/4 text-center m-2 md:text-5xl;
 }
 
 .manage-groups {
-  @apply flex text-center w-full flex-col text-secondary text-lg font-bold px-10 md:text-start;
+	@apply flex text-center w-full flex-col text-secondary text-lg font-bold px-10 md:text-start;
 }
-
