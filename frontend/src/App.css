@@ -3,37 +3,23 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: 'VarelaRound';
-  src: url(/fonts/VarelaRound-Regular.ttf);
+	font-family: 'VarelaRound';
+	src: url(/fonts/VarelaRound-Regular.ttf);
 }
 
 * {
-  font-family: 'VarelaRound';
-  margin: 0;
-  padding: 0;
+	font-family: 'VarelaRound';
+	margin: 0;
+	padding: 0;
 }
 
-html, body, [data-theme] {
-
-  width: 100%;
-  @apply bg-base-200
+html,
+body,
+[data-theme] {
+	width: 100%;
+	@apply bg-base-200;
 }
 
-h6{
-  @apply text-base font-bold
-}
-h5{
-  @apply text-lg font-bold
-}
-h4{
-  @apply text-xl font-bold
-}
-h3{
-  @apply text-2xl font-bold
-}
-h2{
-  @apply text-3xl font-bold
-}
-h1{
-  @apply text-4xl font-bold
+.ds-card {
+	@apply bg-base-100 card border p-5;
 }

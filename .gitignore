@@ -1,22 +1,17 @@
-# Logs
-logs/
-*.log
-*-debug.log*
-*-error.log*
-
-node_modules/
-dist/
-dist-ssr/
-*.local/
-frontend/eslint_report.json
-eslint_report.md
-
-# Editor directories and files
-.vscode/*
-.idea/
 .DS_Store
-*.suo
-*.ntvs*
+.idea/
+.vscode/
+*.local/
+dist-ssr/
+dist/
+logs/
+node_modules/
+
+*.log
 *.njsproj
+*.ntvs*
 *.sln
+*.suo
 *.sw?
+eslint_report.json
+eslint_report.md

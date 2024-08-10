@@ -1,7 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GroupContext } from '../context/GroupContext';
-import Header from '../components/Header';
 
 export function GroupPage() {
 	const [group, updateGroup] = useContext(GroupContext);
@@ -24,62 +23,61 @@ export function GroupPage() {
 
 	return (
 		<>
-			<Header />
-			<div className="p-3 m-3 border bg-base-100 md:flex md:flex-col md:justify-center md:items-center md:border-0">
+			<div className="prose">
 				<h2>{group.header?.name}</h2>
 
-				<form onSubmit={handleHeaderSubmit} className="md:border md:p-5 md:w-96">
-					<div className="">
-						<h3>{t('GroupInformation')}</h3>
-						<div className="mb-4">
-							<label className="form-control ">
-								{t('GroupName')}:
-								<input
-									type="text"
-									placeholder={t('TypeHere')}
-									className="input input-bordered"
-									value={formFields.name}
-									name="name"
-									onChange={handleFieldChange}
-								/>
-							</label>
+				<form onSubmit={handleHeaderSubmit}>
+					<div className="flex flex-row space-x-4">
+						<div className="ds-card">
+							<h3>{t('GroupInformation')}</h3>
+							<div>
+								<label className="form-control ">
+									{t('GroupName')}:
+									<input
+										type="text"
+										placeholder={t('TypeHere')}
+										className="input input-bordered"
+										value={formFields.name}
+										name="name"
+										onChange={handleFieldChange}
+									/>
+								</label>
+							</div>
+						</div>
+
+						<div className="ds-card">
+							<h3>{t('Members')}</h3>
+							<div>
+								<label className="form-control ">
+									{t('MembersName')}:
+									<input
+										type="text"
+										placeholder={t('TypeHere')}
+										className="input input-bordered"
+										value={formFields.memberName}
+										name="memberName"
+										onChange={handleFieldChange}
+									/>
+								</label>
+								<label className="form-control ">
+									{t('PrepaidValue')}:
+									<input
+										type="number"
+										placeholder="$"
+										className="input input-bordered"
+										value={formFields.memberName}
+										name="memberName"
+										onChange={handleFieldChange}
+									/>
+								</label>
+							</div>
 						</div>
 					</div>
 
-					<div className="">
-						<h3>{t('Members')}</h3>
-						<div className="mb-4">
-							<label className="form-control ">
-								{t('MembersName')}:
-								<input
-									type="text"
-									placeholder={t('TypeHere')}
-									className="input input-bordered"
-									value={formFields.memberName}
-									name="memberName"
-									onChange={handleFieldChange}
-								/>
-							</label>
-							<label className="form-control ">
-								{t('PrepaidValue')}:
-								<input
-									type="number"
-									placeholder="$"
-									className="input input-bordered"
-									value={formFields.memberName}
-									name="memberName"
-									onChange={handleFieldChange}
-								/>
-							</label>
-						</div>
-					</div>
-
-					<div className="">
-						<div className="mb-4">
-							<button type="submit" className="btn btn-active btn-primary">
-								{t('Save')}
-							</button>
-						</div>
+					<div className="mb-4">
+						<button type="submit" className="btn btn-active btn-primary">
+							{t('Save')}
+						</button>
 					</div>
 				</form>
 
