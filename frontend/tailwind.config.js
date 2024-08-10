@@ -1,14 +1,18 @@
-/** @type {import('tailwindcss').Config} */
 import daisyui from 'daisyui';
+import typography from '@tailwindcss/typography';
+
+/** @type {import('tailwindcss').Config} */
 export default {
-	content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+	content: ['./index.html', './src/**/*.{js,jsx}'],
 	theme: {
-		extend: {},
+		extend: {
+			typography: { DEFAULT: { css: { maxWidth: '100%' } } },
+		},
 		container: {
 			center: true,
 		},
 	},
-	plugins: [daisyui],
+	plugins: [typography, daisyui],
 	daisyui: {
 		themes: ['light', 'dark'],
 	},

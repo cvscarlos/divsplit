@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 
 import './HomePage.css';
 import CardContainer from '../components/CardContainer';
-import Header from '../components/Header';
 import CardGroup from '../components/CardGroup';
 import { useApiListGroups } from '../utils/use-api';
 
@@ -11,8 +10,7 @@ function HomePage() {
 	const { groupList, isLoading } = useApiListGroups();
 
 	return (
-		<div className=" h-full">
-			<Header />
+		<>
 			<div className="main-title-div">
 				<div className="flex justify-center items-center flex-col h-1/2 ">
 					<h1 className="main-title">{t('MainTitle')}</h1>
@@ -39,7 +37,7 @@ function HomePage() {
 					</CardContainer>
 				)}
 			</div>
-		</div>
+		</>
 	);
 }
 

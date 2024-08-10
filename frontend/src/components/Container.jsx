@@ -11,8 +11,8 @@ export function Container({ children }) {
 	const { theme } = useContext(ThemeContext);
 
 	return (
-		<div data-theme={theme} className="transition duration-300 ease-in-out min-h-svh max-h-fit">
-			<div>{children}</div>
+		<div data-theme={theme} className="transition duration-300 ease-in-out min-h-svh">
+			{children}
 		</div>
 	);
 }
