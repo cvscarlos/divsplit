@@ -23,3 +23,9 @@ body,
 .ds-card {
 	@apply bg-base-100 card border p-5;
 }
+
+.prose{
+	h2{
+		@apply mt-8
+	}
+}

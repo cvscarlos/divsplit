@@ -22,33 +22,33 @@ export function GroupPage() {
 	}
 
 	return (
-		<>
-			<div className="prose">
-				<h2>{group.header?.name}</h2>
+		<div className="prose">
+			<h2>{group.header?.name}</h2>
 
-				<form onSubmit={handleHeaderSubmit}>
-					<div className="flex flex-row space-x-4">
-						<div className="ds-card">
-							<h3>{t('GroupInformation')}</h3>
-							<div>
-								<label className="form-control ">
-									{t('GroupName')}:
-									<input
-										type="text"
-										placeholder={t('TypeHere')}
-										className="input input-bordered"
-										value={formFields.name}
-										name="name"
-										onChange={handleFieldChange}
-									/>
-								</label>
-							</div>
+			<form onSubmit={handleHeaderSubmit}>
+				<div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:space-x-4">
+					<div className="ds-card flex-auto">
+						<h3>{t('GroupInformation')}</h3>
+						<div>
+							<label className="form-control">
+								{t('GroupName')}:
+								<input
+									type="text"
+									placeholder={t('TypeHere')}
+									className="input input-bordered"
+									value={formFields.name}
+									name="name"
+									onChange={handleFieldChange}
+								/>
+							</label>
 						</div>
+					</div>
 
-						<div className="ds-card">
-							<h3>{t('Members')}</h3>
-							<div>
-								<label className="form-control ">
+					<div className="ds-card flex-auto">
+						<h3>{t('Members')}</h3>
+						<div className="grid grid-cols-10 gap-x-3">
+							<div className="col-span-7">
+								<label className="form-control">
 									{t('MembersName')}:
 									<input
 										type="text"
@@ -59,7 +59,9 @@ export function GroupPage() {
 										onChange={handleFieldChange}
 									/>
 								</label>
-								<label className="form-control ">
+							</div>
+							<div className="col-span-3">
+								<label className="form-control">
 									{t('PrepaidValue')}:
 									<input
 										type="number"
@@ -73,23 +75,23 @@ export function GroupPage() {
 							</div>
 						</div>
 					</div>
+				</div>
 
-					<div className="mb-4">
-						<button type="submit" className="btn btn-active btn-primary">
-							{t('Save')}
-						</button>
-					</div>
-				</form>
+				<div className="mb-4 mt-6">
+					<button type="submit" className="btn btn-active btn-primary">
+						{t('Save')}
+					</button>
+				</div>
+			</form>
 
-				<div>
-					<h6>Debug:</h6>
-					<div className="mockup-code">
-						<pre>
-							<code>{JSON.stringify(group, null, 2)}</code>
-						</pre>
-					</div>
+			<div>
+				<h6>Debug:</h6>
+				<div className="mockup-code">
+					<pre>
+						<code>{JSON.stringify(group, null, 2)}</code>
+					</pre>
 				</div>
 			</div>
-		</>
+		</div>
 	);
 }
