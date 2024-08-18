@@ -1,15 +1,17 @@
 {
-	"MainTitle": "Split your group expenses with ease",
-	"MainSubTitle": "Avoid worries when splitting expenses among friends",
-	"GenGroupTitle": "Your expense management groups",
-	"GenGroupSubTitle": "View and manage your active groups",
-	"toggleTheme": "Toggle theme",
-	"Loading": "Loading...",
 	"createGroup": "new group",
+	"GenGroupSubTitle": "View and manage your active groups",
+	"GenGroupTitle": "Your expense management groups",
 	"GroupInformation": "Group information",
 	"GroupName": "Group name",
-	"TypeHere": "Type here",
+	"Loading": "Loading...",
+	"MainSubTitle": "Avoid worries when splitting expenses among friends",
+	"MainTitle": "Split your group expenses with ease",
 	"Members": "Members",
+	"Name": "Name",
 	"PrepaidAmount": "Prepaid value",
-	"Save": "Save"
+	"Save": "Save",
+	"addMember": "member",
+	"toggleTheme": "Toggle theme",
+	"TypeHere": "Type here"
 }

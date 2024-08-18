@@ -70,10 +70,10 @@ export function GroupPage() {
 						{members.map((member) => (
 							<div key={member.id} className="mb-4">
 								<div className="grid gap-3 grid-cols-12">
-									<div className="col-span-2 mt-5 flex justify-center items-center">
+									<div className="col-span-2 sm:col-span-1 mt-5 flex justify-center items-center">
 										<Avatar name={member.name} />
 									</div>
-									<div className="col-span-5">
+									<div className="col-span-5 sm:col-span-6">
 										<label className="form-control">
 											{t('Name')}:
 											<input
@@ -108,7 +108,7 @@ export function GroupPage() {
 							</div>
 						))}
 						<button type="button" className="btn btn-neutral btn-sm mt-4 self-start" onClick={addMember}>
-							+ {t('AddMember')}
+							+ {t('addMember')}
 						</button>
 					</div>
 				</div>

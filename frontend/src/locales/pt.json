@@ -1,15 +1,17 @@
 {
-	"MainTitle": "Divida suas despesas em grupo com facilidade",
-	"MainSubTitle": "Evite preocupações na hora de dividir as despesas entre amigos",
-	"GenGroupTitle": "Seus grupos de gerenciamento de despesas",
-	"GenGroupSubTitle": "Visualize e gerencie os seus grupos ativos",
-	"toggleTheme": "Alternar tema",
-	"Loading": "Carregando...",
 	"createGroup": "criar grupo",
+	"GenGroupSubTitle": "Visualize e gerencie os seus grupos ativos",
+	"GenGroupTitle": "Seus grupos de gerenciamento de despesas",
 	"GroupInformation": "Informações do grupo",
 	"GroupName": "Nome do grupo",
-	"TypeHere": "Digite aqui",
+	"Loading": "Carregando...",
+	"MainSubTitle": "Evite preocupações na hora de dividir as despesas entre amigos",
+	"MainTitle": "Divida suas despesas em grupo com facilidade",
 	"Members": "Membros",
 	"PrepaidAmount": "Valor pré-pago",
-	"Save": "Salvar"
+	"Save": "Salvar",
+	"Name": "Nome",
+	"addMember": "membro",
+	"toggleTheme": "Alternar tema",
+	"TypeHere": "Digite aqui"
 }
