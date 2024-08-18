@@ -1,5 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BiTrash } from 'react-icons/bi';
+
 import { GroupContext } from '../context/GroupContext';
 import { Avatar } from '../components/Avatar';
 
@@ -16,8 +18,11 @@ export function GroupPage() {
 		if (group.members) setMembers(group.members);
 	}, [group]);
 
-	const handleAddMember = () => {
+	const addMember = () => {
 		setMembers([...members, { ...memberBase, id: `${members.length}_${Date.now()}` }]);
+	};
+	const removeMember = (member) => {
+		setMembers(members.filter((m) => m.id !== member.id));
 	};
 	const handleMemberFields = (member, event) => {
 		const { name, value } = event.target;
@@ -64,11 +69,11 @@ export function GroupPage() {
 						<h3>{t('Members')}</h3>
 						{members.map((member) => (
 							<div key={member.id} className="mb-4">
-								<div className="grid grid-flow-col auto-cols-auto gap-x-3">
-									<div className="col-span-1">
+								<div className="flex items-center space-x-3">
+									<div className="flex-auto w-8">
 										<Avatar name={member.name} />
 									</div>
-									<div className="col-span-7">
+									<div className="flex-1">
 										<label className="form-control">
 											{t('MembersName')}:
 											<input
@@ -81,7 +86,7 @@ export function GroupPage() {
 											/>
 										</label>
 									</div>
-									<div className="col-span-3">
+									<div className="flex-auto w-32">
 										<label className="form-control">
 											{t('PrepaidValue')}:
 											<input
@@ -94,14 +99,15 @@ export function GroupPage() {
 											/>
 										</label>
 									</div>
+									<div className="flex-auto text-xl text-red-600">
+										<button onClick={() => removeMember(member)}>
+											<BiTrash />
+										</button>
+									</div>
 								</div>
 							</div>
 						))}
-						<button
-							type="button"
-							className="btn btn-neutral btn-sm mt-4 self-start"
-							onClick={handleAddMember}
-						>
+						<button type="button" className="btn btn-neutral btn-sm mt-4 self-start" onClick={addMember}>
 							+ {t('AddMember')}
 						</button>
 					</div>

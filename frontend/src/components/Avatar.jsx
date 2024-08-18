@@ -4,13 +4,21 @@ Avatar.propTypes = {
 	name: PropTypes.node.isRequired,
 };
 
+const backgroundColors = 'ccffb2,feff9e,aaebf9,f5c1ff';
+const avatarColor = 'ffe554,f498bf,6accd9,ed4a9b,6d4399,73b06f,0c8f8f,405059';
+const size = '64';
+
+const url = new URL('https://api.dicebear.com/9.x/thumbs/svg');
+url.searchParams.set('backgroundColor', backgroundColors);
+url.searchParams.set('shapeColor', avatarColor);
+url.searchParams.set('radius', '50');
+url.searchParams.set('shapeOffsetX', '5');
+url.searchParams.set('size', size);
+
+const baseUrl = url.toString();
+
 export function Avatar({ name }) {
-	return (
-		<img
-			src="https://api.dicebear.com/9.x/thumbs/svg?seed=Lilly&backgroundColor=A77CBF,F57A9C,F99F66,FFD758,A6D472,31B5D1&shapeColor=6209D4,08C6CD,FECD70,5E0792,E136A7,FF9F6F&radius=50&size=64"
-			alt={`Avatar: ${name}`}
-			width={50}
-			height={50}
-		/>
-	);
+	const url = new URL(baseUrl);
+	url.searchParams.set('seed', name);
+	return <img src={url} alt={`Avatar: ${name}`} width={size} height={size} className="not-prose" />;
 }
