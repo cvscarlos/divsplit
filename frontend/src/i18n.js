@@ -7,11 +7,10 @@ import pt from './locales/pt.json';
 
 /** @type {import('i18next').InitOptions} */
 const detection = {
-	order: ['querystring', 'cookie', 'localStorage', 'navigator', 'path', 'subdomain', 'htmlTag'],
+	order: ['querystring', 'localStorage', 'navigator'],
 	lookupQuerystring: 'lang',
-	lookupCookie: 'i18next',
-	lookupLocalStorage: 'i18nextLang',
-	caches: ['localStorage', 'cookie'],
+	lookupLocalStorage: 'i18nLang',
+	caches: ['localStorage'],
 };
 
 i18n.use(LanguageDetector)
