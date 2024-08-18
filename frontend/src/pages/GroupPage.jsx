@@ -3,23 +3,38 @@ import { useTranslation } from 'react-i18next';
 import { GroupContext } from '../context/GroupContext';
 
 export function GroupPage() {
+	const memberBase = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
+
 	const [group, updateGroup] = useContext(GroupContext);
-	const [formFields, setFormFields] = useState({ name: 'loading...' });
+	const [formFields, setFormFields] = useState({});
+	const [members, setMembers] = useState([{ id: `0_${Date.now()}`, name: '', prepaid: 0 }]);
 	const { t } = useTranslation();
 
 	useEffect(() => {
-		setFormFields({ name: group.header?.name || '' });
+		setFormFields({ name: group.header?.name || '---' });
+		if (group.members) setMembers(group.members);
 	}, [group]);
 
-	function handleFieldChange(event) {
-		setFormFields({ ...formFields, [event.target.name]: event.target.value });
-	}
+	const handleAddMember = () => {
+		setMembers([...members, { ...memberBase, id: `${members.length}_${Date.now()}` }]);
+	};
+	const handleMemberFields = (member, event) => {
+		const { name, value } = event.target;
+		if (name.startsWith('memberName')) member.name = value;
+		else if (name.startsWith('memberPrepaid')) member.prepaid = Number(value);
+		setMembers([...members]);
+	};
 
-	function handleHeaderSubmit(event) {
+	const handleFieldChange = (event) => {
+		setFormFields({ ...formFields, [event.target.name]: event.target.value });
+	};
+
+	const handleHeaderSubmit = (event) => {
 		event.preventDefault();
 		Object.assign(group.header, { name: formFields.name });
+		group.members = members;
 		updateGroup(group);
-	}
+	};
 
 	return (
 		<div className="prose">
@@ -46,34 +61,41 @@ export function GroupPage() {
 
 					<div className="ds-card flex-auto">
 						<h3>{t('Members')}</h3>
-						<div className="grid grid-cols-10 gap-x-3">
-							<div className="col-span-7">
-								<label className="form-control">
-									{t('MembersName')}:
-									<input
-										type="text"
-										placeholder={t('TypeHere')}
-										className="input input-bordered"
-										value={formFields.memberName}
-										name="memberName"
-										onChange={handleFieldChange}
-									/>
-								</label>
+						{members.map((member, index) => (
+							<div key={member.id} className="mb-4">
+								<div className="grid grid-cols-10 gap-x-3 ">
+									<div className="col-span-7">
+										<label className="form-control">
+											{t('MembersName')}:
+											<input
+												type="text"
+												placeholder={t('TypeHere')}
+												className="input input-bordered"
+												value={member.name}
+												name={`memberName_${index}`}
+												onChange={(event) => handleMemberFields(member, event)}
+											/>
+										</label>
+									</div>
+									<div className="col-span-3">
+										<label className="form-control">
+											{t('PrepaidValue')}:
+											<input
+												type="number"
+												placeholder="$"
+												className="input input-bordered"
+												value={member.prepaid}
+												name={`memberPrepaid_${index}`}
+												onChange={(event) => handleMemberFields(member, event)}
+											/>
+										</label>
+									</div>
+								</div>
 							</div>
-							<div className="col-span-3">
-								<label className="form-control">
-									{t('PrepaidValue')}:
-									<input
-										type="number"
-										placeholder="$"
-										className="input input-bordered"
-										value={formFields.memberName}
-										name="memberName"
-										onChange={handleFieldChange}
-									/>
-								</label>
-							</div>
-						</div>
+						))}
+						<button type="button" className="btn btn-primary mt-4 self-start" onClick={handleAddMember}>
+							+ {t('AddMember')}
+						</button>
 					</div>
 				</div>
 
