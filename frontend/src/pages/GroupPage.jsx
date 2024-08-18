@@ -69,13 +69,13 @@ export function GroupPage() {
 						<h3>{t('Members')}</h3>
 						{members.map((member) => (
 							<div key={member.id} className="mb-4">
-								<div className="flex items-center space-x-3">
-									<div className="flex-auto w-8">
+								<div className="grid gap-3 grid-cols-12">
+									<div className="col-span-2 mt-5 flex justify-center items-center">
 										<Avatar name={member.name} />
 									</div>
-									<div className="flex-1">
+									<div className="col-span-5">
 										<label className="form-control">
-											{t('MembersName')}:
+											{t('Name')}:
 											<input
 												type="text"
 												placeholder={t('TypeHere')}
@@ -86,9 +86,9 @@ export function GroupPage() {
 											/>
 										</label>
 									</div>
-									<div className="flex-auto w-32">
+									<div className="col-span-4">
 										<label className="form-control">
-											{t('PrepaidValue')}:
+											{t('PrepaidAmount')}:
 											<input
 												type="number"
 												placeholder="$"
@@ -99,7 +99,7 @@ export function GroupPage() {
 											/>
 										</label>
 									</div>
-									<div className="flex-auto text-xl text-red-600">
+									<div className="col-span-1 flex items-center text-xl text-red-600 mt-6">
 										<button onClick={() => removeMember(member)}>
 											<BiTrash />
 										</button>

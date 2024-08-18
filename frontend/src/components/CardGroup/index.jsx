@@ -19,7 +19,7 @@ function CardGroup({ group }) {
 					<i>{group.id}</i>
 				</p>
 				<div className="card-actions justify-end">
-					<button className="btn btn-primary" onClick={handleClick}>
+					<button className="btn btn-secondary" onClick={handleClick}>
 						verificar
 					</button>
 				</div>

@@ -20,5 +20,5 @@ const baseUrl = url.toString();
 export function Avatar({ name }) {
 	const url = new URL(baseUrl);
 	url.searchParams.set('seed', name);
-	return <img src={url} alt={`Avatar: ${name}`} width={size} height={size} className="not-prose" />;
+	return <img src={url} alt={`Avatar: ${name}`} width={size / 2} height={size / 2} className="not-prose" />;
 }
