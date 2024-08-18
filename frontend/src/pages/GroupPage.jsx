@@ -1,13 +1,14 @@
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GroupContext } from '../context/GroupContext';
+import { Avatar } from '../components/Avatar';
 
 export function GroupPage() {
 	const memberBase = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
 
 	const [group, updateGroup] = useContext(GroupContext);
-	const [formFields, setFormFields] = useState({});
-	const [members, setMembers] = useState([{ id: `0_${Date.now()}`, name: '', prepaid: 0 }]);
+	const [formFields, setFormFields] = useState({ name: '' });
+	const [members, setMembers] = useState([{ ...memberBase }]);
 	const { t } = useTranslation();
 
 	useEffect(() => {
@@ -61,9 +62,12 @@ export function GroupPage() {
 
 					<div className="ds-card flex-auto">
 						<h3>{t('Members')}</h3>
-						{members.map((member, index) => (
+						{members.map((member) => (
 							<div key={member.id} className="mb-4">
-								<div className="grid grid-cols-10 gap-x-3 ">
+								<div className="grid grid-flow-col auto-cols-auto gap-x-3">
+									<div className="col-span-1">
+										<Avatar name={member.name} />
+									</div>
 									<div className="col-span-7">
 										<label className="form-control">
 											{t('MembersName')}:
@@ -72,7 +76,7 @@ export function GroupPage() {
 												placeholder={t('TypeHere')}
 												className="input input-bordered"
 												value={member.name}
-												name={`memberName_${index}`}
+												name={`memberName`}
 												onChange={(event) => handleMemberFields(member, event)}
 											/>
 										</label>
@@ -85,7 +89,7 @@ export function GroupPage() {
 												placeholder="$"
 												className="input input-bordered"
 												value={member.prepaid}
-												name={`memberPrepaid_${index}`}
+												name={`memberPrepaid`}
 												onChange={(event) => handleMemberFields(member, event)}
 											/>
 										</label>
@@ -93,14 +97,18 @@ export function GroupPage() {
 								</div>
 							</div>
 						))}
-						<button type="button" className="btn btn-primary mt-4 self-start" onClick={handleAddMember}>
+						<button
+							type="button"
+							className="btn btn-neutral btn-sm mt-4 self-start"
+							onClick={handleAddMember}
+						>
 							+ {t('AddMember')}
 						</button>
 					</div>
 				</div>
 
 				<div className="mb-4 mt-6">
-					<button type="submit" className="btn btn-active btn-primary">
+					<button type="submit" className="btn btn-active btn-primary text-base">
 						{t('Save')}
 					</button>
 				</div>
