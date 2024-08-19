@@ -24,11 +24,11 @@ function HomePage() {
 				<p className="text-xl text-base-content md:text-2xl">{t('GenGroupTitle')}</p>
 				<p>{t('GenGroupSubTitle')}</p>
 				<div className="flex justify-center items-center m-5">
-					<button className="btn btn-secondary w-64">{t('create-text')}</button>
+					<button className="btn btn-primary w-64">{`+ ${t('CreateGroup')}`}</button>
 				</div>
 
 				{isLoading ? (
-					<p>{t('loading')}</p>
+					<p>{t('Loading')}</p>
 				) : (
 					<CardContainer>
 						{groupList.map((groupItem) => (
