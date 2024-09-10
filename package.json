@@ -2,6 +2,10 @@
 	"name": "divsplit",
 	"private": true,
 	"version": "0.0.0",
+	"workspaces": [
+		"frontend",
+		"backend"
+	],
 	"scripts": {
 		"prettier": "prettier --write ."
 	},
