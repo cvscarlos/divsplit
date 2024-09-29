@@ -46,6 +46,18 @@ export function GroupPage() {
 		<div className="prose">
 			<h2>{group.header?.name}</h2>
 
+			<ul className="menu menu-vertical lg:menu-horizontal bg-base-200 rounded-box">
+				<li>
+					<a>Item 1</a>
+				</li>
+				<li>
+					<a>Item 2</a>
+				</li>
+				<li>
+					<a>Item 3</a>
+				</li>
+			</ul>
+
 			<form onSubmit={handleHeaderSubmit}>
 				<div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:space-x-4">
 					<div className="ds-card flex-auto">
