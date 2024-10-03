@@ -3,7 +3,7 @@ import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { GroupContext } from '../context/GroupContext';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 GroupHeader.propTypes = {
 	children: PropTypes.node.isRequired,
@@ -20,13 +20,13 @@ export function GroupHeader({ children }) {
 
 			<ul className="menu menu-vertical lg:menu-horizontal bg-base-200 rounded-box">
 				<li>
-					<a href={`/group/${groupId}/config`}>{t('Config')}</a>
+					<Link to={`/group/${groupId}/config`}>{t('Config')}</Link>
 				</li>
 				<li>
-					<a href={`/group/${groupId}/transactions`}>{t('Transactions')}</a>
+					<Link to={`/group/${groupId}/transactions`}>{t('Transactions')}</Link>
 				</li>
 				<li>
-					<a href={`/group/${groupId}/activity`}>{t('Activity')}</a>
+					<Link to={`/group/${groupId}/activity`}>{t('Activity')}</Link>
 				</li>
 			</ul>
 
