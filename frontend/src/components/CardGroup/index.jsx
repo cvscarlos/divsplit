@@ -9,7 +9,7 @@ CardGroup.propTypes = {
 
 function CardGroup({ group }) {
 	const navigate = useNavigate();
-	const handleClick = () => navigate(`/group/${group.id}`);
+	const handleClick = () => navigate(`/group/${group.id}/config`);
 
 	return (
 		<div className="card-wrap">
