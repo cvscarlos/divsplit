@@ -2,7 +2,12 @@
 	"name": "divsplit",
 	"private": true,
 	"version": "0.0.0",
+	"workspaces": [
+		"frontend",
+		"backend"
+	],
 	"scripts": {
+		"dev": "npm run dev --workspace frontend",
 		"prettier": "prettier --write ."
 	},
 	"devDependencies": {
