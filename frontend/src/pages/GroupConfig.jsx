@@ -14,36 +14,38 @@ export function GroupConfig() {
 	const { t } = useTranslation();
 
 	useEffect(() => {
-		setFormFields({ name: group.header?.name || '---' });
+		setFormFields({ name: group.config?.name || '---' });
 		if (group.members) setMembers(group.members);
 	}, [group]);
 
-	const addMember = () => {
+	const memberName = 'memberName';
+	const memberPrepaid = 'memberPrepaid';
+	function addMember() {
 		setMembers([...members, { ...memberBase, id: `${members.length}_${Date.now()}` }]);
-	};
-	const removeMember = (member) => {
+	}
+	function removeMember(member) {
 		setMembers(members.filter((m) => m.id !== member.id));
-	};
-	const handleMemberFields = (member, event) => {
+	}
+	function handleMemberFields(member, event) {
 		const { name, value } = event.target;
-		if (name.startsWith('memberName')) member.name = value;
-		else if (name.startsWith('memberPrepaid')) member.prepaid = Number(value);
+		if (name == memberName) member.name = value;
+		else if (name == memberPrepaid) member.prepaid = Number(value);
 		setMembers([...members]);
-	};
+	}
 
-	const handleFieldChange = (event) => {
+	function handleFieldChange(event) {
 		setFormFields({ ...formFields, [event.target.name]: event.target.value });
-	};
+	}
 
-	const handleHeaderSubmit = (event) => {
+	function handleGroupSubmit(event) {
 		event.preventDefault();
-		Object.assign(group.header, { name: formFields.name });
+		Object.assign(group.config, { name: formFields.name });
 		group.members = members;
 		updateGroup(group);
-	};
+	}
 
 	return (
-		<form onSubmit={handleHeaderSubmit}>
+		<form onSubmit={handleGroupSubmit}>
 			<div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:space-x-4">
 				<div className="ds-card flex-auto">
 					<h3>{t('GroupInformation')}</h3>
@@ -78,7 +80,7 @@ export function GroupConfig() {
 											placeholder={t('TypeHere')}
 											className="input input-bordered"
 											value={member.name}
-											name={`memberName`}
+											name={memberName}
 											onChange={(event) => handleMemberFields(member, event)}
 										/>
 									</label>
@@ -91,13 +93,13 @@ export function GroupConfig() {
 											placeholder="$"
 											className="input input-bordered"
 											value={member.prepaid}
-											name={`memberPrepaid`}
+											name={memberPrepaid}
 											onChange={(event) => handleMemberFields(member, event)}
 										/>
 									</label>
 								</div>
 								<div className="col-span-1 flex items-center text-xl text-red-600 mt-6">
-									<button onClick={() => removeMember(member)}>
+									<button type="button" onClick={() => removeMember(member)}>
 										<BiTrash />
 									</button>
 								</div>
