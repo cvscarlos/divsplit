@@ -8,7 +8,7 @@ import ObjectId from 'bson-objectid';
  */
 /**
  * @typedef {Object} Group
- * @property {Object} header
+ * @property {Object} config
  */
 
 const groupListStore = localforage.createInstance({ name: 'groupList' });
@@ -58,7 +58,7 @@ async function updateGroupName(newName, groupId) {
 
 function groupStandardize(group = {}) {
 	group ||= {};
-	group.header ||= {}; // Initialize header if not present
+	group.config ||= {}; // Initialize config if not present
 	return group;
 }
 
@@ -82,7 +82,7 @@ export function useApiGetGroup(groupId) {
 			if (dataToSave) {
 				await groupStore.setItem(groupId, dataToSave);
 				if (!abort) setDataToSave(null);
-				if (!abort) await updateGroupName(dataToSave.header.name, groupId);
+				if (!abort) await updateGroupName(dataToSave.config.name, groupId);
 			}
 
 			const group = groupStandardize(await groupStore.getItem(groupId));

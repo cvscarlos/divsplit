@@ -13,7 +13,8 @@ const detection = {
 	caches: ['localStorage'],
 };
 
-i18n.use(LanguageDetector)
+i18n
+	.use(LanguageDetector)
 	.use(initReactI18next)
 	.init({
 		fallbackLng: 'en',

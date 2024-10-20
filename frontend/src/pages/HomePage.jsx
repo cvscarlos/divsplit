@@ -14,9 +14,7 @@ function HomePage() {
 			<div className="main-title-div">
 				<div className="flex justify-center items-center flex-col h-1/2 ">
 					<h1 className="main-title">{t('MainTitle')}</h1>
-					<p className="text-secondary text-lg text-center font-bold w-80 md:w-auto md:text-2xl">
-						{t('MainSubTitle')}
-					</p>
+					<p className="text-secondary text-lg text-center font-bold w-80 md:w-auto md:text-2xl">{t('MainSubTitle')}</p>
 				</div>
 			</div>
 

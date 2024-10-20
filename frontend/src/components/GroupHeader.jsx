@@ -16,7 +16,7 @@ export function GroupHeader({ children }) {
 
 	return (
 		<div className="prose">
-			<h2>{group.header?.name}</h2>
+			<h2>{group.config?.name}</h2>
 
 			<ul className="menu menu-vertical lg:menu-horizontal bg-base-200 rounded-box">
 				<li>
