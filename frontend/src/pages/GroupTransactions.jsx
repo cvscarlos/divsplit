@@ -8,12 +8,10 @@ export function GroupTransactions() {
 	const { t } = useTranslation();
 	function handleGroupSubmit(event) {
 		event.preventDefault();
-		console.log(group.members);
 	}
 
 	function handleChange(e) {
 		selectMember(e.target.value);
-		console.log(e.target.value);
 	}
 
 	return (
