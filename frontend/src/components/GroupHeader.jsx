@@ -16,7 +16,7 @@ export function GroupHeader({ children }) {
 
 	return (
 		<div className="prose">
-			<h2>{group.config?.name}</h2>
+			<h2 className="text-center">{group.config?.name}</h2>
 
 			<ul className="menu menu-horizontal flex justify-center w-full bg-base-200 rounded-box">
 				<li>
