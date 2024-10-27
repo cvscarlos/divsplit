@@ -22,7 +22,7 @@ function HomePage() {
 				<p className="text-xl text-base-content md:text-2xl">{t('GenGroupTitle')}</p>
 				<p>{t('GenGroupSubTitle')}</p>
 				<div className="flex justify-center items-center m-5">
-					<button className="btn btn-primary w-64">{`+ ${t('CreateGroup')}`}</button>
+					<button className="btn btn-primary w-64">{`+ ${t('createGroup')}`}</button>
 				</div>
 
 				{isLoading ? (

@@ -16,9 +16,9 @@ export function GroupHeader({ children }) {
 
 	return (
 		<div className="prose">
-			<h2>{group.config?.name}</h2>
+			<h2 className="text-center">{group.config?.name}</h2>
 
-			<ul className="menu menu-vertical lg:menu-horizontal bg-base-200 rounded-box">
+			<ul className="menu menu-horizontal flex justify-center w-full bg-base-200 rounded-box">
 				<li>
 					<Link to={`/group/${groupId}/config`}>{t('Config')}</Link>
 				</li>

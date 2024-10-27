@@ -21,12 +21,13 @@ jobs:
           node-version: "18"
 
       - name: Install dependencies
-        run: npm ci && cd frontend && npm ci
+        run: npm ci
 
       - name: Run ESLint
         id: eslint
         run: |
-          cd frontend && npm run lint -- -f json -o eslint_report.json || echo "::set-output name=exitcode::$?"
+          npm run lint --workspace frontend -- -f json -o eslint_report.json || \
+          echo "::set-output name=exitcode::$?"
 
       - name: Format ESLint report
         run: node .github/scripts/format-eslint-report.js

@@ -8,5 +8,5 @@
 }
 
 .manage-groups {
-	@apply flex text-center w-full flex-col text-secondary text-lg font-bold md:text-start;
+	@apply flex text-center w-full flex-col text-secondary text-lg font-bold md:text-start lg:p-8;
 }
