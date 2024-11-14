@@ -1,69 +1,90 @@
 import { useContext, useState } from 'react';
-import { GroupContext } from '../context/GroupContext';
 import { useTranslation } from 'react-i18next';
 
+import { GroupContext } from '../context/GroupContext';
+import { Hr } from '../components/Hr';
+
+const PAID_BY = 'paid-by';
+const PAID_FOR = 'paid-for';
+
 export function GroupTransactions() {
-	const [group] = useContext(GroupContext);
-	const [selectedMember, selectMember] = useState({ name: '' });
 	const { t } = useTranslation();
-	function handleGroupSubmit(event) {
-		event.preventDefault();
+	const [group] = useContext(GroupContext);
+	const [paidBy, setPaidBy] = useState(new Map());
+	const [paidFor, setPaiFor] = useState(new Map());
+	const [transaction, setTransaction] = useState({
+		date: null,
+		value: null,
+		description: '',
+	});
+
+	function handleMemberChange(fieldset, id, value) {
+		const newMap = new Map(PAID_BY === fieldset ? paidBy : paidFor);
+		const hook = PAID_BY === fieldset ? setPaidBy : setPaiFor;
+
+		const numericValue = Number(value);
+		const isChecked = Boolean(numericValue);
+		if (isChecked) {
+			newMap.set(id, numericValue);
+		} else {
+			newMap.delete(id);
+		}
+
+		hook(newMap);
 	}
 
-	function handleChange(e) {
-		selectMember(e.target.value);
+	function handleGroupSubmit(event) {
+		event.preventDefault();
+		console.log('handleGroupSubmit', event.target);
+	}
+
+	function membersList(fieldset) {
+		return group?.members?.map(({ id, name }) => (
+			<div key={id}>
+				<input
+					className="checkbox"
+					type="checkbox"
+					value={id}
+					checked={Boolean((PAID_BY === fieldset ? paidBy : paidFor).get(id))}
+					onChange={(e) => handleMemberChange(fieldset, id, e.target.checked)}
+				/>
+				<span className="label-text">{name}</span>
+				<input
+					className="input input-bordered"
+					type="number"
+					name={`${id}-value`}
+					onChange={(e) => handleMemberChange(fieldset, id, e.target.value)}
+				/>
+			</div>
+		));
 	}
 
 	return (
 		<form onSubmit={handleGroupSubmit}>
-			<div className="md:flex md:justify-center">
-				<div className="ds-card md:w-1/2">
-					<h4>Description</h4>
-					<div className=" pt-5">
-						Date: <input className="input input-bordered" type="date" name="date" />
+			<div className="flex justify-center">
+				<div className="ds-card flex-auto">
+					<h3>{t('Transaction')}</h3>
+
+					<div className="pt-5">
+						{t('Date')}: <input className="input input-bordered" type="date" name="date" />
 					</div>
 					<div className="pt-5 pb-5">
-						Total: <input className="input input-bordered" type="number" name="value" />
+						{t('Total')}: <input className="input input-bordered" type="number" name="value" />
 					</div>
 					<div>
-						Description: <input className="input input-bordered" type="text" name="description" />
-					</div>
-					<h4>Paid by</h4>
-					<div>
-						{group?.members
-							? group.members.map((member, index) => (
-									<div key={index}>
-										<input
-											className="radio size-4"
-											type="radio"
-											name="member1"
-											value={member.name}
-											onChange={handleChange}
-										/>
-										{member.name}
-									</div>
-								))
-							: null}
-						Amount: <input className="input input-bordered" type="number" />
-						<h4>Paid for</h4>
+						{t('Description')}: <input className="input input-bordered" type="text" name="description" />
 					</div>
 
-					<div>
-						{group?.members
-							? group.members.map((member, index) => {
-									if (member.name !== selectedMember) {
-										return (
-											<div key={index}>
-												<input className="radio size-4" type="radio" name="member2" value={member.name} />
-												{member.name}
-											</div>
-										);
-									}
-								})
-							: null}
-						Amount:
-						<input className="input input-bordered" type="number" name="member1" />
-					</div>
+					<Hr />
+
+					<h4>{t('Paid by')}:</h4>
+					<div>{membersList(PAID_BY)}</div>
+
+					<Hr />
+
+					<h4>{t('Paid for')}:</h4>
+					<div>{membersList(PAID_FOR)}</div>
+
 					<div className="mb-4 mt-6">
 						<button type="submit" className="btn btn-active btn-primary text-base">
 							{t('Save')}

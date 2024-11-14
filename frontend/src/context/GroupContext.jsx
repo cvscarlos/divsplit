@@ -10,15 +10,15 @@ GroupProvider.propTypes = {
 	children: PropTypes.node.isRequired,
 };
 
-export default function GroupProvider({ children }) {
+export function GroupProvider({ children }) {
 	const { groupId } = useParams();
 	const { data, loading, updateGroup } = useApiGetGroup(groupId);
 	const value = [data, updateGroup];
 
 	return (
 		<GroupContext.Provider value={value}>
-			{children}
 			{loading ? <Loading /> : null}
+			{children}
 		</GroupContext.Provider>
 	);
 }
