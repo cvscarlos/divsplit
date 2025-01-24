@@ -2,8 +2,8 @@ import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BiTrash } from 'react-icons/bi';
 
-import { GroupContext } from '../context/GroupContext';
-import { Avatar } from '../components/Avatar';
+import { GroupContext } from '../../context/GroupContext';
+import { Avatar } from '../../components/Avatar';
 
 export function GroupConfig() {
 	const memberBase = { id: `0_${Date.now()}`, name: '', prepaid: 0 };

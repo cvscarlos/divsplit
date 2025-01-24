@@ -12,7 +12,7 @@ const AppRouter = () => {
 			<div className="container">
 				<Routes>
 					<Route path="/" element={<HomePage />} />
-					<Route path="/group/:groupId/:section" element={<GroupPageWrapper />} />
+					<Route path="/group/:groupId/:section/:sectionItem?" element={<GroupPageWrapper />} />
 					<Route path="*" element={<NotFound />} />
 				</Routes>
 			</div>

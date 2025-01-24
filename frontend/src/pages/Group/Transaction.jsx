@@ -1,8 +1,10 @@
 import { useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
+import ObjectId from 'bson-objectid';
 
-import { GroupContext } from '../context/GroupContext';
-import { Hr } from '../components/Hr';
+import { GroupContext } from '../../context/GroupContext';
+import { Hr } from '../../components/Hr';
 
 const PAID_BY = 'paid-by';
 const PAID_FOR = 'paid-for';
@@ -11,9 +13,16 @@ function round(value) {
 	return Math.round(value * 100) / 100;
 }
 
-export function GroupTransactions() {
+GroupTransaction.propTypes = {
+	transactionId: PropTypes.node.isRequired,
+};
+
+export function GroupTransaction({ transactionId }) {
 	const { t } = useTranslation();
-	const [group] = useContext(GroupContext);
+	const [group, updateGroup] = useContext(GroupContext);
+
+	const existingTransaction = group.transactions?.find(({ id }) => id === transactionId);
+
 	const [paidBy, setPaidBy] = useState({});
 	const [paidFor, setPaiFor] = useState({});
 	const [total, setTotal] = useState(0);
@@ -32,12 +41,10 @@ export function GroupTransactions() {
 		}
 
 		const tempData = { ...data };
-		console.log('manuallyChanged: ', manuallyChanged);
 
 		let manualChangedSum = 0;
-		const manuallyChangedKeys = Object.keys(manuallyChanged).filter((k) => k !== 'current');
+		const manuallyChangedKeys = Object.keys(manuallyChanged.current);
 		manuallyChangedKeys.forEach((key) => {
-			console.log({ key, id });
 			manualChangedSum += key === id ? numericValue : data[key];
 			delete tempData[key]; // Ignoro os que o usuário mudou manualmente
 		});
@@ -45,7 +52,6 @@ export function GroupTransactions() {
 		const tempDataKeys = Object.keys(tempData);
 		const divideBy = Math.max(1, tempDataKeys.length || 1);
 		const subtotal = Math.max(0, round((total - manualChangedSum) / divideBy));
-		console.log({ subtotal, total, manualChangedSum, numericValue });
 		tempDataKeys.forEach((k) => {
 			data[k] = subtotal;
 		});
@@ -55,7 +61,6 @@ export function GroupTransactions() {
 		const currentTotalDiff = total - currentTotal;
 		if (currentTotalDiff !== 0) {
 			const personId = isChecked ? id : tempDataKeys[0];
-			console.log({ currentTotalDiff, personId });
 			const personTotal = round(data[personId] + currentTotalDiff);
 			data[personId] = personTotal;
 		}
@@ -77,6 +82,23 @@ export function GroupTransactions() {
 	function handleGroupSubmit(event) {
 		event.preventDefault();
 		console.log('handleGroupSubmit', event.target);
+		const newGroup = { ...group };
+		const description = event.target.description.value;
+		const date = new Date(event.target.date.value);
+
+		newGroup.transactions ||= [];
+		newGroup.transactions.push({
+			id: String(new ObjectId()),
+			date,
+			createdAt: new Date(),
+			description,
+			total,
+			paidBy,
+			paidFor,
+			manuallyChanged: manuallyChanged.current,
+		});
+
+		updateGroup(newGroup);
 	}
 
 	function membersList(listType) {
@@ -99,7 +121,7 @@ export function GroupTransactions() {
 						value={data[id] || ''}
 						onChange={(e) => handleMemberChange(listType, id, e.target.value, Boolean(e.target.value))}
 						onKeyDown={() => {
-							manuallyChanged[id] = true;
+							manuallyChanged.current[id] = true;
 						}}
 					/>
 				</div>
