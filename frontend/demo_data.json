@@ -1,0 +1,41 @@
+{
+  "header": {
+    "name": "Dev Group"
+  },
+  "members": [
+    {
+      "id": "0_1729425649365",
+      "name": "João",
+      "prepaid": 150
+    },
+    {
+      "id": "1_1729425691368",
+      "name": "Maria",
+      "prepaid": 0
+    },
+    {
+      "id": "2_1729425696453",
+      "name": "Josefa",
+      "prepaid": 500
+    },
+    {
+      "id": "3_1729425700118",
+      "name": "Francisco",
+      "prepaid": 0
+    }
+  ],
+  "config": {
+    "name": "Dev Group 2"
+  },
+  "transactions": [
+    {
+      "id": "683f3d8c2c93b12bf6640606",
+      "paidBy": {
+        "0_1729425649365": 66.67,
+        "1_1729425691368": 66.67,
+        "2_1729425696453": 66.66
+      },
+      "paidFor": {}
+    }
+  ]
+}
