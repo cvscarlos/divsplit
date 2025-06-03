@@ -1,5 +1,6 @@
 import { useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import ObjectId from 'bson-objectid';
 
@@ -19,9 +20,12 @@ GroupTransaction.propTypes = {
 
 export function GroupTransaction({ transactionId }) {
 	const { t } = useTranslation();
-	const [group, updateGroup] = useContext(GroupContext);
+	const navigate = useNavigate();
+	const { groupId } = useParams();
+	const [group, updateGroup, loadDemo] = useContext(GroupContext);
 
-	const existingTransaction = group.transactions?.find(({ id }) => id === transactionId);
+	const isNewTransaction = transactionId === 'new';
+	// const existingTransaction = !isNewTransaction ? group.transactions?.find(({ id }) => id === transactionId) : null;
 
 	const [paidBy, setPaidBy] = useState({});
 	const [paidFor, setPaiFor] = useState({});
@@ -86,9 +90,12 @@ export function GroupTransaction({ transactionId }) {
 		const description = event.target.description.value;
 		const date = new Date(event.target.date.value);
 
+		// Generate new transaction ID
+		const newTransactionId = String(new ObjectId());
+
 		newGroup.transactions ||= [];
 		newGroup.transactions.push({
-			id: String(new ObjectId()),
+			id: newTransactionId,
 			date,
 			createdAt: new Date(),
 			description,
@@ -99,6 +106,9 @@ export function GroupTransaction({ transactionId }) {
 		});
 
 		updateGroup(newGroup);
+
+		// Navigate to the new transaction URL
+		navigate(`/group/${groupId}/transactions/${newTransactionId}`);
 	}
 
 	function membersList(listType) {
@@ -127,6 +137,21 @@ export function GroupTransaction({ transactionId }) {
 				</div>
 			);
 		});
+	}
+
+	// Show demo data button if no members exist
+	if (!group?.members || group.members.length === 0) {
+		return (
+			<div className="flex justify-center">
+				<div className="ds-card flex-auto">
+					<h3>{t('Transaction')}</h3>
+					<p className="mb-4">No members found in this group. Load demo data to get started.</p>
+					<button type="button" className="btn btn-secondary" onClick={loadDemo}>
+						Load Demo Data
+					</button>
+				</div>
+			</div>
+		);
 	}
 
 	return (
