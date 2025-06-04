@@ -4,14 +4,17 @@
     "module": "ESNext",
     "jsx": "react-jsx",
     "strict": true,
-    "baseUrl": "./frontend",
+    "baseUrl": ".",
     "paths": {
+      "@/*": ["src/*"],
       "@components/*": ["src/components/*"],
       "@context/*": ["src/context/*"],
       "@pages/*": ["src/pages/*"],
-      "@utils/*": ["src/utils/*"]
+      "@utils/*": ["src/utils/*"],
+      "@routes/*": ["src/routes/*"],
+      "@locales/*": ["src/locales/*"]
     }
   },
-  "include": ["frontend/src/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
