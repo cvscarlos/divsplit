@@ -1,9 +1,7 @@
-import { useContext } from 'react';
-
-import { GroupContext } from '../context/GroupContext';
+import { useGroupContext } from '../context/GroupContext';
 
 export function Debug() {
-	const { data: group } = useContext(GroupContext);
+	const { data: group } = useGroupContext();
 
 	if (import.meta.env.VITE_SHOW_DEBUG !== 'true') return null;
 

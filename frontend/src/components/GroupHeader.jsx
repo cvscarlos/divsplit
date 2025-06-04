@@ -1,11 +1,10 @@
-import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { GroupContext } from '../context/GroupContext';
+import { useGroupContext } from '../context/GroupContext';
 import { Link, useParams } from 'react-router-dom';
 
 export function GroupHeader() {
-	const { data: group } = useContext(GroupContext);
+	const { data: group } = useGroupContext();
 	const { t } = useTranslation();
 	const { groupId } = useParams();
 

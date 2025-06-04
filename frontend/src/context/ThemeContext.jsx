@@ -1,8 +1,8 @@
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { jsonParseSafe, jsonStringifySafe } from '../utils/tools';
 
-export const ThemeContext = createContext();
+const ThemeContext = createContext();
 
 const getInitialTheme = () => {
 	const initialTheme = localStorage.getItem('divsplit_theme');
@@ -25,4 +25,13 @@ export default function ThemeProvider({ children }) {
 	};
 
 	return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useThemeContext() {
+	const context = useContext(ThemeContext);
+	if (context === undefined) {
+		throw new Error('useThemeContext must be used within a ThemeProvider');
+	}
+	return context;
 }

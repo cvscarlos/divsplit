@@ -1,10 +1,10 @@
-import { useContext, useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import ObjectId from 'bson-objectid';
 
-import { GroupContext } from '../../context/GroupContext';
+import { useGroupContext } from '../../context/GroupContext';
 import { Hr } from '../../components/Hr';
 
 const PAID_BY = 'paid-by';
@@ -22,7 +22,7 @@ export function GroupTransaction({ transactionId }) {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const { groupId } = useParams();
-	const { data: group, updateGroup, loadDemo } = useContext(GroupContext);
+	const { data: group, updateGroup, loadDemo } = useGroupContext();
 
 	// Find existing transaction or use defaults
 	const existingTransaction =

@@ -1,13 +1,12 @@
-import { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 
-import { GroupContext } from '../../context/GroupContext';
+import { useGroupContext } from '../../context/GroupContext';
 
 export function GroupListTransactions() {
 	const { t } = useTranslation();
 	const { groupId } = useParams();
-	const { data: group } = useContext(GroupContext);
+	const { data: group } = useGroupContext();
 
 	function renderTransaction(transaction) {
 		const { id, total, createdAt, description } = transaction;
