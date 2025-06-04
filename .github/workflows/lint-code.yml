@@ -27,7 +27,7 @@ jobs:
         id: eslint
         run: |
           npm run lint --workspace frontend -- -f json -o eslint_report.json || \
-          echo "::set-output name=exitcode::$?"
+          echo "exitcode=$?" >> $GITHUB_OUTPUT
 
       - name: Format ESLint report
         run: node .github/scripts/format-eslint-report.js
@@ -36,7 +36,7 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: eslint_report.md
-          delete: true
+          recreate: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fail if linting fails
