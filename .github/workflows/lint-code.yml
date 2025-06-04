@@ -41,8 +41,9 @@ jobs:
       - name: Comment on PR with ESLint report
         uses: marocchino/sticky-pull-request-comment@v2
         with:
+          header: eslint-report
           path: eslint_report.md
-          recreate: true
+          recreate: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
