@@ -15,5 +15,19 @@
   "toggleTheme": "Alternar tema",
   "TypeHere": "Digite aqui",
   "Need some data to get started?": "Precisa de dados para começar?",
-  "Load sample data": "Carregar dados de exemplo"
+  "Load sample data": "Carregar dados de exemplo",
+  "Config": "Configuração",
+  "Transactions": "Transações",
+  "Activity": "Atividade",
+  "Transaction": "Transação",
+  "Date": "Data",
+  "Total": "Total",
+  "Description": "Descrição",
+  "No transactions found": "Nenhuma transação encontrada",
+  "Add Transaction": "Adicionar Transação",
+  "Want to see some example transactions?": "Quer ver algumas transações de exemplo?",
+  "Paid by": "Pago por",
+  "Paid for": "Pago para",
+  "Remaining": "Restante",
+  "Content not found": "Conteúdo não encontrado"
 }

@@ -8,7 +8,7 @@ import { Avatar } from '../../components/Avatar';
 export function GroupConfig() {
 	const memberBase = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
 
-	const { data: group, updateGroup, loadDemo } = useGroupContext();
+	const { data: group, updateGroup } = useGroupContext();
 	const [formFields, setFormFields] = useState({ name: '' });
 	const [members, setMembers] = useState([{ ...memberBase }]);
 	const { t } = useTranslation();
@@ -117,18 +117,6 @@ export function GroupConfig() {
 					{t('Save')}
 				</button>
 			</div>
-
-			{/* Show load demo data link if group is empty */}
-			{(!group?.members || group.members.length === 0 || !group?.config?.name || group.config.name === '---') && (
-				<div className="text-center mt-4">
-					<p className="text-sm text-gray-600">
-						{t('Need some data to get started?')}{' '}
-						<button type="button" className="link link-primary text-sm" onClick={loadDemo}>
-							{t('Load sample data')}
-						</button>
-					</p>
-				</div>
-			)}
 		</form>
 	);
 }

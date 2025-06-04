@@ -47,7 +47,14 @@ export function GroupListTransactions() {
 						<tbody>{group.transactions.map(renderTransaction)}</tbody>
 					</table>
 				) : (
-					<p>{t('No transactions found')}</p>
+					<div className="text-center py-8">
+						<p className="mb-4">{t('No transactions found')}</p>
+						<div className="mb-4">
+							<Link to={`/group/${groupId}/transactions/new`} className="btn btn-primary">
+								{t('Add Transaction')}
+							</Link>
+						</div>
+					</div>
 				)}
 			</div>
 		</div>
