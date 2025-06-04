@@ -1,14 +1,13 @@
-import { useContext } from 'react';
 import PropTypes from 'prop-types';
 
-import { ThemeContext } from '../context/ThemeContext';
+import { useThemeContext } from '../context/ThemeContext';
 
 Container.propTypes = {
 	children: PropTypes.node.isRequired,
 };
 
 export function Container({ children }) {
-	const { theme } = useContext(ThemeContext);
+	const { theme } = useThemeContext();
 
 	return (
 		<div data-theme={theme} className="transition duration-300 ease-in-out min-h-svh">

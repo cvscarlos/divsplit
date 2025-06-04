@@ -1,14 +1,14 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BiTrash } from 'react-icons/bi';
 
-import { GroupContext } from '../context/GroupContext';
-import { Avatar } from '../components/Avatar';
+import { useGroupContext } from '../../context/GroupContext';
+import { Avatar } from '../../components/Avatar';
 
 export function GroupConfig() {
 	const memberBase = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
 
-	const [group, updateGroup] = useContext(GroupContext);
+	const { data: group, updateGroup } = useGroupContext();
 	const [formFields, setFormFields] = useState({ name: '' });
 	const [members, setMembers] = useState([{ ...memberBase }]);
 	const { t } = useTranslation();

@@ -26,8 +26,14 @@ jobs:
       - name: Run ESLint
         id: eslint
         run: |
-          npm run lint --workspace frontend -- -f json -o eslint_report.json || \
-          echo "::set-output name=exitcode::$?"
+          exitcode=0
+          # Run ESLint with JSON output, ignoring exit code for output generation
+          npx eslint frontend --ext js,jsx --report-unused-disable-directives --max-warnings 0 -f json -o eslint_report.json || exitcode=$?
+          # Ensure we always have a report file, even if ESLint failed
+          if [ ! -f eslint_report.json ]; then
+            echo "[]" > eslint_report.json
+          fi
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
 
       - name: Format ESLint report
         run: node .github/scripts/format-eslint-report.js
@@ -35,8 +41,10 @@ jobs:
       - name: Comment on PR with ESLint report
         uses: marocchino/sticky-pull-request-comment@v2
         with:
+          header: eslint-report
           path: eslint_report.md
-          delete: true
+          recreate: false
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fail if linting fails

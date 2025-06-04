@@ -63,8 +63,31 @@ function groupStandardize(group = {}) {
 }
 
 /**
+ * Load demo data for a group
  * @param {string} groupId
- * @returns {{data: Group, loading: boolean, updateGroup: (updatedData: Group) => void}}
+ * @returns {Promise<void>}
+ */
+export async function loadDemoData(groupId) {
+	try {
+		const response = await fetch('/demo_data.json');
+		const demoData = await response.json();
+		await groupStore.setItem(groupId, demoData);
+
+		// Also update the group list if this group doesn't exist
+		const groups = (await groupListStore.getItem('groups')) || [];
+		const groupExists = groups.some((group) => group.id === groupId);
+		if (!groupExists) {
+			groups.push({ id: groupId, name: demoData.config?.name || 'Demo Group' });
+			await groupListStore.setItem('groups', groups);
+		}
+	} catch (error) {
+		console.error('Error loading demo data:', error);
+	}
+}
+
+/**
+ * @param {string} groupId
+ * @returns {{data: Group, loading: boolean, updateGroup: (updatedData: Group) => void, loadDemo: () => Promise<void>}}
  */
 export function useApiGetGroup(groupId) {
 	const [loading, setLoading] = useState(false);
@@ -95,11 +118,19 @@ export function useApiGetGroup(groupId) {
 		return () => (abort = true);
 	}, [dataToSave, groupId]);
 
+	const loadDemo = async () => {
+		await loadDemoData(groupId);
+		// Trigger a re-fetch by forcing a state update
+		const group = groupStandardize(await groupStore.getItem(groupId));
+		setData(group);
+	};
+
 	return {
 		data,
 		loading,
 		updateGroup: (updatedData) => {
 			setDataToSave(updatedData);
 		},
+		loadDemo,
 	};
 }
