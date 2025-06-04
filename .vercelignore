@@ -1,0 +1,6 @@
+backend/
+.git/
+.github/
+
+*.md
+.gitignore
