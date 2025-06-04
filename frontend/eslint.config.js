@@ -64,7 +64,7 @@ export default [
 		},
 		settings: {
 			react: {
-				version: '19.1',
+				version: 'detect',
 			},
 		},
 	},
