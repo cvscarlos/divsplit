@@ -168,16 +168,19 @@ export function GroupTransaction({ transactionId }) {
 		});
 	}
 
-	// Show demo data button if no members exist
+	// Show demo data link if no members exist
 	if (!group?.members || group.members.length === 0) {
 		return (
 			<div className="flex justify-center">
 				<div className="ds-card flex-auto">
 					<h3>{t('Transaction')}</h3>
-					<p className="mb-4">No members found in this group. Load demo data to get started.</p>
-					<button type="button" className="btn btn-secondary" onClick={loadDemo}>
-						Load Demo Data
-					</button>
+					<p className="mb-4">
+						No members found in this group.{' '}
+						<button type="button" className="link link-primary" onClick={loadDemo}>
+							Load demo data
+						</button>{' '}
+						to get started.
+					</p>
 				</div>
 			</div>
 		);
