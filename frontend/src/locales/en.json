@@ -13,5 +13,7 @@
   "Save": "Save",
   "addMember": "member",
   "toggleTheme": "Toggle theme",
-  "TypeHere": "Type here"
+  "TypeHere": "Type here",
+  "Need some data to get started?": "Need some data to get started?",
+  "Load sample data": "Load sample data"
 }

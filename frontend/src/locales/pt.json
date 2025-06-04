@@ -13,5 +13,7 @@
   "Name": "Nome",
   "addMember": "membro",
   "toggleTheme": "Alternar tema",
-  "TypeHere": "Digite aqui"
+  "TypeHere": "Digite aqui",
+  "Need some data to get started?": "Precisa de dados para começar?",
+  "Load sample data": "Carregar dados de exemplo"
 }
