@@ -1,9 +1,8 @@
-import { useContext } from 'react';
-import { ThemeContext } from '../../context/ThemeContext';
+import { useThemeContext } from '../../context/ThemeContext';
 import { Link } from 'react-router-dom';
 
 function Header() {
-	const { theme, toggleTheme } = useContext(ThemeContext);
+	const { theme, toggleTheme } = useThemeContext();
 
 	return (
 		<header>
