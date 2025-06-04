@@ -4,8 +4,8 @@ const path = require('node:path');
 // Check if eslint report exists
 const reportPath = path.join(process.cwd(), 'eslint_report.json');
 if (!fs.existsSync(reportPath)) {
-	console.log('No ESLint report found, creating empty report');
-	fs.writeFileSync('eslint_report.md', '✅ No linting issues found!');
+	console.log('No ESLint report found - ESLint may have failed to run');
+	fs.writeFileSync('eslint_report.md', '❌ ESLint failed to generate a report. Check the workflow logs for details.');
 	process.exit(0);
 }
 
@@ -14,6 +14,8 @@ const eslintReport = require(reportPath);
 function formatEslintReport() {
 	let output = '';
 	let hasIssues = false;
+	let totalErrors = 0;
+	let totalWarnings = 0;
 
 	eslintReport.forEach((file) => {
 		if (!file.messages.length) return;
@@ -21,17 +23,25 @@ function formatEslintReport() {
 		hasIssues = true;
 		const relativePath = path.relative(process.cwd(), file.filePath);
 		output += `#### File: \`${relativePath}\`\n`;
-		output += '| Rule | Message | Line | Column |\n';
-		output += '| ---- | ------- | ---- | ------ |\n';
-		output += file.messages
-			.map((msg) => `| **${msg.ruleId}** | ${msg.message} | ${msg.line} | ${msg.column} |`)
-			.join('\n');
-		output += '\n\n';
+		output += '| Severity | Rule | Message | Line | Column |\n';
+		output += '| -------- | ---- | ------- | ---- | ------ |\n';
+		
+		file.messages.forEach((msg) => {
+			const severity = msg.severity === 2 ? '🔴 Error' : '🟡 Warning';
+			if (msg.severity === 2) totalErrors++;
+			else totalWarnings++;
+			
+			output += `| ${severity} | **${msg.ruleId || 'N/A'}** | ${msg.message} | ${msg.line} | ${msg.column} |\n`;
+		});
+		output += '\n';
 	});
 
-	output = hasIssues ? `## ESLint Report\n\n${output}` : '✅ No linting issues found!';
-
-	fs.writeFileSync('eslint_report.md', output);
+	if (hasIssues) {
+		const summary = `## ❌ ESLint Report\n\n**Summary:** ${totalErrors} error(s), ${totalWarnings} warning(s)\n\n${output}`;
+		fs.writeFileSync('eslint_report.md', summary);
+	} else {
+		fs.writeFileSync('eslint_report.md', '✅ No linting issues found!');
+	}
 }
 
 formatEslintReport();

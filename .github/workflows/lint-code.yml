@@ -26,8 +26,9 @@ jobs:
       - name: Run ESLint
         id: eslint
         run: |
-          npm run lint --workspace frontend -- -f json -o eslint_report.json || \
-          echo "exitcode=$?" >> $GITHUB_OUTPUT
+          exitcode=0
+          npm run lint --workspace frontend -- -f json -o eslint_report.json || exitcode=$?
+          echo "exitcode=$exitcode" >> $GITHUB_OUTPUT
 
       - name: Format ESLint report
         run: node .github/scripts/format-eslint-report.js
@@ -37,6 +38,7 @@ jobs:
         with:
           path: eslint_report.md
           recreate: true
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fail if linting fails
