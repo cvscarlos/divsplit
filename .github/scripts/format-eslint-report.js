@@ -1,5 +1,5 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 // Check if eslint report exists
 const reportPath = path.join(process.cwd(), 'eslint_report.json');
@@ -9,7 +9,7 @@ if (!fs.existsSync(reportPath)) {
 	process.exit(0);
 }
 
-const eslintReport = require(reportPath);
+const eslintReport = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
 
 function formatEslintReport() {
 	let output = '';
