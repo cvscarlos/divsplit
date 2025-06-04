@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from 'react';
+import { useContext, useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import PropTypes from 'prop-types';
@@ -24,13 +24,34 @@ export function GroupTransaction({ transactionId }) {
 	const { groupId } = useParams();
 	const [group, updateGroup, loadDemo] = useContext(GroupContext);
 
-	const isNewTransaction = transactionId === 'new';
-	// const existingTransaction = !isNewTransaction ? group.transactions?.find(({ id }) => id === transactionId) : null;
+	// Find existing transaction or use defaults
+	const existingTransaction =
+		transactionId !== 'new' ? group.transactions?.find(({ id }) => id === transactionId) : null;
 
-	const [paidBy, setPaidBy] = useState({});
-	const [paidFor, setPaiFor] = useState({});
-	const [total, setTotal] = useState(0);
-	const manuallyChanged = useRef({});
+	// Helper function to format date for input field
+	const formatDateForInput = (dateValue) => {
+		if (!dateValue) return '';
+		const date = new Date(dateValue);
+		return !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : '';
+	};
+
+	// Initialize state with existing data or defaults
+	const [paidBy, setPaidBy] = useState(existingTransaction?.paidBy || {});
+	const [paidFor, setPaiFor] = useState(existingTransaction?.paidFor || {});
+	const [total, setTotal] = useState(existingTransaction?.total || 0);
+	const [description, setDescription] = useState(existingTransaction?.description || '');
+	const [date, setDate] = useState(formatDateForInput(existingTransaction?.date));
+	const manuallyChanged = useRef(existingTransaction?.manuallyChanged || {});
+
+	// Update state when transaction changes (e.g., navigating between transactions)
+	useEffect(() => {
+		setPaidBy(existingTransaction?.paidBy || {});
+		setPaiFor(existingTransaction?.paidFor || {});
+		setTotal(existingTransaction?.total || 0);
+		setDescription(existingTransaction?.description || '');
+		setDate(formatDateForInput(existingTransaction?.date));
+		manuallyChanged.current = existingTransaction?.manuallyChanged || {};
+	}, [existingTransaction]);
 
 	function handleMemberChange(listType, id, inputValue, isChecked) {
 		const data = PAID_BY === listType ? paidBy : paidFor;
@@ -85,30 +106,38 @@ export function GroupTransaction({ transactionId }) {
 
 	function handleGroupSubmit(event) {
 		event.preventDefault();
-		console.log('handleGroupSubmit', event.target);
 		const newGroup = { ...group };
-		const description = event.target.description.value;
-		const date = new Date(event.target.date.value);
-
-		// Generate new transaction ID
-		const newTransactionId = String(new ObjectId());
+		const transactionDate = new Date(date);
+		const isNew = transactionId === 'new';
+		const id = isNew ? String(new ObjectId()) : transactionId;
 
 		newGroup.transactions ||= [];
-		newGroup.transactions.push({
-			id: newTransactionId,
-			date,
-			createdAt: new Date(),
+
+		const transactionData = {
+			id,
+			date: transactionDate,
 			description,
 			total,
 			paidBy,
 			paidFor,
 			manuallyChanged: manuallyChanged.current,
-		});
+			...(isNew ? { createdAt: new Date() } : { updatedAt: new Date() }),
+		};
 
-		updateGroup(newGroup);
-
-		// Navigate to the new transaction URL
-		navigate(`/group/${groupId}/transactions/${newTransactionId}`);
+		if (isNew) {
+			newGroup.transactions.push(transactionData);
+			updateGroup(newGroup);
+			navigate(`/group/${groupId}/transactions/${id}`);
+		} else {
+			const transactionIndex = newGroup.transactions.findIndex(({ id: txId }) => txId === transactionId);
+			if (transactionIndex !== -1) {
+				newGroup.transactions[transactionIndex] = {
+					...newGroup.transactions[transactionIndex],
+					...transactionData,
+				};
+			}
+			updateGroup(newGroup);
+		}
 	}
 
 	function membersList(listType) {
@@ -161,7 +190,14 @@ export function GroupTransaction({ transactionId }) {
 					<h3>{t('Transaction')}</h3>
 
 					<div className="pt-5">
-						{t('Date')}: <input className="input input-bordered" type="date" name="date" />
+						{t('Date')}:{' '}
+						<input
+							className="input input-bordered"
+							type="date"
+							name="date"
+							value={date}
+							onChange={(e) => setDate(e.target.value)}
+						/>
 					</div>
 					<div className="pt-5 pb-5">
 						{t('Total')}:
@@ -174,7 +210,14 @@ export function GroupTransaction({ transactionId }) {
 						/>
 					</div>
 					<div>
-						{t('Description')}: <input className="input input-bordered" type="text" name="description" />
+						{t('Description')}:{' '}
+						<input
+							className="input input-bordered"
+							type="text"
+							name="description"
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+						/>
 					</div>
 
 					<Hr />
