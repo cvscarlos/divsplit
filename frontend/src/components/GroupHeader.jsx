@@ -5,7 +5,7 @@ import { GroupContext } from '../context/GroupContext';
 import { Link, useParams } from 'react-router-dom';
 
 export function GroupHeader() {
-	const [group] = useContext(GroupContext);
+	const { data: group } = useContext(GroupContext);
 	const { t } = useTranslation();
 	const { groupId } = useParams();
 

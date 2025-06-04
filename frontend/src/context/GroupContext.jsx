@@ -14,7 +14,7 @@ GroupProvider.propTypes = {
 export function GroupProvider({ children }) {
 	const { groupId } = useParams();
 	const { data, loading, updateGroup, loadDemo } = useApiGetGroup(groupId);
-	const value = [data, updateGroup, loadDemo];
+	const value = { data, updateGroup, loadDemo };
 
 	return (
 		<GroupContext.Provider value={value}>

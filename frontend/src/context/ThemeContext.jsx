@@ -4,16 +4,16 @@ import { jsonParseSafe, jsonStringifySafe } from '../utils/tools';
 
 export const ThemeContext = createContext();
 
+const getInitialTheme = () => {
+	const initialTheme = localStorage.getItem('divsplit_theme');
+	return initialTheme ? jsonParseSafe(initialTheme) : 'light';
+};
+
 ThemeProvider.propTypes = {
 	children: PropTypes.node.isRequired,
 };
 
 export default function ThemeProvider({ children }) {
-	const getInitialTheme = () => {
-		const initialTheme = localStorage.getItem('divsplit_theme');
-		return initialTheme ? jsonParseSafe(initialTheme) : 'light';
-	};
-
 	const [theme, setTheme] = useState(getInitialTheme());
 
 	useEffect(() => {

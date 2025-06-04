@@ -3,9 +3,9 @@ import { useContext } from 'react';
 import { GroupContext } from '../context/GroupContext';
 
 export function Debug() {
-	const [group] = useContext(GroupContext);
+	const { data: group } = useContext(GroupContext);
 
-	if (window.location.hostname !== 'localhost') return null;
+	if (import.meta.env.VITE_SHOW_DEBUG !== 'true') return null;
 
 	return (
 		<div className="prose">

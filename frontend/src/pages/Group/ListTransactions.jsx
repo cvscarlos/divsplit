@@ -7,7 +7,7 @@ import { GroupContext } from '../../context/GroupContext';
 export function GroupListTransactions() {
 	const { t } = useTranslation();
 	const { groupId } = useParams();
-	const [group] = useContext(GroupContext);
+	const { data: group } = useContext(GroupContext);
 
 	function renderTransaction(transaction) {
 		const { id, total, createdAt, description } = transaction;

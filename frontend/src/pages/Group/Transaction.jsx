@@ -22,7 +22,7 @@ export function GroupTransaction({ transactionId }) {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const { groupId } = useParams();
-	const [group, updateGroup, loadDemo] = useContext(GroupContext);
+	const { data: group, updateGroup, loadDemo } = useContext(GroupContext);
 
 	// Find existing transaction or use defaults
 	const existingTransaction =
@@ -106,37 +106,51 @@ export function GroupTransaction({ transactionId }) {
 
 	function handleGroupSubmit(event) {
 		event.preventDefault();
-		const newGroup = { ...group };
-		const transactionDate = new Date(date);
-		const isNew = transactionId === 'new';
-		const id = isNew ? String(new ObjectId()) : transactionId;
+		try {
+			if (!date || !total || !description) {
+				throw new Error('Please fill in all required fields');
+			}
+			const newGroup = { ...group };
+			const transactionDate = new Date(date);
+			if (isNaN(transactionDate.getTime())) {
+				throw new Error('Invalid date');
+			}
+			const isNew = transactionId === 'new';
+			const id = isNew ? String(new ObjectId()) : transactionId;
 
-		newGroup.transactions ||= [];
+			newGroup.transactions ||= [];
 
-		const transactionData = {
-			id,
-			date: transactionDate,
-			description,
-			total,
-			paidBy,
-			paidFor,
-			manuallyChanged: manuallyChanged.current,
-			...(isNew ? { createdAt: new Date() } : { updatedAt: new Date() }),
-		};
+			const transactionData = {
+				id,
+				date: transactionDate,
+				description,
+				total,
+				paidBy,
+				paidFor,
+				manuallyChanged: manuallyChanged.current,
+				...(isNew ? { createdAt: new Date() } : { updatedAt: new Date() }),
+			};
 
-		if (isNew) {
-			newGroup.transactions.push(transactionData);
-			updateGroup(newGroup);
-			navigate(`/group/${groupId}/transactions/${id}`);
-		} else {
-			const transactionIndex = newGroup.transactions.findIndex(({ id: txId }) => txId === transactionId);
-			if (transactionIndex !== -1) {
-				newGroup.transactions[transactionIndex] = {
-					...newGroup.transactions[transactionIndex],
-					...transactionData,
-				};
+			if (isNew) {
+				newGroup.transactions.push(transactionData);
+			} else {
+				const transactionIndex = newGroup.transactions.findIndex(({ id: txId }) => txId === transactionId);
+				if (transactionIndex !== -1) {
+					newGroup.transactions[transactionIndex] = {
+						...newGroup.transactions[transactionIndex],
+						...transactionData,
+					};
+				} else {
+					throw new Error('Transaction not found');
+				}
 			}
 			updateGroup(newGroup);
+			if (isNew) {
+				navigate(`/group/${groupId}/transactions/${id}`);
+			}
+		} catch (error) {
+			console.error('Error submitting group:', error);
+			// TODO: Implement error handling UI feedback
 		}
 	}
 

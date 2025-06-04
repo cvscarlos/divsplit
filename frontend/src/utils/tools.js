@@ -3,7 +3,7 @@ export function jsonStringifySafe(obj) {
 		return JSON.stringify(obj);
 	} catch (error) {
 		console.error('Error stringifying object:', error);
-		return '{}';
+		return '';
 	}
 }
 

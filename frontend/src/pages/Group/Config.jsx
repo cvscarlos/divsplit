@@ -8,7 +8,7 @@ import { Avatar } from '../../components/Avatar';
 export function GroupConfig() {
 	const memberBase = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
 
-	const [group, updateGroup] = useContext(GroupContext);
+	const { data: group, updateGroup } = useContext(GroupContext);
 	const [formFields, setFormFields] = useState({ name: '' });
 	const [members, setMembers] = useState([{ ...memberBase }]);
 	const { t } = useTranslation();
