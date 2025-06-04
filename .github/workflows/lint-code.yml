@@ -28,7 +28,7 @@ jobs:
         run: |
           exitcode=0
           # Run ESLint with JSON output, ignoring exit code for output generation
-          npx eslint frontend --ext js,jsx --report-unused-disable-directives --max-warnings 0 -f json -o eslint_report.json || exitcode=$?
+          npx eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0 -f json -o eslint_report.json || exitcode=$?
           # Ensure we always have a report file, even if ESLint failed
           if [ ! -f eslint_report.json ]; then
             echo "[]" > eslint_report.json
