@@ -6,6 +6,7 @@ import ObjectId from 'bson-objectid';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { Hr } from '../../components/Hr';
+import { trackTransactionCreated, trackTransactionUpdated } from '../../utils/activity-tracker';
 
 const PAID_BY = 'paid-by';
 const PAID_FOR = 'paid-for';
@@ -110,7 +111,7 @@ export function GroupTransaction({ transactionId }) {
 			if (!date || !total || !description) {
 				throw new Error('Please fill in all required fields');
 			}
-			const newGroup = { ...group };
+			let updatedGroup = { ...group };
 			const transactionDate = new Date(date);
 			if (isNaN(transactionDate.getTime())) {
 				throw new Error('Invalid date');
@@ -118,7 +119,7 @@ export function GroupTransaction({ transactionId }) {
 			const isNew = transactionId === 'new';
 			const id = isNew ? String(new ObjectId()) : transactionId;
 
-			newGroup.transactions ||= [];
+			updatedGroup.transactions ||= [];
 
 			const transactionData = {
 				id,
@@ -132,19 +133,24 @@ export function GroupTransaction({ transactionId }) {
 			};
 
 			if (isNew) {
-				newGroup.transactions.push(transactionData);
+				// Track transaction creation
+				updatedGroup = trackTransactionCreated(updatedGroup, transactionData);
+				updatedGroup.transactions.push(transactionData);
 			} else {
-				const transactionIndex = newGroup.transactions.findIndex(({ id: txId }) => txId === transactionId);
+				const transactionIndex = updatedGroup.transactions.findIndex(({ id: txId }) => txId === transactionId);
 				if (transactionIndex !== -1) {
-					newGroup.transactions[transactionIndex] = {
-						...newGroup.transactions[transactionIndex],
+					const oldTransaction = updatedGroup.transactions[transactionIndex];
+					// Track transaction update
+					updatedGroup = trackTransactionUpdated(updatedGroup, oldTransaction, transactionData);
+					updatedGroup.transactions[transactionIndex] = {
+						...updatedGroup.transactions[transactionIndex],
 						...transactionData,
 					};
 				} else {
 					throw new Error('Transaction not found');
 				}
 			}
-			updateGroup(newGroup);
+			updateGroup(updatedGroup);
 			if (isNew) {
 				navigate(`/group/${groupId}/transactions/${id}`);
 			}
