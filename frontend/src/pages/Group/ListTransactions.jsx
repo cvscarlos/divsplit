@@ -36,16 +36,23 @@ export function GroupListTransactions() {
 			<div className="ds-card flex-auto">
 				<h3>{t('Transactions')}</h3>
 				{group.transactions?.length ? (
-					<table className="table-auto w-full">
-						<thead>
-							<tr>
-								<th>{t('Date')}</th>
-								<th>{t('Total')}</th>
-								<th>{t('Description')}</th>
-							</tr>
-						</thead>
-						<tbody>{group.transactions.map(renderTransaction)}</tbody>
-					</table>
+					<>
+						<div className="mb-4">
+							<Link to={`/group/${groupId}/transactions/new`} className="btn btn-primary">
+								{t('Add Transaction')}
+							</Link>
+						</div>
+						<table className="table-auto w-full">
+							<thead>
+								<tr>
+									<th>{t('Date')}</th>
+									<th>{t('Total')}</th>
+									<th>{t('Description')}</th>
+								</tr>
+							</thead>
+							<tbody>{group.transactions.map(renderTransaction)}</tbody>
+						</table>
+					</>
 				) : (
 					<div className="text-center py-8">
 						<p className="mb-4">{t('No transactions found')}</p>
