@@ -38,7 +38,7 @@ export function GroupTransaction({ transactionId }) {
 
 	// Initialize state with existing data or defaults
 	const [paidBy, setPaidBy] = useState(existingTransaction?.paidBy || {});
-	const [paidFor, setPaiFor] = useState(existingTransaction?.paidFor || {});
+	const [paidFor, setPaidFor] = useState(existingTransaction?.paidFor || {});
 	const [total, setTotal] = useState(existingTransaction?.total || 0);
 	const [description, setDescription] = useState(existingTransaction?.description || '');
 	const [date, setDate] = useState(formatDateForInput(existingTransaction?.date));
@@ -47,7 +47,7 @@ export function GroupTransaction({ transactionId }) {
 	// Update state when transaction changes (e.g., navigating between transactions)
 	useEffect(() => {
 		setPaidBy(existingTransaction?.paidBy || {});
-		setPaiFor(existingTransaction?.paidFor || {});
+		setPaidFor(existingTransaction?.paidFor || {});
 		setTotal(existingTransaction?.total || 0);
 		setDescription(existingTransaction?.description || '');
 		setDate(formatDateForInput(existingTransaction?.date));
@@ -56,7 +56,7 @@ export function GroupTransaction({ transactionId }) {
 
 	function handleMemberChange(listType, id, inputValue, isChecked) {
 		const data = PAID_BY === listType ? paidBy : paidFor;
-		const handler = PAID_BY === listType ? setPaidBy : setPaiFor;
+		const handler = PAID_BY === listType ? setPaidBy : setPaidFor;
 		const numericValue = Number.parseFloat(inputValue);
 
 		if (!isChecked) {
