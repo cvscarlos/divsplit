@@ -4,6 +4,7 @@ import { BiTrash } from 'react-icons/bi';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { Avatar } from '../../components/Avatar';
+import { trackGroupNameChange, trackMemberChanges } from '../../utils/activity-tracker';
 
 export function GroupConfig() {
 	const memberBase = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
@@ -39,9 +40,23 @@ export function GroupConfig() {
 
 	function handleGroupSubmit(event) {
 		event.preventDefault();
-		Object.assign(group.config, { name: formFields.name });
-		group.members = members;
-		updateGroup(group);
+
+		let updatedGroup = { ...group };
+
+		// Track group name change
+		const oldGroupName = group.config?.name || '';
+		const newGroupName = formFields.name;
+		updatedGroup = trackGroupNameChange(updatedGroup, oldGroupName, newGroupName);
+
+		// Track member changes
+		const oldMembers = group.members || [];
+		updatedGroup = trackMemberChanges(updatedGroup, oldMembers, members);
+
+		// Apply the changes
+		updatedGroup.config = { ...updatedGroup.config, name: formFields.name };
+		updatedGroup.members = members;
+
+		updateGroup(updatedGroup);
 	}
 
 	return (

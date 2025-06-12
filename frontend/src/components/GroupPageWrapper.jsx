@@ -8,6 +8,7 @@ import { GroupHeader } from './GroupHeader.jsx';
 import { Debug } from './Debug.jsx';
 import { GroupListTransactions } from '../pages/Group/ListTransactions.jsx';
 import { GroupTransaction } from '../pages/Group/Transaction.jsx';
+import { GroupActivity } from '../pages/Group/Activity.jsx';
 import { useGroupContext } from '../context/GroupContext.jsx';
 
 function GroupContent() {
@@ -18,6 +19,7 @@ function GroupContent() {
 	const pages = {
 		config: section === 'config',
 		transactions: section === 'transactions',
+		activity: section === 'activity',
 	};
 
 	// Check if group needs sample data (no members or empty group name)
@@ -32,6 +34,7 @@ function GroupContent() {
 				{pages.config && <GroupConfig />}
 				{pages.transactions &&
 					(sectionItem ? <GroupTransaction transactionId={sectionItem} /> : <GroupListTransactions />)}
+				{pages.activity && <GroupActivity />}
 			</div>
 
 			{/* Global load sample data link - shows on all pages when group is empty */}

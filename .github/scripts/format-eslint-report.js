@@ -25,12 +25,12 @@ function formatEslintReport() {
 		output += `#### File: \`${relativePath}\`\n`;
 		output += '| Severity | Rule | Message | Line | Column |\n';
 		output += '| -------- | ---- | ------- | ---- | ------ |\n';
-		
+
 		file.messages.forEach((msg) => {
 			const severity = msg.severity === 2 ? '🔴 Error' : '🟡 Warning';
 			if (msg.severity === 2) totalErrors++;
 			else totalWarnings++;
-			
+
 			output += `| ${severity} | **${msg.ruleId || 'N/A'}** | ${msg.message} | ${msg.line} | ${msg.column} |\n`;
 		});
 		output += '\n';
