@@ -1,16 +1,22 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import { Compass } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 
 export function NotFound() {
 	const { t } = useTranslation();
 
 	return (
-		<div className="text-center prose my-5">
-			<h1>{t('Content not found')}</h1>
-			<img
-				className="mx-auto"
-				src="https://random.dog/bfe9f3a4-d8ca-4f16-980c-56cacdeefdb9.gif"
-				alt={t('Content not found')}
-			/>
+		<div className="flex flex-col items-center gap-5 py-20 text-center">
+			<span className="bg-muted text-muted-foreground flex size-16 items-center justify-center rounded-full">
+				<Compass className="size-8" />
+			</span>
+			<p className="font-serif text-7xl font-semibold tracking-tight">404</p>
+			<p className="text-muted-foreground max-w-sm">{t('Content not found')}</p>
+			<Button asChild variant="outline">
+				<Link to="/">DivSplit</Link>
+			</Button>
 		</div>
 	);
 }

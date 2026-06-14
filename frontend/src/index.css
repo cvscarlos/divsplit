@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * DivSplit — "travel receipt / boarding pass" aesthetic.
+ * Warm paper backgrounds, ink text, one confident tangerine accent,
+ * an expressive display serif and a tabular mono for money.
+ */
+:root {
+	--radius: 0.5rem;
+
+	--background: oklch(0.967 0.013 84);
+	--foreground: oklch(0.24 0.018 60);
+
+	--card: oklch(0.995 0.006 90);
+	--card-foreground: oklch(0.24 0.018 60);
+
+	--popover: oklch(0.995 0.006 90);
+	--popover-foreground: oklch(0.24 0.018 60);
+
+	--primary: oklch(0.62 0.2 35);
+	--primary-foreground: oklch(0.98 0.012 90);
+
+	--secondary: oklch(0.915 0.022 80);
+	--secondary-foreground: oklch(0.3 0.02 60);
+
+	--muted: oklch(0.93 0.014 82);
+	--muted-foreground: oklch(0.52 0.022 60);
+
+	--accent: oklch(0.91 0.025 78);
+	--accent-foreground: oklch(0.3 0.02 60);
+
+	--destructive: oklch(0.58 0.22 27);
+	--destructive-foreground: oklch(0.98 0.012 90);
+
+	--border: oklch(0.86 0.022 76);
+	--input: oklch(0.86 0.022 76);
+	--ring: oklch(0.62 0.2 35);
+
+	--chart-1: oklch(0.62 0.2 35);
+	--chart-2: oklch(0.55 0.07 205);
+	--chart-3: oklch(0.7 0.13 90);
+	--chart-4: oklch(0.5 0.12 150);
+	--chart-5: oklch(0.55 0.18 320);
+}
+
+.dark {
+	--background: oklch(0.21 0.012 60);
+	--foreground: oklch(0.93 0.012 84);
+
+	--card: oklch(0.25 0.014 60);
+	--card-foreground: oklch(0.93 0.012 84);
+
+	--popover: oklch(0.25 0.014 60);
+	--popover-foreground: oklch(0.93 0.012 84);
+
+	--primary: oklch(0.71 0.18 42);
+	--primary-foreground: oklch(0.2 0.02 50);
+
+	--secondary: oklch(0.3 0.016 60);
+	--secondary-foreground: oklch(0.92 0.012 84);
+
+	--muted: oklch(0.3 0.014 60);
+	--muted-foreground: oklch(0.72 0.015 70);
+
+	--accent: oklch(0.33 0.018 60);
+	--accent-foreground: oklch(0.95 0.01 84);
+
+	--destructive: oklch(0.64 0.2 25);
+	--destructive-foreground: oklch(0.97 0.01 84);
+
+	--border: oklch(0.36 0.014 60);
+	--input: oklch(0.38 0.016 60);
+	--ring: oklch(0.71 0.18 42);
+
+	--chart-1: oklch(0.71 0.18 42);
+	--chart-2: oklch(0.62 0.08 205);
+	--chart-3: oklch(0.75 0.13 90);
+	--chart-4: oklch(0.6 0.12 150);
+	--chart-5: oklch(0.62 0.18 320);
+}
+
+@theme inline {
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: var(--radius);
+	--radius-lg: calc(var(--radius) + 4px);
+	--radius-xl: calc(var(--radius) + 8px);
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+
+	--font-sans: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-serif: 'Fraunces Variable', ui-serif, Georgia, serif;
+	--font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+
+	html {
+		-webkit-text-size-adjust: 100%;
+	}
+
+	body {
+		@apply bg-background text-foreground font-sans antialiased;
+		font-synthesis-weight: none;
+		/* faint paper grain */
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+	}
+
+	/* Money & figures read as tabular monospace. */
+	.tnum {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		font-feature-settings: 'tnum';
+	}
+
+	h1,
+	h2,
+	h3 {
+		@apply font-serif tracking-tight;
+		font-optical-sizing: auto;
+	}
+}
+
+@layer components {
+	/* Perforated ticket edge — a row of notches punched into a card. */
+	.ticket-notch {
+		--notch: 9px;
+		-webkit-mask-image: radial-gradient(var(--notch) at var(--notch) 50%, transparent 98%, #000 100%),
+			radial-gradient(var(--notch) at calc(100% - var(--notch)) 50%, transparent 98%, #000 100%);
+		-webkit-mask-composite: source-in;
+		mask-image: radial-gradient(var(--notch) at var(--notch) 50%, transparent 98%, #000 100%),
+			radial-gradient(var(--notch) at calc(100% - var(--notch)) 50%, transparent 98%, #000 100%);
+		mask-composite: intersect;
+	}
+}

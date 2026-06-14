@@ -1,32 +1,34 @@
 import { useTranslation } from 'react-i18next';
-import { BiGroup, BiReceipt, BiTrash, BiEdit, BiPlus } from 'react-icons/bi';
+import { Users, Receipt, Trash2, Pencil, Plus, History } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { ACTIVITY_TYPES } from '../../utils/activity-tracker';
 import type { Activity } from '../../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function GroupActivity() {
 	const { t } = useTranslation();
 	const { data: group } = useGroupContext();
 
-	function getActivityIcon(type: string) {
+	function getActivityIcon(type: string): { Icon: LucideIcon; tone: string } {
 		switch (type) {
 			case ACTIVITY_TYPES.GROUP_UPDATED:
-				return <BiGroup className="text-blue-600" />;
+				return { Icon: Users, tone: 'bg-accent text-accent-foreground' };
 			case ACTIVITY_TYPES.MEMBER_CREATED:
-				return <BiPlus className="text-green-600" />;
+				return { Icon: Plus, tone: 'bg-primary/15 text-primary' };
 			case ACTIVITY_TYPES.MEMBER_UPDATED:
-				return <BiEdit className="text-blue-600" />;
+				return { Icon: Pencil, tone: 'bg-accent text-accent-foreground' };
 			case ACTIVITY_TYPES.MEMBER_DELETED:
-				return <BiTrash className="text-red-600" />;
+				return { Icon: Trash2, tone: 'bg-destructive/15 text-destructive' };
 			case ACTIVITY_TYPES.TRANSACTION_CREATED:
-				return <BiPlus className="text-green-600" />;
+				return { Icon: Plus, tone: 'bg-primary/15 text-primary' };
 			case ACTIVITY_TYPES.TRANSACTION_UPDATED:
-				return <BiEdit className="text-blue-600" />;
+				return { Icon: Pencil, tone: 'bg-accent text-accent-foreground' };
 			case ACTIVITY_TYPES.TRANSACTION_DELETED:
-				return <BiTrash className="text-red-600" />;
+				return { Icon: Trash2, tone: 'bg-destructive/15 text-destructive' };
 			default:
-				return <BiReceipt className="text-gray-600" />;
+				return { Icon: Receipt, tone: 'bg-muted text-muted-foreground' };
 		}
 	}
 
@@ -42,7 +44,6 @@ export function GroupActivity() {
 			const hours = Math.floor(diffInHours);
 			return `${hours} hour${hours > 1 ? 's' : ''} ago`;
 		} else if (diffInHours < 168) {
-			// 7 days
 			const days = Math.floor(diffInHours / 24);
 			return `${days} day${days > 1 ? 's' : ''} ago`;
 		} else {
@@ -52,46 +53,43 @@ export function GroupActivity() {
 
 	function renderActivity(activity: Activity) {
 		const { id, type, description, timestamp } = activity;
+		const { Icon, tone } = getActivityIcon(type);
 
 		return (
-			<div key={id} className="flex items-start space-x-3 p-4 border-b border-gray-100 hover:bg-gray-50">
-				<div className="flex-shrink-0 mt-1">
-					<div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
-						{getActivityIcon(type)}
-					</div>
+			<li key={id} className="flex items-start gap-4 py-4">
+				<span className={`flex size-9 shrink-0 items-center justify-center rounded-full ${tone}`}>
+					<Icon className="size-4" />
+				</span>
+				<div className="min-w-0 flex-1">
+					<p className="text-sm leading-snug">{description}</p>
+					<p className="text-muted-foreground mt-0.5 text-xs">{formatTimestamp(timestamp)}</p>
 				</div>
-				<div className="flex-1 min-w-0">
-					<p className="text-sm text-gray-900">{description}</p>
-					<p className="text-xs text-gray-500 mt-1">{formatTimestamp(timestamp)}</p>
-				</div>
-			</div>
+			</li>
 		);
 	}
 
 	const activities = group.activities || [];
 
 	return (
-		<div className="flex justify-center">
-			<div className="ds-card flex-auto">
-				<h3>{t('Activity Log')}</h3>
+		<Card>
+			<CardHeader>
+				<CardTitle>{t('Activity Log')}</CardTitle>
+			</CardHeader>
+			<CardContent>
 				{activities.length > 0 ? (
-					<div className="mt-4">
-						<div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-							{activities.map(renderActivity)}
-						</div>
-					</div>
+					<ul className="divide-border divide-y">{activities.map(renderActivity)}</ul>
 				) : (
-					<div className="text-center py-8">
-						<div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-gray-100">
-							<BiReceipt className="w-8 h-8 text-gray-400" />
-						</div>
-						<p className="text-gray-500 mb-2">No activity yet</p>
-						<p className="text-sm text-gray-400">
+					<div className="flex flex-col items-center gap-3 py-12 text-center">
+						<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
+							<History className="size-7" />
+						</span>
+						<p className="text-muted-foreground">No activity yet</p>
+						<p className="text-muted-foreground/70 max-w-xs text-sm">
 							Activity will appear here when you make changes to the group or transactions.
 						</p>
 					</div>
 				)}
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 	);
 }

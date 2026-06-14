@@ -1,7 +1,10 @@
+import { Loader2 } from 'lucide-react';
+
 export default function Loading() {
 	return (
-		<div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center" style={{ zIndex: 10 }}>
-			<span className="loading loading-spinner loading-lg text-accent">Loading ...</span>
+		<div className="bg-background/70 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+			<Loader2 className="text-primary size-10 animate-spin" />
+			<span className="sr-only">Loading…</span>
 		</div>
 	);
 }

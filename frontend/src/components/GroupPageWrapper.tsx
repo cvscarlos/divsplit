@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Sparkles } from 'lucide-react';
 
 import { GroupConfig } from '../pages/Group/Config';
 import { NotFound } from '../pages/NotFound';
@@ -9,6 +10,7 @@ import { Debug } from './Debug';
 import { GroupListTransactions } from '../pages/Group/ListTransactions';
 import { GroupTransaction } from '../pages/Group/Transaction';
 import { GroupActivity } from '../pages/Group/Activity';
+import { Button } from '@/components/ui/button';
 
 function GroupContent() {
 	const { section, sectionItem } = useParams();
@@ -30,7 +32,7 @@ function GroupContent() {
 	return (
 		<>
 			<GroupHeader />
-			<div className="prose">
+			<div>
 				{!isKnownSection && <NotFound />}
 				{pages.config && <GroupConfig />}
 				{pages.transactions &&
@@ -38,15 +40,14 @@ function GroupContent() {
 				{pages.activity && <GroupActivity />}
 			</div>
 
-			{/* Global load sample data link - shows on all pages when group is empty */}
+			{/* Global load sample data prompt — shows when the group is empty */}
 			{needsSampleData && (
-				<div className="text-center mt-4 mb-6">
-					<p className="text-sm text-gray-600">
-						{t('Need some data to get started?')}{' '}
-						<button type="button" className="text-blue-600 underline" onClick={loadDemo}>
-							{t('Load sample data')}
-						</button>
-					</p>
+				<div className="border-border bg-muted/40 mx-auto mt-8 flex max-w-md flex-col items-center gap-3 rounded-xl border border-dashed p-6 text-center">
+					<Sparkles className="text-primary size-6" />
+					<p className="text-muted-foreground text-sm">{t('Need some data to get started?')}</p>
+					<Button variant="outline" size="sm" onClick={loadDemo}>
+						{t('Load sample data')}
+					</Button>
 				</div>
 			)}
 

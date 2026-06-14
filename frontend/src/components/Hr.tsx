@@ -1,3 +1,3 @@
 export function Hr() {
-	return <hr className="my-8 border-t border-gray-200" />;
+	return <hr className="border-border my-7 border-t border-dashed" />;
 }

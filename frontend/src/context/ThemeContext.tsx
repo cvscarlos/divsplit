@@ -23,6 +23,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		localStorage.setItem('divsplit_theme', jsonStringifySafe(theme));
+		document.documentElement.classList.toggle('dark', theme === 'dark');
 	}, [theme]);
 
 	const toggleTheme = () => {

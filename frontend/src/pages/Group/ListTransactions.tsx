@@ -1,15 +1,19 @@
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import type { MouseEvent } from 'react';
-import { BiTrash } from 'react-icons/bi';
+import { Trash2, Plus, ReceiptText } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { trackTransactionDeleted } from '../../utils/activity-tracker';
 import type { Transaction } from '../../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export function GroupListTransactions() {
 	const { t } = useTranslation();
 	const { groupId } = useParams();
+	const navigate = useNavigate();
 	const { data: group, updateGroup } = useGroupContext();
 
 	function handleDeleteTransaction(transaction: Transaction, event: MouseEvent<HTMLButtonElement>) {
@@ -32,70 +36,69 @@ export function GroupListTransactions() {
 	function renderTransaction(transaction: Transaction) {
 		const { id, total, createdAt, description } = transaction;
 		return (
-			<tr key={id} className="hover:bg-gray-50">
-				<td>
-					<Link to={`/group/${groupId}/transactions/${id}`} className="block w-full h-full">
-						{createdAt ? new Date(createdAt).toLocaleDateString() : ''}
-					</Link>
-				</td>
-				<td>
-					<Link to={`/group/${groupId}/transactions/${id}`} className="block w-full h-full">
-						{total}
-					</Link>
-				</td>
-				<td>
-					<Link to={`/group/${groupId}/transactions/${id}`} className="block w-full h-full">
-						{description}
-					</Link>
-				</td>
-				<td className="w-12">
-					<button
+			<TableRow key={id} className="cursor-pointer" onClick={() => navigate(`/group/${groupId}/transactions/${id}`)}>
+				<TableCell className="text-muted-foreground tnum">
+					{createdAt ? new Date(createdAt).toLocaleDateString() : '—'}
+				</TableCell>
+				<TableCell className="font-medium">{description}</TableCell>
+				<TableCell className="tnum text-right font-semibold">${total}</TableCell>
+				<TableCell className="w-12 text-right">
+					<Button
 						type="button"
+						variant="ghost"
+						size="icon"
+						className="text-muted-foreground hover:text-destructive size-8"
 						onClick={(e) => handleDeleteTransaction(transaction, e)}
-						className="text-red-600 hover:text-red-800 p-2"
-						title="Delete transaction"
+						aria-label={`Delete ${description}`}
 					>
-						<BiTrash />
-					</button>
-				</td>
-			</tr>
+						<Trash2 className="size-4" />
+					</Button>
+				</TableCell>
+			</TableRow>
 		);
 	}
 
+	const hasTransactions = Boolean(group.transactions?.length);
+
 	return (
-		<div className="flex justify-center">
-			<div className="ds-card flex-auto">
-				<h3>{t('Transactions')}</h3>
-				{group.transactions?.length ? (
-					<>
-						<div className="mb-4">
-							<Link to={`/group/${groupId}/transactions/new`} className="btn btn-primary">
-								{t('Add Transaction')}
-							</Link>
-						</div>
-						<table className="table-auto w-full">
-							<thead>
-								<tr>
-									<th>{t('Date')}</th>
-									<th>{t('Total')}</th>
-									<th>{t('Description')}</th>
-									<th className="w-12">{t('Actions')}</th>
-								</tr>
-							</thead>
-							<tbody>{group.transactions.map(renderTransaction)}</tbody>
-						</table>
-					</>
+		<Card>
+			<CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
+				<CardTitle>{t('Transactions')}</CardTitle>
+				{hasTransactions && (
+					<Button asChild size="sm">
+						<Link to={`/group/${groupId}/transactions/new`}>
+							<Plus /> {t('Add Transaction')}
+						</Link>
+					</Button>
+				)}
+			</CardHeader>
+			<CardContent>
+				{hasTransactions ? (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>{t('Date')}</TableHead>
+								<TableHead>{t('Description')}</TableHead>
+								<TableHead className="text-right">{t('Total')}</TableHead>
+								<TableHead className="text-right">{t('Actions')}</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>{group.transactions?.map(renderTransaction)}</TableBody>
+					</Table>
 				) : (
-					<div className="text-center py-8">
-						<p className="mb-4">{t('No transactions found')}</p>
-						<div className="mb-4">
-							<Link to={`/group/${groupId}/transactions/new`} className="btn btn-primary">
-								{t('Add Transaction')}
+					<div className="flex flex-col items-center gap-4 py-12 text-center">
+						<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
+							<ReceiptText className="size-7" />
+						</span>
+						<p className="text-muted-foreground">{t('No transactions found')}</p>
+						<Button asChild>
+							<Link to={`/group/${groupId}/transactions/new`}>
+								<Plus /> {t('Add Transaction')}
 							</Link>
-						</div>
+						</Button>
 					</div>
 				)}
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 	);
 }

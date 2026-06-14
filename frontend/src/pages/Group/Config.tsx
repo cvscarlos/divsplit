@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BiTrash } from 'react-icons/bi';
+import { Trash2, UserPlus, Save } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { Avatar } from '../../components/Avatar';
 import { trackGroupNameChange, trackMemberChanges } from '../../utils/activity-tracker';
 import type { Member } from '../../types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function GroupConfig() {
 	const memberBase: Member = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
@@ -62,77 +66,86 @@ export function GroupConfig() {
 	}
 
 	return (
-		<form onSubmit={handleGroupSubmit}>
-			<div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:space-x-4">
-				<div className="ds-card flex-auto">
-					<h3>{t('GroupInformation')}</h3>
-					<div>
-						<label className="form-control">
-							{t('GroupName')}:
-							<input
-								type="text"
-								placeholder={t('TypeHere')}
-								className="input input-bordered"
-								value={formFields.name}
-								name="name"
-								onChange={handleFieldChange}
-							/>
-						</label>
-					</div>
-				</div>
+		<form onSubmit={handleGroupSubmit} className="space-y-6">
+			<div className="grid gap-6 md:grid-cols-5">
+				<Card className="md:col-span-2">
+					<CardHeader>
+						<CardTitle>{t('GroupInformation')}</CardTitle>
+						<CardDescription>{t('GroupName')}</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Label htmlFor="group-name" className="mb-2">
+							{t('GroupName')}
+						</Label>
+						<Input
+							id="group-name"
+							type="text"
+							placeholder={t('TypeHere')}
+							value={formFields.name}
+							name="name"
+							onChange={handleFieldChange}
+						/>
+					</CardContent>
+				</Card>
 
-				<div className="ds-card flex-auto">
-					<h3>{t('Members')}</h3>
-					{members.map((member) => (
-						<div key={member.id} className="mb-4">
-							<div className="grid gap-3 grid-cols-12">
-								<div className="col-span-2 sm:col-span-1 mt-5 flex justify-center items-center">
-									<Avatar name={member.name} />
+				<Card className="md:col-span-3">
+					<CardHeader>
+						<CardTitle>{t('Members')}</CardTitle>
+						<CardDescription>{members.length}</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						{members.map((member) => (
+							<div key={member.id} className="flex items-end gap-3">
+								<Avatar name={member.name || '?'} className="mb-1.5" />
+								<div className="flex-1">
+									<Label className="text-muted-foreground mb-1.5 text-xs">{t('Name')}</Label>
+									<Input
+										type="text"
+										placeholder={t('TypeHere')}
+										value={member.name}
+										name={memberName}
+										onChange={(event) => handleMemberFields(member, event)}
+									/>
 								</div>
-								<div className="col-span-5 sm:col-span-6">
-									<label className="form-control">
-										{t('Name')}:
-										<input
-											type="text"
-											placeholder={t('TypeHere')}
-											className="input input-bordered"
-											value={member.name}
-											name={memberName}
-											onChange={(event) => handleMemberFields(member, event)}
-										/>
-									</label>
-								</div>
-								<div className="col-span-4">
-									<label className="form-control">
-										{t('PrepaidAmount')}:
-										<input
+								<div className="w-28">
+									<Label className="text-muted-foreground mb-1.5 text-xs">{t('PrepaidAmount')}</Label>
+									<div className="relative">
+										<span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+											$
+										</span>
+										<Input
 											type="number"
-											placeholder="$"
-											className="input input-bordered"
+											className="tnum pl-7"
+											placeholder="0"
 											value={member.prepaid}
 											name={memberPrepaid}
 											onChange={(event) => handleMemberFields(member, event)}
 										/>
-									</label>
+									</div>
 								</div>
-								<div className="col-span-1 flex items-center text-xl text-red-600 mt-6">
-									<button type="button" onClick={() => removeMember(member)}>
-										<BiTrash />
-									</button>
-								</div>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="text-muted-foreground hover:text-destructive mb-0.5"
+									onClick={() => removeMember(member)}
+									aria-label={`Remove ${member.name || 'member'}`}
+								>
+									<Trash2 />
+								</Button>
 							</div>
-						</div>
-					))}
-					<button type="button" className="btn btn-neutral btn-sm mt-4 self-start" onClick={addMember}>
-						+ {t('addMember')}
-					</button>
-				</div>
+						))}
+						<Button type="button" variant="outline" size="sm" onClick={addMember}>
+							<UserPlus /> {t('addMember')}
+						</Button>
+					</CardContent>
+				</Card>
 			</div>
 
-			<div className="mb-4 mt-6">
-				<button type="submit" className="btn btn-active btn-primary text-base">
-					{t('Save')}
-				</button>
+			<div className="flex justify-end">
+				<Button type="submit" size="lg">
+					<Save /> {t('Save')}
+				</Button>
 			</div>
 		</form>
 	);

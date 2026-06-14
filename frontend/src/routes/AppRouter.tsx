@@ -9,13 +9,13 @@ const AppRouter = () => {
 	return (
 		<BrowserRouter>
 			<Header />
-			<div className="container">
+			<main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
 				<Routes>
 					<Route path="/" element={<HomePage />} />
 					<Route path="/group/:groupId/:section/:sectionItem?" element={<GroupPageWrapper />} />
 					<Route path="*" element={<NotFound />} />
 				</Routes>
-			</div>
+			</main>
 		</BrowserRouter>
 	);
 };

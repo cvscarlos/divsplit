@@ -41,8 +41,14 @@ export function useApiListGroups(): { loading: boolean; groupList: GroupListItem
 async function updateGroupName(newName: string | undefined, groupId: string): Promise<void> {
 	const groups = (await groupListStore.getItem<GroupListItem[]>('groups')) || [];
 	const groupIndex = groups.findIndex((group) => group.id === groupId);
-	if (groupIndex === -1) return;
-	groups[groupIndex].name = newName ?? '';
+	const name = newName ?? '';
+	// Upsert: a freshly created group won't be in the index yet, so add it
+	// instead of silently dropping it (otherwise it never shows on the home list).
+	if (groupIndex === -1) {
+		groups.push({ id: groupId, name });
+	} else {
+		groups[groupIndex].name = name;
+	}
 	await groupListStore.setItem('groups', groups);
 }
 

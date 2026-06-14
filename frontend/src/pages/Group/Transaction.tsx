@@ -3,11 +3,16 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import ObjectId from 'bson-objectid';
+import { Wallet, HandCoins, Save, Check } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
-import { Hr } from '../../components/Hr';
 import { trackTransactionCreated, trackTransactionUpdated } from '../../utils/activity-tracker';
 import type { AmountMap, Transaction } from '../../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 const PAID_BY = 'paid-by';
 const PAID_FOR = 'paid-for';
@@ -103,7 +108,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		const data = PAID_BY === fieldset ? paidBy : paidFor;
 		const values = Object.values(data);
 		const sum = values.reduce((acc, value) => acc + value, 0);
-		return total - sum;
+		return round(total - sum);
 	}
 
 	function handleGroupSubmit(event: FormEvent<HTMLFormElement>) {
@@ -162,110 +167,159 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	function membersList(listType: ListType) {
 		return group?.members?.map(({ id, name }) => {
 			const data = PAID_BY === listType ? paidBy : paidFor;
+			const checked = Boolean(data[id]);
 			return (
-				<div key={listType + id}>
+				<label
+					key={listType + id}
+					className={cn(
+						'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors',
+						checked ? 'border-primary/60 bg-primary/5' : 'border-border/60 hover:bg-muted/40',
+					)}
+				>
 					<input
-						className="checkbox"
+						className="accent-primary size-4"
 						type="checkbox"
 						value={id}
-						checked={Boolean(data[id])}
+						checked={checked}
 						onChange={(e) => handleMemberChange(listType, id, 0, e.target.checked)}
 					/>
-					<span className="label-text">{name}</span>
-					<input
-						className="input input-bordered"
-						type="number"
-						name={`${id}-value`}
-						value={data[id] || ''}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleMemberChange(listType, id, e.target.value, Boolean(e.target.value))
-						}
-						onKeyDown={() => {
-							manuallyChanged.current[id] = true;
-						}}
-					/>
-				</div>
+					<span className="flex-1 text-sm font-medium">{name}</span>
+					<div className="relative w-28">
+						<span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+							$
+						</span>
+						<Input
+							className="tnum h-9 pl-7"
+							type="number"
+							name={`${id}-value`}
+							placeholder="0"
+							value={data[id] || ''}
+							onChange={(e: ChangeEvent<HTMLInputElement>) =>
+								handleMemberChange(listType, id, e.target.value, Boolean(e.target.value))
+							}
+							onKeyDown={() => {
+								manuallyChanged.current[id] = true;
+							}}
+						/>
+					</div>
+				</label>
 			);
 		});
+	}
+
+	function remainingRow(listType: ListType) {
+		const remaining = getRemainingValue(listType);
+		const balanced = remaining === 0;
+		return (
+			<div className="mt-3 flex items-center justify-between border-t border-dashed pt-3 text-sm">
+				<span className="text-muted-foreground">{t('Remaining')}</span>
+				<span
+					className={cn(
+						'tnum inline-flex items-center gap-1 font-semibold',
+						balanced ? 'text-muted-foreground' : 'text-primary',
+					)}
+				>
+					{balanced && <Check className="size-4" />}${remaining}
+				</span>
+			</div>
+		);
 	}
 
 	// Show demo data link if no members exist
 	if (!group?.members || group.members.length === 0) {
 		return (
-			<div className="flex justify-center">
-				<div className="ds-card flex-auto">
-					<h3>{t('Transaction')}</h3>
-					<p className="mb-4">
-						No members found in this group.{' '}
-						<button type="button" className="link link-primary" onClick={loadDemo}>
-							Load demo data
-						</button>{' '}
-						to get started.
-					</p>
-				</div>
-			</div>
+			<Card className="mx-auto max-w-md text-center">
+				<CardHeader>
+					<CardTitle>{t('Transaction')}</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<p className="text-muted-foreground text-sm">No members found in this group.</p>
+					<Button variant="outline" onClick={loadDemo}>
+						Load demo data
+					</Button>
+				</CardContent>
+			</Card>
 		);
 	}
 
 	return (
-		<form onSubmit={handleGroupSubmit}>
-			<div className="flex justify-center">
-				<div className="ds-card flex-auto">
-					<h3>{t('Transaction')}</h3>
-
-					<div className="pt-5">
-						{t('Date')}:{' '}
-						<input
-							className="input input-bordered"
-							type="date"
-							name="date"
-							value={date}
-							onChange={(e) => setDate(e.target.value)}
-						/>
-					</div>
-					<div className="pt-5 pb-5">
-						{t('Total')}:
-						<input
-							className="input input-bordered"
-							type="number"
-							name="total"
-							value={total || ''}
-							onChange={(e) => setTotal(Number(e.target.value) || total)}
-						/>
+		<form onSubmit={handleGroupSubmit} className="space-y-6">
+			<Card>
+				<CardHeader>
+					<CardTitle>{t('Transaction')}</CardTitle>
+				</CardHeader>
+				<CardContent className="grid gap-4 sm:grid-cols-3">
+					<div>
+						<Label htmlFor="tx-date" className="mb-1.5">
+							{t('Date')}
+						</Label>
+						<Input id="tx-date" type="date" name="date" value={date} onChange={(e) => setDate(e.target.value)} />
 					</div>
 					<div>
-						{t('Description')}:{' '}
-						<input
-							className="input input-bordered"
+						<Label htmlFor="tx-total" className="mb-1.5">
+							{t('Total')}
+						</Label>
+						<div className="relative">
+							<span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
+								$
+							</span>
+							<Input
+								id="tx-total"
+								className="tnum pl-7"
+								type="number"
+								name="total"
+								placeholder="0"
+								value={total || ''}
+								onChange={(e) => setTotal(Number(e.target.value) || total)}
+							/>
+						</div>
+					</div>
+					<div>
+						<Label htmlFor="tx-desc" className="mb-1.5">
+							{t('Description')}
+						</Label>
+						<Input
+							id="tx-desc"
 							type="text"
 							name="description"
+							placeholder={t('TypeHere')}
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 						/>
 					</div>
+				</CardContent>
+			</Card>
 
-					<Hr />
+			<div className="grid gap-6 md:grid-cols-2">
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2 text-lg">
+							<Wallet className="text-primary size-5" /> {t('Paid by')}
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-2">{membersList(PAID_BY)}</div>
+						{remainingRow(PAID_BY)}
+					</CardContent>
+				</Card>
 
-					<h4>{t('Paid by')}:</h4>
-					<div>{membersList(PAID_BY)}</div>
-					<div>
-						{t('Remaining')}: {getRemainingValue(PAID_BY)}
-					</div>
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2 text-lg">
+							<HandCoins className="text-primary size-5" /> {t('Paid for')}
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-2">{membersList(PAID_FOR)}</div>
+						{remainingRow(PAID_FOR)}
+					</CardContent>
+				</Card>
+			</div>
 
-					<Hr />
-
-					<h4>{t('Paid for')}:</h4>
-					<div>{membersList(PAID_FOR)}</div>
-					<div>
-						{t('Remaining')}: {getRemainingValue(PAID_FOR)}
-					</div>
-
-					<div className="mb-4 mt-6">
-						<button type="submit" className="btn btn-active btn-primary text-base">
-							{t('Save')}
-						</button>
-					</div>
-				</div>
+			<div className="flex justify-end">
+				<Button type="submit" size="lg">
+					<Save /> {t('Save')}
+				</Button>
 			</div>
 		</form>
 	);
