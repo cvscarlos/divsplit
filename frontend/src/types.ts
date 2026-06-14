@@ -41,6 +41,8 @@ export interface Activity {
 
 export interface GroupConfig {
 	name?: string;
+	/** Member who holds the prepaid pot; used by settlement. Defaults to the first member. */
+	bankerId?: string;
 }
 
 export interface Group {
