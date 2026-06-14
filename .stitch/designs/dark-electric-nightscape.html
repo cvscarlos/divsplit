@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DivSplit - Split group expenses</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&amp;family=Hanken+Grotesk:wght@400;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#ccff00", // Electric Lime
+                        "secondary": "#ff2d78", // Hot Pink
+                        "background": "#0a0a0c", // Deep Black/Indigo
+                        "surface": "#121217",
+                        "surface-variant": "#1c1c24",
+                        "on-surface": "#ffffff",
+                        "on-surface-variant": "#a1a1aa",
+                        "outline": "#3f3f46",
+                        "electric-lime": "#ccff00",
+                        "hot-pink": "#ff2d78"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "unit": "4px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "xl": "40px",
+                        "container-margin": "20px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "display": ["Sora", "sans-serif"],
+                        "body": ["Hanken Grotesk", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0a0a0c;
+            color: #ffffff;
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-image: 
+                radial-gradient(circle at 50% -20%, #1e1e2e 0%, transparent 50%),
+                radial-gradient(circle at 0% 0%, #ff2d7810 0%, transparent 30%),
+                radial-gradient(circle at 100% 100%, #ccff0010 0%, transparent 30%);
+        }
+        .glow-lime {
+            box-shadow: 0 0 20px -5px rgba(204, 255, 0, 0.4);
+        }
+        .glow-pink {
+            box-shadow: 0 0 20px -5px rgba(255, 45, 120, 0.4);
+        }
+        .card-border {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .card-border:hover {
+            border-color: #ccff00;
+            box-shadow: 0 0 30px -10px rgba(204, 255, 0, 0.2);
+        }
+        .text-gradient-lime {
+            background: linear-gradient(to right, #ccff00, #9eff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logo-glow {
+            filter: drop-shadow(0 0 8px rgba(217, 83, 29, 0.4));
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col relative">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full bg-background/60 backdrop-blur-xl z-50 border-b border-white/5">
+<div class="flex justify-between items-center px-lg py-md max-w-[800px] mx-auto w-full">
+<div class="flex items-center gap-sm">
+<img alt="DivSplit Logo" class="w-9 h-9 rounded-lg logo-glow" src="https://lh3.googleusercontent.com/aida/AP1WRLulO53mp3b7dqCwIVMlNr0vQg2qgSXQkgeq6AWNGRhIo7vR-2PydeKQ98KiI785cJvaKmPW_OX_JYedroxivTi2yL1by6kcJ6sXjuizZ_Q2QebjX4pHQDK5Ubem_JAhA50wR_p7ccU_Sya3wx2m9mQfDo739uQhqZhcDuExYYCt7rWQ-VquW2TBeEqFz4ZY2Q1_cWgL7TLM78GhYfZbCT5lK4DL_Tx8fOm6C_fII3Vku3ezNL2xlxqiFG1v"/>
+<span class="font-display text-xl font-extrabold tracking-tighter text-white">DivSplit</span>
+</div>
+<nav class="hidden md:flex items-center gap-lg">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">How it works</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">Pricing</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-sm font-semibold uppercase tracking-wider" href="#">Support</a>
+</nav>
+<button class="bg-surface-variant p-2 rounded-full hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</button>
+</div>
+</header>
+<main class="flex-grow pt-32 pb-xl max-w-[800px] mx-auto w-full px-lg flex flex-col gap-xl">
+<!-- Hero Section -->
+<section class="text-center py-xl relative">
+<div class="absolute inset-0 bg-primary/10 blur-[120px] rounded-full w-3/4 h-3/4 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10"></div>
+<h1 class="font-display text-5xl md:text-7xl font-extrabold leading-[1] mb-md tracking-tighter italic">
+                SQUAD UP. <br/>
+<span class="text-gradient-lime">SPLIT EASY.</span>
+</h1>
+<p class="font-body text-lg text-on-surface-variant mb-xl max-w-lg mx-auto leading-relaxed">
+                Stop stressing about who owes what. Split the bill, track the group, and settle up in one tap. High vibes only.
+            </p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-md">
+<button class="bg-primary text-background font-display font-bold text-lg px-xl py-4 rounded-full glow-lime hover:scale-105 transition-transform flex items-center gap-sm">
+<span>CREATE NEW GROUP</span>
+<span class="material-symbols-outlined font-bold">add</span>
+</button>
+<button class="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-display font-bold text-lg px-xl py-4 rounded-full transition-all">
+                    VIEW DEMO
+                </button>
+</div>
+</section>
+<!-- Your Groups Section -->
+<section class="flex flex-col gap-lg">
+<div class="flex justify-between items-end">
+<h2 class="font-display text-3xl font-bold italic tracking-tight">MY GROUPS</h2>
+<a class="text-primary font-bold text-sm underline underline-offset-4" href="#">VIEW ALL</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Group Card 1 -->
+<a class="block bg-surface card-border rounded-2xl p-lg cursor-pointer group relative overflow-hidden" href="#">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl -mr-16 -mt-16"></div>
+<div class="flex justify-between items-start mb-xl relative z-10">
+<div class="w-12 h-12 rounded-xl bg-primary text-background flex items-center justify-center font-display font-bold text-lg rotate-3 group-hover:rotate-0 transition-transform">MT</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-all group-hover:scale-125">north_east</span>
+</div>
+<div class="relative z-10">
+<h3 class="font-display text-2xl font-bold mb-xs">Mountain Trip</h3>
+<div class="flex items-center gap-sm">
+<span class="font-mono text-xs text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">#GRP-8921</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-xs text-on-surface-variant font-bold uppercase">4 ACTIVE</span>
+</div>
+</div>
+</a>
+<!-- Group Card 2 -->
+<a class="block bg-surface card-border rounded-2xl p-lg cursor-pointer group relative overflow-hidden" href="#">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary/5 blur-3xl -mr-16 -mt-16"></div>
+<div class="flex justify-between items-start mb-xl relative z-10">
+<div class="w-12 h-12 rounded-xl bg-secondary text-white flex items-center justify-center font-display font-bold text-lg -rotate-3 group-hover:rotate-0 transition-transform">DP</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary transition-all group-hover:scale-125">north_east</span>
+</div>
+<div class="relative z-10">
+<h3 class="font-display text-2xl font-bold mb-xs">Dinner Party</h3>
+<div class="flex items-center gap-sm">
+<span class="font-mono text-xs text-secondary bg-secondary/10 px-2 py-0.5 rounded border border-secondary/20">#GRP-4410</span>
+<span class="w-1.5 h-1.5 rounded-full bg-on-surface-variant opacity-30"></span>
+<span class="text-xs text-on-surface-variant font-bold uppercase">SETTLED</span>
+</div>
+</div>
+</a>
+</div>
+</section>
+<!-- Settle Up Section -->
+<section class="flex flex-col gap-lg mt-lg">
+<h2 class="font-display text-3xl font-bold italic tracking-tight">SETTLE UP</h2>
+<div class="bg-surface border border-white/10 rounded-2xl overflow-hidden relative">
+<div class="p-lg flex flex-col md:flex-row gap-lg justify-between items-stretch md:items-center">
+<div class="flex flex-col gap-md flex-1">
+<div class="bg-background/50 p-4 rounded-xl border border-white/5 flex justify-between items-center group hover:border-primary/50 transition-colors cursor-default">
+<div class="flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-primary glow-lime"></div>
+<span class="font-body text-on-surface-variant">Bob gets back</span>
+</div>
+<span class="font-mono text-2xl font-bold text-primary">$40.00</span>
+</div>
+<div class="bg-background/50 p-4 rounded-xl border border-white/5 flex justify-between items-center group hover:border-secondary/50 transition-colors cursor-default">
+<div class="flex items-center gap-md">
+<div class="w-2 h-2 rounded-full bg-secondary glow-pink"></div>
+<span class="font-body text-on-surface-variant">Alice owes</span>
+</div>
+<span class="font-mono text-2xl font-bold text-secondary">$20.00</span>
+</div>
+</div>
+<div class="hidden md:block w-px h-24 bg-white/5 mx-lg"></div>
+<div class="flex flex-col flex-1">
+<span class="font-display text-xs font-bold text-on-surface-variant mb-md uppercase tracking-[0.2em]">Optimization Engine</span>
+<div class="bg-primary/5 border border-primary/20 p-lg rounded-xl flex items-center justify-between relative group overflow-hidden">
+<div class="absolute -left-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+<div class="flex items-center gap-md relative z-10">
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant font-bold uppercase">FROM</span>
+<span class="font-display font-bold text-lg">Bob</span>
+</div>
+<span class="material-symbols-outlined text-primary animate-pulse">keyboard_double_arrow_right</span>
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant font-bold uppercase">TO</span>
+<span class="font-display font-bold text-lg">Carol</span>
+</div>
+</div>
+<div class="text-right relative z-10">
+<div class="bg-white text-background px-3 py-1 rounded font-mono font-bold text-lg glow-lime">
+                                    $40.00
+                                </div>
+</div>
+</div>
+</div>
+</div>
+<div class="px-lg py-4 bg-primary/10 flex items-center justify-center gap-md border-t border-white/5">
+<span class="text-xs font-bold uppercase tracking-widest text-primary">Magic settlement mode active</span>
+<span class="material-symbols-outlined text-sm text-primary">auto_fix_high</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface w-full border-t border-white/5 mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center px-lg py-xl max-w-[800px] mx-auto w-full gap-xl">
+<div class="flex flex-col items-center md:items-start gap-md">
+<div class="flex items-center gap-sm">
+<img alt="DivSplit Logo" class="w-8 h-8 rounded-lg grayscale" src="https://lh3.googleusercontent.com/aida/AP1WRLulO53mp3b7dqCwIVMlNr0vQg2qgSXQkgeq6AWNGRhIo7vR-2PydeKQ98KiI785cJvaKmPW_OX_JYedroxivTi2yL1by6kcJ6sXjuizZ_Q2QebjX4pHQDK5Ubem_JAhA50wR_p7ccU_Sya3wx2m9mQfDo739uQhqZhcDuExYYCt7rWQ-VquW2TBeEqFz4ZY2Q1_cWgL7TLM78GhYfZbCT5lK4DL_Tx8fOm6C_fII3Vku3ezNL2xlxqiFG1v"/>
+<span class="font-display text-2xl font-black italic tracking-tighter text-white">DivSplit</span>
+</div>
+<p class="font-body text-xs text-on-surface-variant font-bold uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">
+                    100% OFFLINE-FIRST CAPABLE
+                </p>
+</div>
+<div class="flex flex-col items-center md:items-end gap-md">
+<div class="flex gap-lg">
+<a class="text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>
+<a class="text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors" href="#">Cookies</a>
+</div>
+<div class="text-[10px] font-mono text-on-surface-variant/50 uppercase tracking-widest">
+                    © 2024 DIVSPLIT LEDGER // BUILT FOR THE NIGHT
+                </div>
+</div>
+</div>
+</footer>
+</body></html>
