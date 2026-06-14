@@ -1,24 +1,10 @@
 import { useEffect, useState } from 'react';
 import localforage from 'localforage';
-import ObjectId from 'bson-objectid';
 
 import type { Group, GroupListItem } from '../types';
 
 const groupListStore = localforage.createInstance({ name: 'groupList' });
 const groupStore = localforage.createInstance({ name: 'group' });
-
-function generateId(): string {
-	return new ObjectId().toHexString();
-}
-
-async function loadSampleData(): Promise<void> {
-	if (await groupListStore.getItem('groups')) return;
-	await groupListStore.setItem<GroupListItem[]>('groups', [
-		{ id: generateId(), name: 'Grupo Teste' },
-		{ id: generateId(), name: 'Grupo Teste' },
-		{ id: generateId(), name: 'Grupo Teste' },
-	]);
-}
 
 export function useApiListGroups(): { loading: boolean; groupList: GroupListItem[] } {
 	const [loading, setLoading] = useState(false);
@@ -27,7 +13,6 @@ export function useApiListGroups(): { loading: boolean; groupList: GroupListItem
 	useEffect(() => {
 		setLoading(true);
 		const fetchData = async () => {
-			await loadSampleData();
 			const groups = (await groupListStore.getItem<GroupListItem[]>('groups')) || [];
 			setGroupList(groups);
 			setLoading(false);

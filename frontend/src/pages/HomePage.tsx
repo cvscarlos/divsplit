@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import ObjectId from 'bson-objectid';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Users } from 'lucide-react';
 
 import CardContainer from '../components/CardContainer';
 import CardGroup from '../components/CardGroup';
@@ -39,21 +39,32 @@ function HomePage() {
 			</section>
 
 			<section>
-				<div className="mb-6 flex flex-col gap-1">
-					<h2 className="font-serif text-2xl font-semibold tracking-tight">{t('GenGroupTitle')}</h2>
-					<p className="text-muted-foreground text-sm">{t('GenGroupSubTitle')}</p>
-				</div>
-
 				{loading ? (
 					<div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
 						<Loader2 className="size-5 animate-spin" /> {t('Loading')}
 					</div>
+				) : groupList.length === 0 ? (
+					<div className="border-border bg-card/50 flex flex-col items-center gap-3 rounded-2xl border border-dashed p-12 text-center">
+						<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
+							<Users className="size-7" />
+						</span>
+						<p className="text-muted-foreground">{t('No groups yet')}</p>
+						<Button onClick={createGroup}>
+							<Plus /> {t('createGroup')}
+						</Button>
+					</div>
 				) : (
-					<CardContainer>
-						{groupList.map((groupItem) => (
-							<CardGroup key={groupItem.id} group={groupItem} />
-						))}
-					</CardContainer>
+					<>
+						<div className="mb-6 flex flex-col gap-1">
+							<h2 className="font-serif text-2xl font-semibold tracking-tight">{t('GenGroupTitle')}</h2>
+							<p className="text-muted-foreground text-sm">{t('GenGroupSubTitle')}</p>
+						</div>
+						<CardContainer>
+							{groupList.map((groupItem) => (
+								<CardGroup key={groupItem.id} group={groupItem} />
+							))}
+						</CardContainer>
+					</>
 				)}
 			</section>
 		</div>
