@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import type { Group } from '../types';
+import type { Group, Transaction } from '../types';
 import { computeBalances, computeSettlement, type Transfer } from './settlement';
 
 function netTransfer(transfers: Transfer[], memberId: string): number {
@@ -176,5 +176,54 @@ describe('computeSettlement', () => {
 		};
 		const { transfers } = computeSettlement(g);
 		expect(transfers.length).toBeLessThanOrEqual(9);
+	});
+});
+
+describe('settle-up transfers (stored as transactions)', () => {
+	// A transfer: sender on paidBy (credit), recipient on paidFor (debit).
+	const transfer = (id: string, from: string, to: string, amount: number): Transaction => ({
+		id,
+		type: 'transfer',
+		date: '2026-06-15',
+		description: 'Settle up',
+		total: amount,
+		paidBy: { [from]: amount },
+		paidFor: { [to]: amount },
+	});
+
+	const singlePayer: Group = {
+		config: { bankerId: 'a' },
+		members: [
+			{ id: 'a', name: 'A', prepaid: 0 },
+			{ id: 'b', name: 'B', prepaid: 0 },
+		],
+		transactions: [
+			{ id: 't1', date: '2026-01-01', description: 'x', total: 100, paidBy: { a: 100 }, paidFor: { a: 50, b: 50 } },
+		],
+	};
+
+	it('folds a transfer into balances: payer up, payee down', () => {
+		const g: Group = { ...singlePayer, transactions: [...singlePayer.transactions!, transfer('p1', 'b', 'a', 50)] };
+		const byId = Object.fromEntries(computeBalances(g).map((b) => [b.memberId, b.balance]));
+		expect(byId).toEqual({ a: 0, b: 0 });
+	});
+
+	it('settles everyone once the suggested transfers are recorded as transfers', () => {
+		const withTransfers: Group = {
+			...beachTrip,
+			transactions: [
+				...beachTrip.transactions!,
+				transfer('p1', 'bob', 'carol', 40),
+				transfer('p2', 'alice', 'carol', 90),
+			],
+		};
+		expect(computeSettlement(withTransfers).transfers).toEqual([]);
+	});
+
+	it('a partial transfer reduces but does not clear the debt', () => {
+		const g: Group = { ...singlePayer, transactions: [...singlePayer.transactions!, transfer('p1', 'b', 'a', 20)] };
+		expect(computeSettlement(g).transfers).toEqual([
+			{ fromId: 'b', fromName: 'B', toId: 'a', toName: 'A', amount: 30 },
+		]);
 	});
 });

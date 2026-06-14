@@ -58,7 +58,9 @@ export function GroupListTransactions() {
 		);
 	}
 
-	const hasTransactions = Boolean(group.transactions?.length);
+	// Settle-up transfers live on the Settle up page; the expenses list shows expenses only.
+	const expenses = (group.transactions ?? []).filter((tx) => tx.type !== 'transfer');
+	const hasTransactions = expenses.length > 0;
 
 	return (
 		<Card>
@@ -83,7 +85,7 @@ export function GroupListTransactions() {
 								<TableHead className="text-right">{t('Actions')}</TableHead>
 							</TableRow>
 						</TableHeader>
-						<TableBody>{group.transactions?.map(renderTransaction)}</TableBody>
+						<TableBody>{expenses.map(renderTransaction)}</TableBody>
 					</Table>
 				) : (
 					<div className="flex flex-col items-center gap-4 py-12 text-center">

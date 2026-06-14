@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Users, Receipt, Trash2, Pencil, Plus, History } from 'lucide-react';
+import { Users, Receipt, Trash2, Pencil, Plus, History, ArrowLeftRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
@@ -26,6 +26,10 @@ export function GroupActivity() {
 			case ACTIVITY_TYPES.TRANSACTION_UPDATED:
 				return { Icon: Pencil, tone: 'bg-accent text-accent-foreground' };
 			case ACTIVITY_TYPES.TRANSACTION_DELETED:
+				return { Icon: Trash2, tone: 'bg-destructive/15 text-destructive' };
+			case ACTIVITY_TYPES.TRANSFER_RECORDED:
+				return { Icon: ArrowLeftRight, tone: 'bg-primary/15 text-primary' };
+			case ACTIVITY_TYPES.TRANSFER_REMOVED:
 				return { Icon: Trash2, tone: 'bg-destructive/15 text-destructive' };
 			default:
 				return { Icon: Receipt, tone: 'bg-muted text-muted-foreground' };

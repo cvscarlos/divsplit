@@ -6,48 +6,67 @@
 >
 > Keep this file current: update it in the same change that alters structure, the data model, routes, or a constraint. A stale architecture doc is worse than none.
 >
-> Project size: ~31 source files → documented at depth **L1**, with the **Monorepo** and **i18n** optional modules included because they apply.
+> Project size: ~40 source files → documented at depth **L1**, with the **Monorepo** and **i18n** optional modules included because they apply.
 
 ---
 
 ## 1. What DivSplit Is
 
-DivSplit is yet another shared-expense splitter for trips and group bills (restaurants, groceries, etc.). Two product decisions set it apart from typical splitters and shape the whole architecture:
+DivSplit is a shared-expense splitter for trips and group bills (restaurants, groceries, a rented lake-house, etc.). A few product decisions set it apart and shape the whole architecture.
 
-1. **Prepaid amounts.** When you create a group, each member can carry a **prepaid balance** — money already put in, like a pre-paid card (you must have funds to spend) rather than a credit card (pay later). Settlement must net expenses against these prepaid balances.
+### 1.1 Money in DivSplit: expenses vs. transfers
 
-2. **Decoupled "paid by" vs "paid for", with auto-split.** Each expense records, separately, *who actually paid* (`paidBy`) and *who should be charged* (`paidFor`). These need not match — e.g. the person with cash pays the street-food vendor, but a different person actually eats the food. When the user types an amount for one person, the remaining total auto-splits across the other selected people, so nobody does mental arithmetic.
+There are exactly **two kinds of money movement**, and keeping them distinct is the core domain model:
 
-3. **Fewest-transfers settlement (planned).** The long-term goal is to net everyone's balances and emit the *minimum* set of transfers, so a 10-person trip never ends with one person sending money to nine others. **This settlement engine is not implemented yet** — the data is captured, the computation is future work (see §9 and §11).
+1. **Expenses** (`transactions`) — *consumption*. Each records, separately, *who actually paid* (`paidBy`) and *who should be charged* (`paidFor`); these need not match (the person with cash pays the street-food vendor, but someone else eats the food). An auto-split helper fills in the rest so nobody does mental arithmetic (§6).
 
-**Local-first by design.** The app must run with **no internet** (trips often have none). All data persists to the browser. A backend/database is intentionally deferred and will act as a **sync layer** *after* local save — allowing multiple users to record transactions offline on their own devices and reconcile later.
+2. **Transfers** — money one member hands another that is **not** an expense, but still moves their balances. This single primitive covers two product features that are conceptually the same thing:
+   - **Prepaid** — money members put in up front, typically to one organizer. Example: ten friends rent a lake-house; one person makes the booking and pays, so everyone wires **them** first. The organizer waits until everyone has paid in before committing, and isn't left out of pocket if some people flake. That collected money sits in the organizer's balance, ready to be drawn down by the lake-house expense.
+   - **Settle-up** — a debtor paying a creditor to clear the balance the app computed (during or at the end of the trip).
+
+   **Rule (project owner):** prepaid and settle-up are the same concept — "A gave B money, counts toward balances, is not an expense." The target model collapses both into one **member-to-member transfer** list (§6). A pleasant consequence: with transfers and expenses both balanced, every member balance sums to zero, so settlement is pure peer-to-peer with no special "banker pot" handling.
+
+### 1.2 Fewest-transfers settlement
+
+The app nets everyone's balances and emits the **minimum** set of transfers, so a 10-person trip never ends with one person paying nine others. **Built** (`utils/settlement.ts`, §6).
+
+### 1.3 Local-first & privacy
+
+- **Local-first by design.** The app must run with **no internet** (trips often have none). All data persists in the browser. A backend/database is intentionally deferred and will act as a **sync layer** *after* local save — letting multiple people record on their own devices offline and reconcile later. Fonts are self-hosted and avatars generated locally so nothing breaks offline.
+- **Privacy by default (project owner rule).** No email or personal data is required — it stays optional, to protect people's privacy. Identity is modeled with opaque UUIDs, not accounts:
+  - each **event** (group) has a UUID the creator shares with members;
+  - each **member** gets their own per-event UUID;
+  - a member uses their UUID to record expenses **independently**, without waiting for the creator — this is what later enables multi-device offline contribution.
+  - Real **member identification/auth is a v2 concern**; today there is no PII and `activities.userId` is unused.
 
 ---
 
 ## 2. Stack & Dependencies
 
-**Monorepo** managed with **npm workspaces** (`frontend`, `backend`). Node **24** (`.nvmrc`). ES modules throughout (`"type": "module"`).
+**Monorepo** managed with **npm workspaces** (`frontend`, `backend`). Node **24** (`.nvmrc`). ES modules throughout (`"type": "module"`). The frontend is **TypeScript** (strict).
 
 ### Frontend (`frontend/`) — the only live workspace today
 | Concern | Choice |
 |---|---|
-| Build / dev server | **Vite 5** (`@vitejs/plugin-react`) |
-| UI | **React 19** + **react-dom 19** |
-| Routing | **react-router-dom 6** |
-| Styling | **Tailwind CSS 3** + **daisyUI 4** + `@tailwindcss/typography` |
+| Language | **TypeScript 6** (strict; project references) |
+| Build / dev server | **Vite 8** (`@vitejs/plugin-react` 6) |
+| UI | **React 19.2** + **react-dom** |
+| Routing | **react-router-dom 7** |
+| Styling | **Tailwind CSS v4** (`@tailwindcss/vite`, CSS-first `@theme`) + **shadcn/ui** primitives |
+| Icons | **lucide-react** |
+| Fonts | self-hosted via **@fontsource** (Fraunces / Hanken Grotesk / JetBrains Mono) |
 | i18n | **i18next** + **react-i18next** + browser language detector |
 | Local persistence | **localforage** (IndexedDB) |
-| ID generation | **bson-objectid** (Mongo-style ObjectIds, for an eventual DB) |
-| Icons | **react-icons** |
-| Prop validation | **prop-types** (runtime; no TypeScript yet) |
+| ID generation | **bson-objectid** (Mongo-style ObjectIds) |
+| Unit tests | **Vitest** |
 
 ### Backend (`backend/`)
-Placeholder workspace. `package.json` is empty (`{}`). No code yet — reserved for the future sync layer.
+Placeholder workspace (`package.json` is `{}`). Reserved for the future sync layer.
 
 ### Tooling
-ESLint 9 (flat config) + Prettier (`.prettierrc.yml`), run from root. Deployed on **Vercel** (`vercel.json`).
+**ESLint 10** (flat config) + **typescript-eslint** + **Prettier**. CI (`.github/workflows/frontend.yml`) runs **lint**, **unit tests**, and **type-check + build** on the Node version from `.nvmrc`. Deployed on **Vercel** (`vercel.json`).
 
-> ⚠️ **Version mismatch:** `.nvmrc` pins Node **24** but `.github/workflows/frontend.yml` uses Node **20**. Align these when touching CI.
+> Note: `eslint` is pinned via a root `overrides` because `eslint-plugin-react` 7.37 doesn't yet declare ESLint 10 support; the React version is also pinned in the flat config to avoid its removed-API crash on ESLint 10.
 
 ---
 
@@ -55,103 +74,92 @@ ESLint 9 (flat config) + Prettier (`.prettierrc.yml`), run from root. Deployed o
 
 ```
 divsplit/
-├─ package.json          # root: workspaces, shared dev tooling (eslint, prettier), scripts
+├─ package.json          # root: workspaces, shared dev tooling, eslint override, scripts
 ├─ vercel.json           # builds frontend workspace, SPA rewrite → index.html
-├─ frontend/             # Vite + React 19 SPA (all current application code)
+├─ frontend/             # Vite + React 19 + TS SPA (all current application code)
 ├─ backend/              # empty placeholder workspace (future sync API)
 ├─ ARCHITECTURE.md       # this file
 ├─ DESIGN.md             # visual design system (placeholder; to be built via Stitch MCP)
-└─ .github/              # CI (frontend lint) + copilot-instructions.md
+├─ TEST.md               # manual QA procedures per feature
+├─ docs/superpowers/specs # design specs (settlement, mark-as-paid, …)
+└─ .github/              # CI (lint + test + build) + copilot-instructions.md
 ```
 
-Root scripts: `npm run dev` → frontend dev server; `npm run format` → Prettier; `npm run lint` → ESLint + frontend lint.
+Root scripts: `npm run dev`, `npm run format`, `npm run lint`. Frontend scripts add `build` (`tsc -b && vite build`), `test` (`vitest run`), `typecheck`.
 
 ---
 
 ## 4. Module Map (`frontend/src`)
 
 **Entry & shell**
-- `renderApp.jsx` — bootstrap only; mounts `<App/>` into `#app-root` under `React.StrictMode`. (By convention, no logic here.)
-- `App.jsx` — composition root: `ThemeProvider → Container → AppRouter`; loads `App.css` and `i18n`.
-- `routes/AppRouter.jsx` — `BrowserRouter`, global `Header`, and the route table (see §5).
+- `renderApp.tsx` — bootstrap only; mounts `<App/>` into `#app-root` under `StrictMode`.
+- `App.tsx` — composition root: imports `index.css` + fonts + i18n; `ThemeProvider → Container → AppRouter`.
+- `routes/AppRouter.tsx` — `BrowserRouter`, global `Header`, route table (§5).
+- `index.css` — Tailwind v4 entry: theme tokens (oklch, light/dark), fonts, base styles.
 
 **Cross-cutting state (React Context)**
-- `context/ThemeContext.jsx` — light/dark theme, persisted to `localStorage["divsplit_theme"]`.
-- `context/GroupContext.jsx` — loads and exposes the active group (`data`, `updateGroup`, `loadDemo`) for the current `:groupId`; renders `<Loading/>` while fetching.
+- `context/ThemeContext.tsx` — light/dark, persisted to `localStorage["divsplit_theme"]`; toggles the `.dark` class on `<html>`.
+- `context/GroupContext.tsx` — loads/exposes the active group (`data`, `updateGroup`, `loadDemo`).
 
-**Data layer**
-- `utils/use-api.js` — the persistence boundary. localforage instances `groupList` and `group`; hooks `useApiListGroups`, `useApiGetGroup`; `loadDemoData`; `generateId()` (ObjectId). *This is the single place that touches storage — treat it as the "API" the rest of the app talks to.*
-- `utils/activity-tracker.js` — `ACTIVITY_TYPES` enum + pure functions that append audit entries to a group (capped at 100, newest first).
-- `utils/tools.js` — `jsonParseSafe` / `jsonStringifySafe`.
+**Domain & data layer (`utils/`)**
+- `use-api.ts` — the persistence boundary. localforage stores `groupList` and `group`; hooks `useApiListGroups`, `useApiGetGroup`; `loadDemoData`; `generateId()`. *Single place that touches storage.*
+- `settlement.ts` — **pure** settlement engine: `computeBalances` and `computeSettlement` (balances → banker pot adjustment → greedy min-cash-flow → fewest `transfers` + `netBalances`). Unit-tested.
+- `transaction.ts` — `getTransactionError` (form validation), unit-tested.
+- `activity-tracker.ts` — `ACTIVITY_TYPES` + pure functions appending audit entries (capped 100, newest first).
+- `tools.ts` — `jsonParseSafe` / `jsonStringifySafe`.
+- `types.ts` — shared domain types (`Group`, `Member`, `Transaction` incl. `TransactionType`, `Activity`, settlement types).
 
-**Pages**
-- `pages/HomePage.jsx` — landing; lists groups via `CardGroup`/`CardContainer`.
-- `pages/Group/Config.jsx` — edit group name + members (name, prepaid); diffs old vs new and records activities.
-- `pages/Group/Transaction.jsx` — create/edit a transaction; **hosts the auto-split algorithm** (see §6).
-- `pages/Group/ListTransactions.jsx` — transaction table; row links + delete (records activity).
-- `pages/Group/Activity.jsx` — activity feed with relative timestamps.
-- `pages/NotFound.jsx`.
-
-**Components**
-- `components/GroupPageWrapper.jsx` — wraps a group route in `GroupProvider`, dispatches the `:section` to the right page, shows the "load sample data" prompt for empty groups, and mounts `Debug`.
-- `Header`, `GroupHeader`, `Avatar`, `Hr`, `Loading`, `Container`, `CardGroup`, `CardContainer`, `Debug`.
+**UI**
+- `components/ui/*` — shadcn primitives (`button`, `card`, `input`, `label`, `table`, `switch`, `badge`); `lib/utils.ts` exports `cn`.
+- Pages (`pages/`): `HomePage`, `Group/Config`, `Group/Transaction` (hosts auto-split), `Group/ListTransactions`, `Group/Settlement`, `Group/Activity`, `NotFound`.
+- `components/GroupPageWrapper.tsx` — wraps a group route in `GroupProvider`, dispatches `:section`, shows the empty-group prompt, mounts `Debug`.
+- `Header`, `GroupHeader` (tab nav), `Avatar` (local initials), `Hr`, `Loading`, `Container`, `CardGroup`, `CardContainer`, `Debug`.
 
 ---
 
 ## 5. Route Structure
 
-SPA, client-side routing only (Vercel rewrites all paths to `index.html`).
+SPA, client-side routing only (Vercel rewrites all paths to `index.html`). The single dynamic route is `/group/:groupId/:section/:sectionItem?`; `GroupPageWrapper` switches on `section`.
 
 | Path | Renders |
 |---|---|
 | `/` | `HomePage` (group list) |
-| `/group/:groupId/config` | `GroupConfig` |
-| `/group/:groupId/transactions` | `GroupListTransactions` |
-| `/group/:groupId/transactions/:sectionItem` | `GroupTransaction` (`:sectionItem` = transaction id, or `new`) |
+| `/group/:groupId/config` | `GroupConfig` (name, members, prepaid, banker) |
+| `/group/:groupId/transactions[/:id\|new]` | transactions list / `GroupTransaction` |
+| `/group/:groupId/settlement` | `GroupSettlement` (balances + transfers) |
 | `/group/:groupId/activity` | `GroupActivity` |
 | `*` | `NotFound` |
-
-The single dynamic route is `/group/:groupId/:section/:sectionItem?`; `GroupPageWrapper` switches on `section` (`config` / `transactions` / `activity`).
 
 ---
 
 ## 6. Data Model & Core Domain Logic
 
-All state is one **group object** per group id, stored in IndexedDB.
+All state is one **group object** per group id, stored in IndexedDB (typed in `types.ts`).
 
-```jsonc
-group = {
-  config:   { name },                 // canonical group name
-  members:  [ { id, name, prepaid } ],// prepaid = pre-funded balance (number)
-  transactions: [ {
-    id,                               // ObjectId hex
-    date, createdAt | updatedAt,
-    description, total,
-    paidBy:  { [memberId]: amount },  // who actually paid
-    paidFor: { [memberId]: amount },  // who is charged / consumed
-    manuallyChanged: { [memberId]: true } // entries the user typed → exempt from auto-split
-  } ],
-  activities: [ {                     // audit log, newest first, capped at 100
-    id, type, description, details, userId /* always null today */, timestamp
-  } ]
+```ts
+Group = {
+  config:   { name?, bankerId? },          // bankerId = member holding the prepaid pot
+  members:  Member[],                       // { id, name, prepaid }
+  transactions: Transaction[],              // { id, type?: 'expense'|'transfer', date, description,
+                                            //   total, paidBy:{memberId:amount},
+                                            //   paidFor:{memberId:amount}, manuallyChanged }
+  activities?: Activity[],                  // audit log (capped 100, newest first)
 }
 ```
 
-> Demo data (`frontend/demo_data.json`) also carries a legacy `header.name`; the live UI uses `config.name`.
+**Expenses vs. transfers are both `Transaction`s** (§1.1). An expense (`type` absent / `'expense'`) is consumption entered via the split form. A **transfer** (`type: 'transfer'`) is money between members — a settle-up (or, in future, prepaid) — with the *sender* on `paidBy` (credit) and *recipient* on `paidFor` (debit). Same shape, so it folds into balances for free; entered via the Settle up page, and filtered out of the expenses list.
 
-### The auto-split algorithm (`Transaction.jsx › handleMemberChange`)
-Both `paidBy` and `paidFor` are `memberId → amount` maps and use the same logic:
+### Auto-split (`Transaction.tsx`)
+Both `paidBy` and `paidFor` are `memberId → amount` maps. Toggling a member splits the remaining `total − sum(manually-typed)` equally across the others; rounding remainder lands on the current person so the parts reconcile to `total`. Most intricate code in the app.
 
-1. Toggling a member on adds them at `0`; toggling off deletes them.
-2. Entries the user **typed into** are recorded in the `manuallyChanged` ref and held **fixed**.
-3. The **remaining** amount (`total − sum(manual)`) is split **equally** across the non-manual selected members.
-4. Any rounding remainder (values are rounded to 2 decimals via `round()`) is absorbed by the current person so the sum reconciles to `total`.
-5. `getRemainingValue()` surfaces `total − sum` per fieldset as live feedback.
+### Settlement (`settlement.ts`) — **built & tested**
+- `balance(m) = prepaid(m) + Σ paidBy − Σ paidFor + Σ (transfers given − received)`.
+- **Banker:** prepaid is currently a per-member number whose recipient is the **banker** (`config.bankerId`, default first member). The banker holds the pot, so their *effective* balance is reduced by `Σ prepaid`, making effective balances sum to zero.
+- `computeSettlement` runs a greedy **min-cash-flow** (largest creditor ↔ largest debtor) → fewest `transfers` (≤ n−1) plus `netBalances` (post-banker, sum to zero, match the transfers).
+- **Settle-up** is recorded as a `type: 'transfer'` transaction, so it folds into `computeBalances` for free (sender `paidBy` +, recipient `paidFor` −); recording one shrinks/clears its suggested transfer. Undo deletes the transaction.
 
-This is the **most intricate and fragile code in the app** (it mutates the working map in place before re-setting state). Touch it carefully; it is the prime candidate for unit tests once a test setup exists.
-
-### Not yet modeled
-- **Balances & settlement.** Per-member net balance (prepaid + paidBy − paidFor) and the minimal-transfer plan are **not computed anywhere yet**. Transactions capture the raw inputs the future engine will need.
+### Planned unification (project-owner rule, §1.1)
+Prepaid is still a per-member number routed to the banker (mathematically equal to "everyone transferred their prepaid to the organizer"). The remaining step is to also express **prepaid as transfer transactions** to the organizer, retiring `member.prepaid` and the banker special-case so every balance is just `Σ(paidBy − paidFor)` over transactions. Settle-up already works this way.
 
 ---
 
@@ -164,56 +172,55 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
                                           localforage "groupList" (name index)
 ```
 
-- **Two stores:** `group` (full object keyed by `groupId`) and `groupList` (lightweight `[{id, name}]` index for the home page).
-- **Write path:** a page builds a new group object (often via `activity-tracker` helpers), calls `updateGroup(next)`. `useApiGetGroup` stages it as `dataToSave`, an effect persists it, re-reads, and mirrors the name into `groupList`.
-- **Demo data:** `loadDemoData` fetches `/demo_data.json` (served from `frontend/demo_data.json`) into the `group` store and registers it in `groupList`. `useApiListGroups` also seeds three placeholder groups on first run.
-- **No network.** Everything is in-browser; the app works fully offline.
+- **Write path:** a page builds a new group object (often via `activity-tracker` helpers), calls `updateGroup(next)`; `useApiGetGroup` stages it, persists, re-reads, and upserts the name into `groupList`.
+- **Derived, not stored:** balances and the *suggested* settlement transfers are computed on read; recorded settle-ups are persisted as `type: 'transfer'` transactions.
+- **No network.** Fully offline; demo data from `/demo_data.json`.
 
 ---
 
 ## 8. Configuration & Environment
 
-- **`VITE_SHOW_DEBUG=true`** — renders the `Debug` panel (raw group JSON) on group pages.
-- **i18n detection order:** querystring `?lang=`, `localStorage["i18nLang"]`, then browser `navigator`; fallback `en`. Locales: `en`, `pt` (`src/locales/*.json`); `load: 'languageOnly'`.
-- **Theme:** persisted at `localStorage["divsplit_theme"]`; daisyUI themes `light` / `dark`.
-- **Vite aliases:** `@`, `@components`, `@context`, `@pages`, `@utils`, `@routes`, `@locales` → `src/*`.
-- **Deploy (Vercel):** build `npm run build --workspace frontend` → `frontend/dist`; SPA rewrite `/(.*) → /index.html`.
+- **`VITE_SHOW_DEBUG=true`** — renders the `Debug` raw-group panel on group pages.
+- **i18n:** detection order querystring `?lang=` → `localStorage["i18nLang"]` → navigator; fallback `en`. Locales `en`, `pt`.
+- **Theme:** `.dark` class on `<html>`; tokens defined in `index.css` (oklch); persisted at `localStorage["divsplit_theme"]`.
+- **Vite aliases:** `@`, `@components`, `@context`, `@pages`, `@utils`, `@routes`, `@locales` → `src/*` (mirrored in `tsconfig`).
+- **Deploy (Vercel):** build `npm run build --workspace frontend` → `frontend/dist`; SPA rewrite.
 
 ---
 
 ## 9. Constraints & Trade-offs
 
-- **Local-first, intentionally.** No backend persistence today — required so trips without internet still work. The `backend/` workspace is an empty placeholder.
-- **Single-device today.** Data lives in *one* browser's IndexedDB. Multi-device/multi-user **sync is a future goal**, not a current capability. Designing the sync layer will need stable identities (today `activities.userId` is always `null`) and conflict resolution.
-- **No settlement engine yet.** The headline "fewest transfers" feature is unbuilt (§6, §11).
-- **No tests.** No test runner is configured; the riskiest code (auto-split) is untested.
-- **JavaScript + PropTypes**, not TypeScript (migration planned, §11).
+- **Local-first, intentionally.** No backend persistence today; `backend/` is an empty placeholder.
+- **Single-device today.** Data lives in one browser's IndexedDB. Multi-device/multi-user **sync is a future goal** built on the UUID identity model (§1.3) + conflict resolution.
+- **No PII.** Identity is opaque per-event UUIDs; member identification is deferred to v2.
+- **Greedy settlement** (near-optimal), not provably minimal.
+- **Tests cover pure logic** (settlement, validation) via Vitest; UI is covered by manual `TEST.md` + Chrome MCP QA, not component tests yet.
 
 ---
 
 ## 10. Known Tech Debt & Code Hotspots
 
-- **`Transaction.jsx › handleMemberChange`** — complex in-place mutation + rounding; highest-risk hotspot. Cover with tests before refactoring.
-- **Inconsistent member ids** — members use `"${index}_${Date.now()}"` while groups/transactions/activities use ObjectId hex. Unify before the DB/sync layer relies on ids.
-- **Node version drift** — `.nvmrc` (24) vs CI (20). See §2.
-- **Mixed-language comments** (Portuguese/English) across files.
-- **Unfinished UI affordances** — the home page "create group" button has no handler; `Transaction.jsx` submit has a `// TODO` for error-handling UI.
-- **`activities.userId` unused** (always `null`) — placeholder for future auth/identity.
+- **`Transaction.tsx` auto-split** — complex in-place mutation + rounding; highest-risk hotspot, still untested at the component level (the pure split rules are the candidate to extract + unit-test).
+- **Prepaid still a number** — settle-up is now a transfer transaction, but prepaid remains `member.prepaid` + the banker special-case; express prepaid as transfer transactions too to retire the banker (§6).
+- **Inconsistent member ids** — members use `"${index}_${Date.now()}"` while transactions/activities use ObjectId hex. Move members to UUIDs with the identity model.
+- **`activities.userId` unused** — placeholder until the UUID identity model lands.
+- **No component/E2E tests** — only pure-logic unit tests exist.
 
 ---
 
 ## 11. Roadmap / Future Direction
 
-Captured here because it directly shapes architectural decisions (source: project owner). Order is indicative, not committed.
+Source: project owner. Order indicative.
 
-1. **Settlement engine** — compute per-member balances (prepaid + paidBy − paidFor) and emit the **minimum-transfer** plan.
-2. **Backend sync layer** — local-first stays the source of truth; the backend reconciles multiple users' offline edits when a device regains internet (needs identities + conflict resolution).
-3. **TypeScript migration** — replace PropTypes with static types (note `@types/react*` are already present).
-4. **Dependency upgrades** — React and all other npm dependencies bumped to current.
-5. **Visual redesign** — a fresh, distinctive look (the current UI is generic). Design system to be produced via the **Stitch MCP** and recorded in `DESIGN.md`.
+1. ✅ **TypeScript migration**, dependency upgrades, **shadcn/Tailwind v4 redesign**, **CI** (lint+test+build), **settlement engine**.
+2. ✅ **Mark transfers as paid** — settle-ups recorded as transfer transactions that net down balances; undoable; logged to Activity.
+3. **Finish unifying prepaid** — express prepaid as transfer transactions to the organizer too, removing `member.prepaid` and the banker special-case (§6).
+4. **Identity & privacy model** — per-event + per-member UUIDs so members contribute independently with no PII (§1.3); member identification in **v2**.
+5. **Backend sync layer** — local-first stays source of truth; reconcile multi-device offline edits (needs the UUID identities + conflict resolution).
+6. **Visual design via Stitch MCP** — generate fresh modern layouts, recorded in `DESIGN.md`.
 
 ---
 
-## 12. Security
+## 12. Security & Privacy
 
-Client-only app: no auth, no secrets, no server. Data is confined to the user's browser storage. Security surface is minimal today but becomes material with the sync layer (§11) — that work will introduce authentication, transport security, and per-user authorization, and must be re-assessed here when it lands.
+Client-only app: no auth, no secrets, no server; data confined to browser storage. **Privacy is a product principle** — no email/PII is collected; identity is opaque UUIDs (§1.3). The security/privacy surface becomes material with the sync layer (§11), which will introduce transport security, per-user authorization, and conflict handling, and must be re-assessed here when it lands.

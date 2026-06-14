@@ -39,6 +39,9 @@ export function computeBalances(group: Group): MemberBalance[] {
 	const members = group.members ?? [];
 	const transactions = group.transactions ?? [];
 
+	// Both expenses and transfers are transactions: paidBy is money in (credit),
+	// paidFor is money out (debit). A settle-up transfer therefore folds in for free
+	// (the payer is paidBy, the recipient is paidFor).
 	return members.map((member) => {
 		let paidBy = 0;
 		let paidFor = 0;
