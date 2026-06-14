@@ -7,6 +7,7 @@ import { Wallet, HandCoins, Save, Check } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { trackTransactionCreated, trackTransactionUpdated } from '../../utils/activity-tracker';
+import { getTransactionError } from '../../utils/transaction';
 import type { AmountMap, Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const [description, setDescription] = useState<string>(existingTransaction?.description || '');
 	const [date, setDate] = useState<string>(formatDateForInput(existingTransaction?.date));
 	const manuallyChanged = useRef<Record<string, boolean>>(existingTransaction?.manuallyChanged || {});
+	const [error, setError] = useState<string | null>(null);
 
 	// Update state when transaction changes (e.g., navigating between transactions)
 	useEffect(() => {
@@ -113,15 +115,17 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 
 	function handleGroupSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
+
+		const validationError = getTransactionError({ date, total, description });
+		if (validationError) {
+			setError(validationError);
+			return;
+		}
+		setError(null);
+
 		try {
-			if (!date || !total || !description) {
-				throw new Error('Please fill in all required fields');
-			}
 			let updatedGroup = { ...group };
 			const transactionDate = new Date(date);
-			if (isNaN(transactionDate.getTime())) {
-				throw new Error('Invalid date');
-			}
 			const isNew = transactionId === 'new';
 			const id = isNew ? String(new ObjectId()) : transactionId;
 
@@ -158,9 +162,9 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			if (isNew) {
 				navigate(`/group/${groupId}/transactions/${id}`);
 			}
-		} catch (error) {
-			console.error('Error submitting group:', error);
-			// TODO: Implement error handling UI feedback
+		} catch (err) {
+			console.error('Error submitting transaction:', err);
+			setError('Something went wrong saving this transaction.');
 		}
 	}
 
@@ -316,7 +320,12 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				</Card>
 			</div>
 
-			<div className="flex justify-end">
+			<div className="flex items-center justify-end gap-4">
+				{error && (
+					<p role="alert" className="text-destructive text-sm font-medium">
+						{error}
+					</p>
+				)}
 				<Button type="submit" size="lg">
 					<Save /> {t('Save')}
 				</Button>
