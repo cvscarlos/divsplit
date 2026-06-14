@@ -16,7 +16,10 @@ export interface Transfer {
 }
 
 export interface SettlementResult {
+	/** Raw position per member: prepaid + paidBy − paidFor. */
 	balances: MemberBalance[];
+	/** Net position after the banker absorbs the prepaid pot; sums to ~0 and matches `transfers`. */
+	netBalances: MemberBalance[];
 	transfers: Transfer[];
 	bankerId: string | null;
 }
@@ -105,7 +108,7 @@ export function computeSettlement(group: Group): SettlementResult {
 	const balances = computeBalances(group);
 
 	if (members.length === 0) {
-		return { balances, transfers: [], bankerId: null };
+		return { balances, netBalances: [], transfers: [], bankerId: null };
 	}
 
 	const configuredBanker = group.config?.bankerId;
@@ -120,5 +123,11 @@ export function computeSettlement(group: Group): SettlementResult {
 		amount: round(b.balance - (b.memberId === bankerId ? pot : 0)),
 	}));
 
-	return { balances, transfers: minimizeTransfers(effective), bankerId };
+	const netBalances: MemberBalance[] = effective.map((e) => ({
+		memberId: e.id,
+		name: e.name,
+		balance: e.amount,
+	}));
+
+	return { balances, netBalances, transfers: minimizeTransfers(effective), bankerId };
 }

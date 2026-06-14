@@ -60,6 +60,15 @@ describe('computeSettlement', () => {
 		}
 	});
 
+	it('exposes net balances (post-banker) that sum to zero and match the transfers', () => {
+		const { netBalances, transfers } = computeSettlement(beachTrip);
+		const sum = netBalances.reduce((acc, b) => acc + b.balance, 0);
+		expect(Math.abs(sum)).toBeLessThan(0.005);
+		for (const nb of netBalances) {
+			expect(netTransfer(transfers, nb.memberId)).toBeCloseTo(nb.balance, 2);
+		}
+	});
+
 	it('produces at most n-1 transfers with positive amounts', () => {
 		const { transfers } = computeSettlement(beachTrip);
 		expect(transfers.length).toBeLessThanOrEqual(beachTrip.members!.length - 1);
