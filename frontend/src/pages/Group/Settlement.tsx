@@ -13,7 +13,7 @@ const SETTLED_EPS = 0.005;
 export function GroupSettlement() {
 	const { t } = useTranslation();
 	const { data: group } = useGroupContext();
-	const { balances, transfers, bankerId } = computeSettlement(group);
+	const { netBalances, transfers, bankerId } = computeSettlement(group);
 
 	if (!group.members || group.members.length === 0) {
 		return (
@@ -30,7 +30,7 @@ export function GroupSettlement() {
 					<CardTitle>{t('Balances')}</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-1">
-					{balances.map((b) => {
+					{netBalances.map((b) => {
 						const settled = Math.abs(b.balance) < SETTLED_EPS;
 						const positive = b.balance > 0;
 						return (
