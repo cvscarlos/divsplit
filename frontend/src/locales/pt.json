@@ -31,5 +31,15 @@
   "Remaining": "Restante",
   "Content not found": "Conteúdo não encontrado",
   "Actions": "Ações",
-  "Activity Log": "Registro de Atividades"
+  "Activity Log": "Registro de Atividades",
+  "Banker": "Tesoureiro",
+  "BankerHint": "Guarda os valores depositados e devolve os reembolsos",
+  "Settle up": "Acerto de contas",
+  "Balances": "Saldos",
+  "Transfers": "Transferências",
+  "gets back": "a receber",
+  "owes": "a pagar",
+  "settled": "quitado",
+  "pays": "paga a",
+  "Everyone is settled up": "Tudo certo — nenhuma transferência necessária"
 }

@@ -10,6 +10,7 @@ import { Debug } from './Debug';
 import { GroupListTransactions } from '../pages/Group/ListTransactions';
 import { GroupTransaction } from '../pages/Group/Transaction';
 import { GroupActivity } from '../pages/Group/Activity';
+import { GroupSettlement } from '../pages/Group/Settlement';
 import { Button } from '@/components/ui/button';
 
 function GroupContent() {
@@ -20,6 +21,7 @@ function GroupContent() {
 	const pages: Record<string, boolean> = {
 		config: section === 'config',
 		transactions: section === 'transactions',
+		settlement: section === 'settlement',
 		activity: section === 'activity',
 	};
 
@@ -37,6 +39,7 @@ function GroupContent() {
 				{pages.config && <GroupConfig />}
 				{pages.transactions &&
 					(sectionItem ? <GroupTransaction transactionId={sectionItem} /> : <GroupListTransactions />)}
+				{pages.settlement && <GroupSettlement />}
 				{pages.activity && <GroupActivity />}
 			</div>
 

@@ -18,11 +18,13 @@ export function GroupConfig() {
 	const { data: group, updateGroup } = useGroupContext();
 	const [formFields, setFormFields] = useState<{ name: string }>({ name: '' });
 	const [members, setMembers] = useState<Member[]>([{ ...memberBase }]);
+	const [bankerId, setBankerId] = useState<string>('');
 	const { t } = useTranslation();
 
 	useEffect(() => {
 		setFormFields({ name: group.config?.name || '---' });
 		if (group.members) setMembers(group.members);
+		setBankerId(group.config?.bankerId || group.members?.[0]?.id || '');
 	}, [group]);
 
 	const memberName = 'memberName';
@@ -59,7 +61,8 @@ export function GroupConfig() {
 		updatedGroup = trackMemberChanges(updatedGroup, oldMembers, members);
 
 		// Apply the changes
-		updatedGroup.config = { ...updatedGroup.config, name: formFields.name };
+		const validBanker = members.some((m) => m.id === bankerId) ? bankerId : members[0]?.id;
+		updatedGroup.config = { ...updatedGroup.config, name: formFields.name, bankerId: validBanker };
 		updatedGroup.members = members;
 
 		updateGroup(updatedGroup);
@@ -85,6 +88,23 @@ export function GroupConfig() {
 							name="name"
 							onChange={handleFieldChange}
 						/>
+
+						<Label htmlFor="group-banker" className="mt-4 mb-2">
+							{t('Banker')}
+						</Label>
+						<select
+							id="group-banker"
+							value={bankerId}
+							onChange={(e) => setBankerId(e.target.value)}
+							className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 flex h-10 w-full rounded-md border px-3 py-2 text-base shadow-xs outline-none focus-visible:ring-[3px]"
+						>
+							{members.map((member) => (
+								<option key={member.id} value={member.id}>
+									{member.name || t('Name')}
+								</option>
+							))}
+						</select>
+						<p className="text-muted-foreground mt-1.5 text-xs">{t('BankerHint')}</p>
 					</CardContent>
 				</Card>
 
