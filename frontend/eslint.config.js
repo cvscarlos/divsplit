@@ -61,4 +61,12 @@ export default tseslint.config(
 			},
 		},
 	},
+	{
+		// shadcn/ui primitives export their cva variants next to the component by
+		// design; the fast-refresh rule doesn't apply to these generated files.
+		files: ['**/components/ui/**'],
+		rules: {
+			'react-refresh/only-export-components': 'off',
+		},
+	},
 );
