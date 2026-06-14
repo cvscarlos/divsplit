@@ -210,9 +210,45 @@ Most tests below use this group:
 
 ---
 
-## 7. Routing
+## 7. Settle up (balances & fewest transfers)
 
-### TC-7.1 — Unknown route shows 404
+Settlement is derived (not stored). Balances use
+`balance = prepaid + paidBy − paidFor`; the **banker** holds the prepaid pot, so
+the net balances (shown on the page) sum to zero and match the transfers. The
+pure logic is also covered by unit tests: `npm test --workspace frontend`.
+
+### TC-7.1 — Choose the banker
+
+1. Open a group → **Config** → set the **Banker** dropdown to a member → **Save**.
+2. **Expected:** the choice persists across reload (defaults to the first member
+   when never set).
+
+### TC-7.2 — Balances and transfers (worked example)
+
+1. Use the `Beach Trip` group (Alice 100 / Bob 0 / Carol 50, banker Alice) with
+   the `Dinner` $120 expense (paid by Carol; split 40/40/40). Open **Settle up**.
+2. **Expected balances (net):** Alice owes $90, Bob owes $40, Carol gets back $130.
+3. **Expected transfers:** `Bob → Carol $40` and `Alice → Carol $90` (2 transfers);
+   the net balances sum to zero.
+
+### TC-7.3 — Prepaid-only refund via the banker
+
+1. Same members, banker Alice, but **no transactions**. Open **Settle up**.
+2. **Expected:** Carol gets back $50, Bob settled, Alice (banker) owes $50;
+   transfer `Alice → Carol $50` (Alice returns Carol's prepaid from the pot and
+   keeps her own).
+
+### TC-7.4 — Everyone already even
+
+1. A group where each member's contributions equal their consumption.
+2. **Expected:** all rows show "settled" and the Transfers panel shows
+   "Everyone is settled up — no transfers needed".
+
+---
+
+## 8. Routing
+
+### TC-8.1 — Unknown route shows 404
 
 1. Navigate to a nonsense path, e.g. `/group/abc/does-not-exist`.
 2. **Expected:** the 404 page ("404 / Content not found") with a link back home.
@@ -224,9 +260,10 @@ Most tests below use this group:
 - **Silent validation on transaction save (TC-3.6):** if Date, Total, or
   Description is empty the Save is ignored without any visible message
   (`Transaction.tsx` logs to console only — there is a `TODO` for UI feedback).
-- **Settlement not implemented:** DivSplit captures `paidBy` / `paidFor` and
-  prepaid balances but does **not** yet compute per-person balances or the
-  minimum set of transfers. There is nothing to test there yet.
+- **Settlement banker model:** settle-up assumes one **banker** holds the prepaid
+  pot and disburses refunds (so a banker can show as "owes" while having prepaid
+  the most — that's the cash they pay out of the pot, and it matches the transfer
+  lines). Transfer minimization is greedy (near-optimal), not provably minimal.
 - **No favicon:** the initial page load logs one harmless `404` for the favicon.
 - **Native date input:** automated tools may need to set the date field
   programmatically; manual testing with the date picker works normally.
