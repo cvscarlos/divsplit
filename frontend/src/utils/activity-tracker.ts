@@ -1,0 +1,246 @@
+import ObjectId from 'bson-objectid';
+
+import type { Activity, Group, Member, Transaction } from '../types';
+
+/**
+ * Activity types for tracking changes
+ */
+export const ACTIVITY_TYPES = {
+	// Group activities
+	GROUP_UPDATED: 'group_updated',
+	MEMBER_CREATED: 'member_created',
+	MEMBER_UPDATED: 'member_updated',
+	MEMBER_DELETED: 'member_deleted',
+
+	// Transaction activities
+	TRANSACTION_CREATED: 'transaction_created',
+	TRANSACTION_UPDATED: 'transaction_updated',
+	TRANSACTION_DELETED: 'transaction_deleted',
+} as const;
+
+export type ActivityType = (typeof ACTIVITY_TYPES)[keyof typeof ACTIVITY_TYPES];
+
+interface ActivityInput {
+	description: string;
+	details?: Record<string, unknown>;
+	userId?: string | null;
+}
+
+/**
+ * Create a new activity entry
+ */
+export function createActivity(type: ActivityType, data: ActivityInput): Activity {
+	return {
+		id: new ObjectId().toHexString(),
+		type,
+		description: data.description,
+		details: data.details || {},
+		userId: data.userId || null,
+		timestamp: new Date(),
+	};
+}
+
+/**
+ * Add activity to group data
+ */
+export function addActivityToGroup(group: Group, activity: Activity): Group {
+	const updatedGroup: Group = { ...group };
+	updatedGroup.activities = updatedGroup.activities || [];
+	updatedGroup.activities.unshift(activity); // Add to beginning for chronological order
+
+	// Keep only last 100 activities to prevent storage bloat
+	if (updatedGroup.activities.length > 100) {
+		updatedGroup.activities = updatedGroup.activities.slice(0, 100);
+	}
+
+	return updatedGroup;
+}
+
+/**
+ * Track group name change
+ */
+export function trackGroupNameChange(group: Group, oldName: string, newName: string): Group {
+	if (oldName === newName) return group;
+
+	const activity = createActivity(ACTIVITY_TYPES.GROUP_UPDATED, {
+		description: `Group name changed from "${oldName}" to "${newName}"`,
+		details: { oldName, newName },
+	});
+
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track member addition
+ */
+export function trackMemberAdded(group: Group, member: Member): Group {
+	const activity = createActivity(ACTIVITY_TYPES.MEMBER_CREATED, {
+		description: `Member "${member.name}" was added to the group`,
+		details: { memberId: member.id, memberName: member.name, prepaid: member.prepaid },
+	});
+
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track member removal
+ */
+export function trackMemberRemoved(group: Group, member: Member): Group {
+	const activity = createActivity(ACTIVITY_TYPES.MEMBER_DELETED, {
+		description: `Member "${member.name}" was removed from the group`,
+		details: { memberId: member.id, memberName: member.name },
+	});
+
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track member name change
+ */
+export function trackMemberNameChange(group: Group, memberId: string, oldName: string, newName: string): Group {
+	if (oldName === newName) return group;
+
+	const activity = createActivity(ACTIVITY_TYPES.MEMBER_UPDATED, {
+		description: `Member name changed from "${oldName}" to "${newName}"`,
+		details: { memberId, oldName, newName, changeType: 'name' },
+	});
+
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track member prepaid amount change
+ */
+export function trackMemberPrepaidChange(
+	group: Group,
+	memberId: string,
+	memberName: string,
+	oldAmount: number,
+	newAmount: number,
+): Group {
+	if (oldAmount === newAmount) return group;
+
+	const activity = createActivity(ACTIVITY_TYPES.MEMBER_UPDATED, {
+		description: `${memberName}'s prepaid amount changed from $${oldAmount} to $${newAmount}`,
+		details: { memberId, memberName, oldAmount, newAmount, changeType: 'prepaid' },
+	});
+
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track transaction creation
+ */
+export function trackTransactionCreated(group: Group, transaction: Transaction): Group {
+	const activity = createActivity(ACTIVITY_TYPES.TRANSACTION_CREATED, {
+		description: `Transaction "${transaction.description}" was created for $${transaction.total}`,
+		details: {
+			transactionId: transaction.id,
+			description: transaction.description,
+			total: transaction.total,
+			date: transaction.date,
+		},
+	});
+
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track transaction update
+ */
+export function trackTransactionUpdated(group: Group, oldTransaction: Transaction, newTransaction: Transaction): Group {
+	const changes: string[] = [];
+
+	if (oldTransaction.description !== newTransaction.description) {
+		changes.push(`description from "${oldTransaction.description}" to "${newTransaction.description}"`);
+	}
+
+	if (oldTransaction.total !== newTransaction.total) {
+		changes.push(`total from $${oldTransaction.total} to $${newTransaction.total}`);
+	}
+
+	if (new Date(oldTransaction.date).getTime() !== new Date(newTransaction.date).getTime()) {
+		changes.push(
+			`date from ${new Date(oldTransaction.date).toLocaleDateString()} to ${new Date(newTransaction.date).toLocaleDateString()}`,
+		);
+	}
+
+	if (changes.length === 0) return group;
+
+	const activity = createActivity(ACTIVITY_TYPES.TRANSACTION_UPDATED, {
+		description: `Transaction "${newTransaction.description}" was updated: ${changes.join(', ')}`,
+		details: {
+			transactionId: newTransaction.id,
+			changes: changes,
+			oldTransaction: {
+				description: oldTransaction.description,
+				total: oldTransaction.total,
+				date: oldTransaction.date,
+			},
+			newTransaction: {
+				description: newTransaction.description,
+				total: newTransaction.total,
+				date: newTransaction.date,
+			},
+		},
+	});
+
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track transaction deletion
+ */
+export function trackTransactionDeleted(group: Group, transaction: Transaction): Group {
+	const activity = createActivity(ACTIVITY_TYPES.TRANSACTION_DELETED, {
+		description: `Transaction "${transaction.description}" was deleted (was $${transaction.total})`,
+		details: {
+			transactionId: transaction.id,
+			description: transaction.description,
+			total: transaction.total,
+			date: transaction.date,
+		},
+	});
+
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Compare two arrays of members and track changes
+ */
+export function trackMemberChanges(group: Group, oldMembers: Member[] = [], newMembers: Member[] = []): Group {
+	let updatedGroup: Group = { ...group };
+
+	// Create maps for easier comparison
+	const oldMembersMap = new Map(oldMembers.map((m) => [m.id, m]));
+	const newMembersMap = new Map(newMembers.map((m) => [m.id, m]));
+
+	// Track removed members
+	for (const oldMember of oldMembers) {
+		if (!newMembersMap.has(oldMember.id)) {
+			updatedGroup = trackMemberRemoved(updatedGroup, oldMember);
+		}
+	}
+
+	// Track added and modified members
+	for (const newMember of newMembers) {
+		const oldMember = oldMembersMap.get(newMember.id);
+
+		if (!oldMember) {
+			// New member added
+			updatedGroup = trackMemberAdded(updatedGroup, newMember);
+		} else {
+			// Check for changes in existing member
+			updatedGroup = trackMemberNameChange(updatedGroup, newMember.id, oldMember.name, newMember.name);
+			updatedGroup = trackMemberPrepaidChange(
+				updatedGroup,
+				newMember.id,
+				newMember.name,
+				oldMember.prepaid,
+				newMember.prepaid,
+			);
+		}
+	}
+
+	return updatedGroup;
+}
