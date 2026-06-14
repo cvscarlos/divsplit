@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - "frontend/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".nvmrc"
+      - ".github/workflows/frontend.yml"
 
 permissions:
   pull-requests: write
@@ -18,7 +22,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: 'npm'
 
       - name: Install dependencies
@@ -50,3 +54,24 @@ jobs:
       - name: Fail if linting fails
         if: steps.eslint.outputs.exitcode != 0
         run: exit 1
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      - name: Unit tests
+        run: npm test --workspace frontend
+
+      - name: Type-check and build
+        run: npm run build --workspace frontend
