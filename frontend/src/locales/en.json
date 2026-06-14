@@ -45,5 +45,14 @@
   "No groups yet": "No groups yet — create your first one",
   "Mark paid": "Mark paid",
   "Recorded payments": "Recorded payments",
-  "Undo": "Undo"
+  "Undo": "Undo",
+  "Top up": "Top up",
+  "Top-holder": "Top-holder",
+  "HolderHint": "Holds the pooled top-up cash and refunds what's unused at the end",
+  "Holder": "Holder",
+  "Deposited": "deposited",
+  "Top-ups": "Top-ups",
+  "Amount": "Amount",
+  "Member": "Member",
+  "Note": "Note"
 }

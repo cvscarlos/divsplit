@@ -40,6 +40,36 @@ async function updateGroupName(newName: string | undefined, groupId: string): Pr
 function groupStandardize(group?: Group | null): Group {
 	const standardized: Group = group ?? ({} as Group);
 	standardized.config ||= {}; // Initialize config if not present
+
+	// Legacy migration: "banker" → "holder".
+	if (standardized.config.bankerId && !standardized.config.holderId) {
+		standardized.config.holderId = standardized.config.bankerId;
+	}
+	delete standardized.config.bankerId;
+
+	// Legacy migration: a member's prepaid number → a top-up transaction (held by
+	// the holder). Deterministic id keeps it idempotent across reloads.
+	const members = standardized.members ?? [];
+	const legacy = members.filter((m) => (m.prepaid ?? 0) > 0);
+	if (legacy.length) {
+		standardized.transactions ||= [];
+		for (const m of legacy) {
+			const id = `topup-legacy-${m.id}`;
+			if (!standardized.transactions.some((tx) => tx.id === id)) {
+				standardized.transactions.unshift({
+					id,
+					type: 'topup',
+					date: new Date(),
+					description: 'Prepaid',
+					total: m.prepaid as number,
+					paidBy: { [m.id]: m.prepaid as number },
+					paidFor: {},
+				});
+			}
+			delete m.prepaid;
+		}
+	}
+
 	return standardized;
 }
 

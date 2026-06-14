@@ -11,6 +11,7 @@ import { GroupListTransactions } from '../pages/Group/ListTransactions';
 import { GroupTransaction } from '../pages/Group/Transaction';
 import { GroupActivity } from '../pages/Group/Activity';
 import { GroupSettlement } from '../pages/Group/Settlement';
+import { GroupTopUp } from '../pages/Group/TopUp';
 import { Button } from '@/components/ui/button';
 
 function GroupContent() {
@@ -22,6 +23,7 @@ function GroupContent() {
 		config: section === 'config',
 		transactions: section === 'transactions',
 		settlement: section === 'settlement',
+		topup: section === 'topup',
 		activity: section === 'activity',
 	};
 
@@ -40,6 +42,7 @@ function GroupContent() {
 				{pages.transactions &&
 					(sectionItem ? <GroupTransaction transactionId={sectionItem} /> : <GroupListTransactions />)}
 				{pages.settlement && <GroupSettlement />}
+				{pages.topup && <GroupTopUp />}
 				{pages.activity && <GroupActivity />}
 			</div>
 

@@ -13,32 +13,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function GroupConfig() {
-	const memberBase: Member = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
+	const memberBase: Member = { id: `0_${Date.now()}`, name: '' };
 
 	const { data: group, updateGroup } = useGroupContext();
 	const [formFields, setFormFields] = useState<{ name: string }>({ name: '' });
 	const [members, setMembers] = useState<Member[]>([{ ...memberBase }]);
-	const [bankerId, setBankerId] = useState<string>('');
+	const [holderId, setHolderId] = useState<string>('');
 	const { t } = useTranslation();
 
 	useEffect(() => {
 		setFormFields({ name: group.config?.name || '---' });
 		if (group.members) setMembers(group.members);
-		setBankerId(group.config?.bankerId || group.members?.[0]?.id || '');
+		setHolderId(group.config?.holderId || group.members?.[0]?.id || '');
 	}, [group]);
 
-	const memberName = 'memberName';
-	const memberPrepaid = 'memberPrepaid';
 	function addMember() {
 		setMembers([...members, { ...memberBase, id: `${members.length}_${Date.now()}` }]);
 	}
 	function removeMember(member: Member) {
 		setMembers(members.filter((m) => m.id !== member.id));
 	}
-	function handleMemberFields(member: Member, event: ChangeEvent<HTMLInputElement>) {
-		const { name, value } = event.target;
-		if (name == memberName) member.name = value;
-		else if (name == memberPrepaid) member.prepaid = Number(value);
+	function handleMemberName(member: Member, event: ChangeEvent<HTMLInputElement>) {
+		member.name = event.target.value;
 		setMembers([...members]);
 	}
 
@@ -51,18 +47,12 @@ export function GroupConfig() {
 
 		let updatedGroup = { ...group };
 
-		// Track group name change
 		const oldGroupName = group.config?.name || '';
-		const newGroupName = formFields.name;
-		updatedGroup = trackGroupNameChange(updatedGroup, oldGroupName, newGroupName);
+		updatedGroup = trackGroupNameChange(updatedGroup, oldGroupName, formFields.name);
+		updatedGroup = trackMemberChanges(updatedGroup, group.members || [], members);
 
-		// Track member changes
-		const oldMembers = group.members || [];
-		updatedGroup = trackMemberChanges(updatedGroup, oldMembers, members);
-
-		// Apply the changes
-		const validBanker = members.some((m) => m.id === bankerId) ? bankerId : members[0]?.id;
-		updatedGroup.config = { ...updatedGroup.config, name: formFields.name, bankerId: validBanker };
+		const validHolder = members.some((m) => m.id === holderId) ? holderId : members[0]?.id;
+		updatedGroup.config = { ...updatedGroup.config, name: formFields.name, holderId: validHolder };
 		updatedGroup.members = members;
 
 		updateGroup(updatedGroup);
@@ -89,13 +79,13 @@ export function GroupConfig() {
 							onChange={handleFieldChange}
 						/>
 
-						<Label htmlFor="group-banker" className="mt-4 mb-2">
-							{t('Banker')}
+						<Label htmlFor="group-holder" className="mt-4 mb-2">
+							{t('Top-holder')}
 						</Label>
 						<select
-							id="group-banker"
-							value={bankerId}
-							onChange={(e) => setBankerId(e.target.value)}
+							id="group-holder"
+							value={holderId}
+							onChange={(e) => setHolderId(e.target.value)}
 							className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 flex h-10 w-full rounded-md border px-3 py-2 text-base shadow-xs outline-none focus-visible:ring-[3px]"
 						>
 							{members.map((member) => (
@@ -104,7 +94,7 @@ export function GroupConfig() {
 								</option>
 							))}
 						</select>
-						<p className="text-muted-foreground mt-1.5 text-xs">{t('BankerHint')}</p>
+						<p className="text-muted-foreground mt-1.5 text-xs">{t('HolderHint')}</p>
 					</CardContent>
 				</Card>
 
@@ -123,25 +113,8 @@ export function GroupConfig() {
 										type="text"
 										placeholder={t('TypeHere')}
 										value={member.name}
-										name={memberName}
-										onChange={(event) => handleMemberFields(member, event)}
+										onChange={(event) => handleMemberName(member, event)}
 									/>
-								</div>
-								<div className="w-28">
-									<Label className="text-muted-foreground mb-1.5 text-xs">{t('PrepaidAmount')}</Label>
-									<div className="relative">
-										<span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
-											$
-										</span>
-										<Input
-											type="number"
-											className="tnum pl-7"
-											placeholder="0"
-											value={member.prepaid}
-											name={memberPrepaid}
-											onChange={(event) => handleMemberFields(member, event)}
-										/>
-									</div>
 								</div>
 								<Button
 									type="button"

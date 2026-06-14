@@ -20,6 +20,10 @@ export const ACTIVITY_TYPES = {
 	// Settle-up transfer activities
 	TRANSFER_RECORDED: 'transfer_recorded',
 	TRANSFER_REMOVED: 'transfer_removed',
+
+	// Top-up activities
+	TOPUP_RECORDED: 'topup_recorded',
+	TOPUP_REMOVED: 'topup_removed',
 } as const;
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[keyof typeof ACTIVITY_TYPES];
@@ -107,26 +111,6 @@ export function trackMemberNameChange(group: Group, memberId: string, oldName: s
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_UPDATED, {
 		description: `Member name changed from "${oldName}" to "${newName}"`,
 		details: { memberId, oldName, newName, changeType: 'name' },
-	});
-
-	return addActivityToGroup(group, activity);
-}
-
-/**
- * Track member prepaid amount change
- */
-export function trackMemberPrepaidChange(
-	group: Group,
-	memberId: string,
-	memberName: string,
-	oldAmount: number,
-	newAmount: number,
-): Group {
-	if (oldAmount === newAmount) return group;
-
-	const activity = createActivity(ACTIVITY_TYPES.MEMBER_UPDATED, {
-		description: `${memberName}'s prepaid amount changed from $${oldAmount} to $${newAmount}`,
-		details: { memberId, memberName, oldAmount, newAmount, changeType: 'prepaid' },
 	});
 
 	return addActivityToGroup(group, activity);
@@ -236,13 +220,6 @@ export function trackMemberChanges(group: Group, oldMembers: Member[] = [], newM
 		} else {
 			// Check for changes in existing member
 			updatedGroup = trackMemberNameChange(updatedGroup, newMember.id, oldMember.name, newMember.name);
-			updatedGroup = trackMemberPrepaidChange(
-				updatedGroup,
-				newMember.id,
-				newMember.name,
-				oldMember.prepaid,
-				newMember.prepaid,
-			);
 		}
 	}
 
@@ -267,6 +244,28 @@ export function trackTransferRemoved(group: Group, fromName: string, toName: str
 	const activity = createActivity(ACTIVITY_TYPES.TRANSFER_REMOVED, {
 		description: `Removed payment: ${fromName} → ${toName} $${amount}`,
 		details: { fromName, toName, amount },
+	});
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track a recorded top-up (a member adding money to the pot).
+ */
+export function trackTopupRecorded(group: Group, memberName: string, amount: number): Group {
+	const activity = createActivity(ACTIVITY_TYPES.TOPUP_RECORDED, {
+		description: `${memberName} topped up $${amount}`,
+		details: { memberName, amount },
+	});
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track the removal (undo) of a top-up.
+ */
+export function trackTopupRemoved(group: Group, memberName: string, amount: number): Group {
+	const activity = createActivity(ACTIVITY_TYPES.TOPUP_REMOVED, {
+		description: `Removed top-up: ${memberName} $${amount}`,
+		details: { memberName, amount },
 	});
 	return addActivityToGroup(group, activity);
 }

@@ -11,15 +11,15 @@ export type AmountMap = Record<string, number>;
 export interface Member {
 	id: string;
 	name: string;
-	/** Pre-funded balance, like a pre-paid card. */
-	prepaid: number;
+	/** @deprecated Legacy pre-funded amount; migrated to a `topup` transaction on load. */
+	prepaid?: number;
 }
 
 /**
  * 'expense' = consumption (the full split form). 'transfer' = money moved between
  * members (a settle-up, or prepaid into the pot) — same shape, simpler entry.
  */
-export type TransactionType = 'expense' | 'transfer';
+export type TransactionType = 'expense' | 'transfer' | 'topup';
 
 export interface Transaction {
 	id: string;
@@ -49,7 +49,9 @@ export interface Activity {
 
 export interface GroupConfig {
 	name?: string;
-	/** Member who holds the prepaid pot; used by settlement. Defaults to the first member. */
+	/** Member who holds the pooled top-up cash (a holder, not an owner). Defaults to the first member. */
+	holderId?: string;
+	/** @deprecated Renamed to `holderId`; migrated on load. */
 	bankerId?: string;
 }
 
