@@ -45,5 +45,14 @@
   "No groups yet": "Nenhum grupo ainda — crie o primeiro",
   "Mark paid": "Marcar pago",
   "Recorded payments": "Pagamentos registrados",
-  "Undo": "Desfazer"
+  "Undo": "Desfazer",
+  "Top up": "Adicionar saldo",
+  "Top-holder": "Responsável pelo caixa",
+  "HolderHint": "Guarda o dinheiro do caixa e devolve o que sobrar no final",
+  "Holder": "Caixa",
+  "Deposited": "depositado",
+  "Top-ups": "Adições de saldo",
+  "Amount": "Valor",
+  "Member": "Membro",
+  "Note": "Nota"
 }

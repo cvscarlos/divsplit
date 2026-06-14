@@ -3,7 +3,7 @@ import type { Group } from '../types';
 export interface MemberBalance {
 	memberId: string;
 	name: string;
-	/** prepaid + paidBy − paidFor. Positive = owed money, negative = owes. */
+	/** Σ paidBy − Σ paidFor across all transactions. Positive = owed money, negative = owes. */
 	balance: number;
 }
 
@@ -16,12 +16,10 @@ export interface Transfer {
 }
 
 export interface SettlementResult {
-	/** Raw position per member: prepaid + paidBy − paidFor. */
 	balances: MemberBalance[];
-	/** Net position after the banker absorbs the prepaid pot; sums to ~0 and matches `transfers`. */
-	netBalances: MemberBalance[];
 	transfers: Transfer[];
-	bankerId: string | null;
+	/** The top-holder (holds the pooled top-up cash); settlement refunds route through them. */
+	holderId: string | null;
 }
 
 /** Amounts below this (half a cent) are treated as settled. */
@@ -32,16 +30,14 @@ function round(value: number): number {
 }
 
 /**
- * Per-member balance: prepaid + everything they paid (paidBy) − everything they
- * should be charged (paidFor), summed across all transactions.
+ * Per-member balance: everything they put in (paidBy, incl. top-ups) minus their
+ * share of expenses (paidFor), across every transaction. A top-up is a transaction
+ * that only credits its member; a settle-up transfer credits sender / debits recipient.
  */
 export function computeBalances(group: Group): MemberBalance[] {
 	const members = group.members ?? [];
 	const transactions = group.transactions ?? [];
 
-	// Both expenses and transfers are transactions: paidBy is money in (credit),
-	// paidFor is money out (debit). A settle-up transfer therefore folds in for free
-	// (the payer is paidBy, the recipient is paidFor).
 	return members.map((member) => {
 		let paidBy = 0;
 		let paidFor = 0;
@@ -49,12 +45,13 @@ export function computeBalances(group: Group): MemberBalance[] {
 			paidBy += tx.paidBy?.[member.id] ?? 0;
 			paidFor += tx.paidFor?.[member.id] ?? 0;
 		}
-		return {
-			memberId: member.id,
-			name: member.name,
-			balance: round((member.prepaid ?? 0) + paidBy - paidFor),
-		};
+		return { memberId: member.id, name: member.name, balance: round(paidBy - paidFor) };
 	});
+}
+
+/** Total money currently held in the pot (sum of all top-up transactions). */
+export function topupTotal(group: Group): number {
+	return round((group.transactions ?? []).filter((tx) => tx.type === 'topup').reduce((sum, tx) => sum + tx.total, 0));
 }
 
 interface EffectiveEntry {
@@ -85,13 +82,7 @@ function minimizeTransfers(entries: EffectiveEntry[]): Transfer[] {
 		const creditor = creditors[j];
 		const amount = round(Math.min(debtor.amount, creditor.amount));
 		if (amount > EPS) {
-			transfers.push({
-				fromId: debtor.id,
-				fromName: debtor.name,
-				toId: creditor.id,
-				toName: creditor.name,
-				amount,
-			});
+			transfers.push({ fromId: debtor.id, fromName: debtor.name, toId: creditor.id, toName: creditor.name, amount });
 		}
 		debtor.amount = round(debtor.amount - amount);
 		creditor.amount = round(creditor.amount - amount);
@@ -102,35 +93,31 @@ function minimizeTransfers(entries: EffectiveEntry[]): Transfer[] {
 }
 
 /**
- * Compute balances and the fewest transfers to settle the group. The banker
- * holds the prepaid pot (Σ prepaid), so their effective balance is reduced by
- * it — which makes effective balances sum to zero and settle peer-to-peer.
+ * Compute balances and the fewest transfers to settle the group.
+ *
+ * The top-holder physically holds the pooled top-up cash, so for the transfer
+ * computation their position is offset by −Σtop-ups (they owe the pot back). This
+ * makes effective balances sum to zero and routes refunds through the holder. When
+ * there are no top-ups the offset is zero and it degrades to plain peer-to-peer
+ * fewest-transfers.
  */
 export function computeSettlement(group: Group): SettlementResult {
 	const members = group.members ?? [];
 	const balances = computeBalances(group);
 
 	if (members.length === 0) {
-		return { balances, netBalances: [], transfers: [], bankerId: null };
+		return { balances, transfers: [], holderId: null };
 	}
 
-	const configuredBanker = group.config?.bankerId;
-	const bankerId =
-		configuredBanker && members.some((m) => m.id === configuredBanker) ? configuredBanker : members[0].id;
-
-	const pot = members.reduce((sum, m) => sum + (m.prepaid ?? 0), 0);
+	const configured = group.config?.holderId;
+	const holderId = configured && members.some((m) => m.id === configured) ? configured : members[0].id;
+	const pot = topupTotal(group);
 
 	const effective: EffectiveEntry[] = balances.map((b) => ({
 		id: b.memberId,
 		name: b.name,
-		amount: round(b.balance - (b.memberId === bankerId ? pot : 0)),
+		amount: round(b.balance - (b.memberId === holderId ? pot : 0)),
 	}));
 
-	const netBalances: MemberBalance[] = effective.map((e) => ({
-		memberId: e.id,
-		name: e.name,
-		balance: e.amount,
-	}));
-
-	return { balances, netBalances, transfers: minimizeTransfers(effective), bankerId };
+	return { balances, transfers: minimizeTransfers(effective), holderId };
 }

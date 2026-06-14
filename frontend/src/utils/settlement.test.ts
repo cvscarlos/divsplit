@@ -1,229 +1,137 @@
 import { describe, it, expect } from 'vitest';
 
 import type { Group, Transaction } from '../types';
-import { computeBalances, computeSettlement, type Transfer } from './settlement';
+import { computeBalances, computeSettlement, topupTotal, type Transfer } from './settlement';
 
-function netTransfer(transfers: Transfer[], memberId: string): number {
-	let net = 0;
-	for (const t of transfers) {
-		if (t.toId === memberId) net += t.amount;
-		if (t.fromId === memberId) net -= t.amount;
-	}
-	return Math.round(net * 100) / 100;
-}
+const member = (id: string) => ({ id, name: id.toUpperCase() });
 
-function balanceOf(group: Group, memberId: string): number {
-	return computeBalances(group).find((b) => b.memberId === memberId)!.balance;
-}
+const topup = (id: string, m: string, amount: number): Transaction => ({
+	id,
+	type: 'topup',
+	date: '2026-01-01',
+	description: 'Top up',
+	total: amount,
+	paidBy: { [m]: amount },
+	paidFor: {},
+});
 
-// The worked example from the design spec.
-const beachTrip: Group = {
-	config: { name: 'Beach Trip', bankerId: 'alice' },
-	members: [
-		{ id: 'alice', name: 'Alice', prepaid: 100 },
-		{ id: 'bob', name: 'Bob', prepaid: 0 },
-		{ id: 'carol', name: 'Carol', prepaid: 50 },
-	],
-	transactions: [
-		{
-			id: 't1',
-			date: '2026-06-14',
-			description: 'Dinner',
-			total: 120,
-			paidBy: { carol: 120 },
-			paidFor: { alice: 40, bob: 40, carol: 40 },
-		},
-	],
-};
+const expense = (id: string, paidBy: Record<string, number>, paidFor: Record<string, number>): Transaction => ({
+	id,
+	date: '2026-01-01',
+	description: 'x',
+	total: Object.values(paidBy).reduce((s, v) => s + v, 0),
+	paidBy,
+	paidFor,
+});
+
+const transfer = (id: string, from: string, to: string, amount: number): Transaction => ({
+	id,
+	type: 'transfer',
+	date: '2026-01-01',
+	description: 'Settle up',
+	total: amount,
+	paidBy: { [from]: amount },
+	paidFor: { [to]: amount },
+});
+
+const netTransfer = (transfers: Transfer[], id: string) =>
+	Math.round(
+		transfers.reduce((net, t) => net + (t.toId === id ? t.amount : 0) - (t.fromId === id ? t.amount : 0), 0) * 100,
+	) / 100;
 
 describe('computeBalances', () => {
-	it('computes prepaid + paidBy - paidFor per member', () => {
-		const balances = computeBalances(beachTrip);
-		const byId = Object.fromEntries(balances.map((b) => [b.memberId, b.balance]));
-		expect(byId).toEqual({ alice: 60, bob: -40, carol: 130 });
+	it('sums paidBy minus paidFor across all transactions (top-up credits its member)', () => {
+		const g: Group = {
+			config: {},
+			members: [member('a'), member('b')],
+			transactions: [expense('e1', { a: 100 }, { a: 50, b: 50 }), topup('t1', 'a', 30)],
+		};
+		const byId = Object.fromEntries(computeBalances(g).map((b) => [b.memberId, b.balance]));
+		expect(byId).toEqual({ a: 80, b: -50 });
 	});
+});
 
-	it('includes the member name', () => {
-		const alice = computeBalances(beachTrip).find((b) => b.memberId === 'alice');
-		expect(alice?.name).toBe('Alice');
+describe('topupTotal', () => {
+	it('sums only top-up transactions', () => {
+		const g: Group = {
+			config: {},
+			members: [member('a'), member('b')],
+			transactions: [topup('t1', 'a', 100), topup('t2', 'b', 50), expense('e1', { a: 20 }, { a: 10, b: 10 })],
+		};
+		expect(topupTotal(g)).toBe(150);
 	});
 });
 
 describe('computeSettlement', () => {
-	it('settles every member to their fair share (banker holds the prepaid pot)', () => {
-		const { transfers, bankerId } = computeSettlement(beachTrip);
-		const pot = 150; // sum of prepaid
-		for (const m of beachTrip.members!) {
-			const effective = balanceOf(beachTrip, m.id) - (m.id === bankerId ? pot : 0);
-			// Each member's net cash movement must equal their effective balance.
-			expect(netTransfer(transfers, m.id)).toBeCloseTo(effective, 2);
-		}
+	it('refunds each member their top-up when nothing is spent (holder is the hub)', () => {
+		const g: Group = {
+			config: { holderId: 'a' },
+			members: [member('a'), member('b'), member('c')],
+			transactions: [topup('t1', 'b', 100), topup('t2', 'c', 50)],
+		};
+		expect(computeSettlement(g).transfers).toEqual([
+			{ fromId: 'a', fromName: 'A', toId: 'b', toName: 'B', amount: 100 },
+			{ fromId: 'a', fromName: 'A', toId: 'c', toName: 'C', amount: 50 },
+		]);
 	});
 
-	it('exposes net balances (post-banker) that sum to zero and match the transfers', () => {
-		const { netBalances, transfers } = computeSettlement(beachTrip);
-		const sum = netBalances.reduce((acc, b) => acc + b.balance, 0);
-		expect(Math.abs(sum)).toBeLessThan(0.005);
-		for (const nb of netBalances) {
-			expect(netTransfer(transfers, nb.memberId)).toBeCloseTo(nb.balance, 2);
-		}
-	});
-
-	it('produces at most n-1 transfers with positive amounts', () => {
-		const { transfers } = computeSettlement(beachTrip);
-		expect(transfers.length).toBeLessThanOrEqual(beachTrip.members!.length - 1);
-		expect(transfers.every((t) => t.amount > 0)).toBe(true);
-	});
-
-	it('returns no transfers when everyone is already even', () => {
-		const even: Group = {
-			config: { bankerId: 'a' },
-			members: [
-				{ id: 'a', name: 'A', prepaid: 0 },
-				{ id: 'b', name: 'B', prepaid: 0 },
-			],
+	it('holder refunds unused top-ups and out-of-pocket spend after expenses', () => {
+		const g: Group = {
+			config: { holderId: 'a' },
+			members: [member('a'), member('b'), member('c')],
 			transactions: [
-				{
-					id: 't1',
-					date: '2026-01-01',
-					description: 'x',
-					total: 100,
-					paidBy: { a: 50, b: 50 },
-					paidFor: { a: 50, b: 50 },
-				},
+				topup('t1', 'a', 100),
+				topup('t2', 'b', 100),
+				topup('t3', 'c', 100),
+				expense('e1', { b: 90 }, { a: 30, b: 30, c: 30 }), // B paid the street food out of pocket
 			],
 		};
-		expect(computeSettlement(even).transfers).toEqual([]);
+		const { transfers } = computeSettlement(g);
+		// A holds the 300 pot: effective A −230, B +160, C +70.
+		expect(netTransfer(transfers, 'a')).toBeCloseTo(-230, 2);
+		expect(netTransfer(transfers, 'b')).toBeCloseTo(160, 2);
+		expect(netTransfer(transfers, 'c')).toBeCloseTo(70, 2);
+		expect(transfers.every((t) => t.fromId === 'a')).toBe(true); // holder is the hub
 	});
 
-	it('handles a single payer and single ower', () => {
+	it('falls back to plain fewest-transfers when there are no top-ups', () => {
 		const g: Group = {
-			config: { bankerId: 'a' },
-			members: [
-				{ id: 'a', name: 'A', prepaid: 0 },
-				{ id: 'b', name: 'B', prepaid: 0 },
-			],
-			transactions: [
-				{
-					id: 't1',
-					date: '2026-01-01',
-					description: 'x',
-					total: 100,
-					paidBy: { a: 100 },
-					paidFor: { a: 50, b: 50 },
-				},
-			],
+			config: {},
+			members: [member('a'), member('b')],
+			transactions: [expense('e1', { a: 100 }, { a: 50, b: 50 })],
 		};
 		expect(computeSettlement(g).transfers).toEqual([
 			{ fromId: 'b', fromName: 'B', toId: 'a', toName: 'A', amount: 50 },
 		]);
 	});
 
-	it('keeps cents balanced with non-even splits (no phantom transfers)', () => {
-		const g: Group = {
-			config: { bankerId: 'a' },
-			members: [
-				{ id: 'a', name: 'A', prepaid: 0 },
-				{ id: 'b', name: 'B', prepaid: 0 },
-				{ id: 'c', name: 'C', prepaid: 0 },
-			],
-			transactions: [
-				{
-					id: 't1',
-					date: '2026-01-01',
-					description: 'x',
-					total: 100,
-					paidBy: { a: 100 },
-					paidFor: { a: 33.33, b: 33.33, c: 33.34 },
-				},
-			],
+	it('settles everyone once the suggested refund transfers are recorded', () => {
+		const base: Group = {
+			config: { holderId: 'a' },
+			members: [member('a'), member('b'), member('c')],
+			transactions: [topup('t1', 'b', 100), topup('t2', 'c', 50)],
 		};
-		const { transfers } = computeSettlement(g);
-		expect(transfers.every((t) => t.amount > 0)).toBe(true);
-		// Every member ends within a cent of their effective balance.
-		for (const m of g.members!) {
-			const effective = balanceOf(g, m.id) - (m.id === 'a' ? 0 : 0);
-			expect(netTransfer(transfers, m.id)).toBeCloseTo(effective, 2);
-		}
+		const withRefunds: Group = {
+			...base,
+			transactions: [...base.transactions!, transfer('r1', 'a', 'b', 100), transfer('r2', 'a', 'c', 50)],
+		};
+		expect(computeSettlement(withRefunds).transfers).toEqual([]);
 	});
 
-	it('defaults the banker to the first member when bankerId is unset', () => {
-		const g: Group = {
-			config: {},
-			members: [
-				{ id: 'a', name: 'A', prepaid: 0 },
-				{ id: 'b', name: 'B', prepaid: 0 },
-			],
-			transactions: [],
-		};
-		expect(computeSettlement(g).bankerId).toBe('a');
+	it('defaults the holder to the first member when holderId is unset', () => {
+		const g: Group = { config: {}, members: [member('a'), member('b')], transactions: [topup('t1', 'b', 10)] };
+		expect(computeSettlement(g).holderId).toBe('a');
 	});
 
-	it('does not throw and returns no transfers for an empty group', () => {
-		const empty: Group = { config: {} };
-		const result = computeSettlement(empty);
-		expect(result.transfers).toEqual([]);
-		expect(result.balances).toEqual([]);
+	it('returns no transfers and no holder for an empty group', () => {
+		const result = computeSettlement({ config: {} });
+		expect(result).toEqual({ balances: [], transfers: [], holderId: null });
 	});
 
 	it('produces at most n-1 transfers for a 10-member group', () => {
-		const members = Array.from({ length: 10 }, (_, i) => ({ id: `m${i}`, name: `M${i}`, prepaid: 0 }));
-		const paidFor = Object.fromEntries(members.map((m) => [m.id, 10]));
-		const g: Group = {
-			config: { bankerId: 'm0' },
-			members,
-			transactions: [{ id: 't1', date: '2026-01-01', description: 'x', total: 100, paidBy: { m0: 100 }, paidFor }],
-		};
-		const { transfers } = computeSettlement(g);
-		expect(transfers.length).toBeLessThanOrEqual(9);
-	});
-});
-
-describe('settle-up transfers (stored as transactions)', () => {
-	// A transfer: sender on paidBy (credit), recipient on paidFor (debit).
-	const transfer = (id: string, from: string, to: string, amount: number): Transaction => ({
-		id,
-		type: 'transfer',
-		date: '2026-06-15',
-		description: 'Settle up',
-		total: amount,
-		paidBy: { [from]: amount },
-		paidFor: { [to]: amount },
-	});
-
-	const singlePayer: Group = {
-		config: { bankerId: 'a' },
-		members: [
-			{ id: 'a', name: 'A', prepaid: 0 },
-			{ id: 'b', name: 'B', prepaid: 0 },
-		],
-		transactions: [
-			{ id: 't1', date: '2026-01-01', description: 'x', total: 100, paidBy: { a: 100 }, paidFor: { a: 50, b: 50 } },
-		],
-	};
-
-	it('folds a transfer into balances: payer up, payee down', () => {
-		const g: Group = { ...singlePayer, transactions: [...singlePayer.transactions!, transfer('p1', 'b', 'a', 50)] };
-		const byId = Object.fromEntries(computeBalances(g).map((b) => [b.memberId, b.balance]));
-		expect(byId).toEqual({ a: 0, b: 0 });
-	});
-
-	it('settles everyone once the suggested transfers are recorded as transfers', () => {
-		const withTransfers: Group = {
-			...beachTrip,
-			transactions: [
-				...beachTrip.transactions!,
-				transfer('p1', 'bob', 'carol', 40),
-				transfer('p2', 'alice', 'carol', 90),
-			],
-		};
-		expect(computeSettlement(withTransfers).transfers).toEqual([]);
-	});
-
-	it('a partial transfer reduces but does not clear the debt', () => {
-		const g: Group = { ...singlePayer, transactions: [...singlePayer.transactions!, transfer('p1', 'b', 'a', 20)] };
-		expect(computeSettlement(g).transfers).toEqual([
-			{ fromId: 'b', fromName: 'B', toId: 'a', toName: 'A', amount: 30 },
-		]);
+		const members = Array.from({ length: 10 }, (_, i) => member(`m${i}`));
+		const transactions = members.slice(1).map((m, i) => topup(`t${i}`, m.id, 10));
+		const g: Group = { config: { holderId: 'm0' }, members, transactions };
+		expect(computeSettlement(g).transfers.length).toBeLessThanOrEqual(9);
 	});
 });

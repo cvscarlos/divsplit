@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, ArrowLeftRight, Check, Undo2 } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowRight, ArrowLeftRight, Check, Undo2, PiggyBank } from 'lucide-react';
 import ObjectId from 'bson-objectid';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { computeSettlement, type Transfer } from '../../utils/settlement';
-import { trackTransferRecorded, trackTransferRemoved } from '../../utils/activity-tracker';
+import { trackTransferRecorded, trackTransferRemoved, trackTopupRemoved } from '../../utils/activity-tracker';
 import { Avatar } from '../../components/Avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,11 +17,19 @@ const SETTLED_EPS = 0.005;
 
 export function GroupSettlement() {
 	const { t } = useTranslation();
+	const { groupId } = useParams();
 	const { data: group, updateGroup } = useGroupContext();
-	const { netBalances, transfers, bankerId } = computeSettlement(group);
+	const { balances, transfers, holderId } = computeSettlement(group);
 
 	const nameOf = (id: string) => group.members?.find((m) => m.id === id)?.name ?? id;
-	const recorded = (group.transactions ?? []).filter((tx) => tx.type === 'transfer');
+	const txns = group.transactions ?? [];
+	const recordedTransfers = txns.filter((tx) => tx.type === 'transfer');
+	const recordedTopups = txns.filter((tx) => tx.type === 'topup');
+
+	const deposited: Record<string, number> = {};
+	for (const tx of recordedTopups) {
+		for (const [id, amount] of Object.entries(tx.paidBy)) deposited[id] = (deposited[id] ?? 0) + amount;
+	}
 
 	function markPaid(transfer: Transfer) {
 		const txn: Transaction = {
@@ -38,11 +47,13 @@ export function GroupSettlement() {
 		updateGroup(updated);
 	}
 
-	function undoTransfer(txn: Transaction) {
+	function removeTransaction(txn: Transaction) {
 		const fromId = Object.keys(txn.paidBy)[0] ?? '';
-		const toId = Object.keys(txn.paidFor)[0] ?? '';
-		const updated = trackTransferRemoved(group, nameOf(fromId), nameOf(toId), txn.total);
-		updated.transactions = (updated.transactions ?? []).filter((t) => t.id !== txn.id);
+		const updated =
+			txn.type === 'topup'
+				? trackTopupRemoved(group, nameOf(fromId), txn.total)
+				: trackTransferRemoved(group, nameOf(fromId), nameOf(Object.keys(txn.paidFor)[0] ?? ''), txn.total);
+		updated.transactions = (updated.transactions ?? []).filter((tx) => tx.id !== txn.id);
 		updateGroup(updated);
 	}
 
@@ -56,13 +67,21 @@ export function GroupSettlement() {
 
 	return (
 		<div className="space-y-6">
+			<div className="flex justify-end">
+				<Button asChild variant="outline" size="sm">
+					<Link to={`/group/${groupId}/topup`}>
+						<PiggyBank /> {t('Top up')}
+					</Link>
+				</Button>
+			</div>
+
 			<div className="grid gap-6 md:grid-cols-2">
 				<Card>
 					<CardHeader>
 						<CardTitle>{t('Balances')}</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-1">
-						{netBalances.map((b) => {
+						{balances.map((b) => {
 							const settled = Math.abs(b.balance) < SETTLED_EPS;
 							const positive = b.balance > 0;
 							return (
@@ -71,13 +90,16 @@ export function GroupSettlement() {
 									className="border-border/60 flex items-center gap-3 border-b border-dashed py-2 last:border-0"
 								>
 									<Avatar name={b.name} className="size-8 text-xs" />
-									<span className="flex-1 truncate text-sm font-medium">
-										{b.name}
-										{b.memberId === bankerId && (
-											<Badge variant="muted" className="ml-2 align-middle">
-												{t('Banker')}
-											</Badge>
-										)}
+									<span className="min-w-0 flex-1">
+										<span className="flex items-center gap-2 text-sm font-medium">
+											<span className="truncate">{b.name}</span>
+											{b.memberId === holderId && <Badge variant="muted">{t('Holder')}</Badge>}
+										</span>
+										{deposited[b.memberId] ? (
+											<span className="text-muted-foreground tnum block text-xs">
+												{t('Deposited')} ${deposited[b.memberId]}
+											</span>
+										) : null}
 									</span>
 									<span
 										className={cn(
@@ -136,14 +158,45 @@ export function GroupSettlement() {
 				</Card>
 			</div>
 
-			{recorded.length > 0 && (
+			{recordedTopups.length > 0 && (
+				<Card>
+					<CardHeader>
+						<CardTitle>{t('Top-ups')}</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<ul className="space-y-2">
+							{recordedTopups.map((txn) => {
+								const memberId = Object.keys(txn.paidBy)[0] ?? '';
+								return (
+									<li key={txn.id} className="border-border/60 flex items-center gap-2 rounded-lg border px-3 py-2">
+										<PiggyBank className="text-primary size-4 shrink-0" />
+										<span className="truncate text-sm font-medium">{nameOf(memberId)}</span>
+										<span className="tnum ml-auto font-semibold">${txn.total}</span>
+										<Button
+											type="button"
+											size="sm"
+											variant="ghost"
+											className="text-muted-foreground hover:text-destructive shrink-0"
+											onClick={() => removeTransaction(txn)}
+										>
+											<Undo2 /> {t('Undo')}
+										</Button>
+									</li>
+								);
+							})}
+						</ul>
+					</CardContent>
+				</Card>
+			)}
+
+			{recordedTransfers.length > 0 && (
 				<Card>
 					<CardHeader>
 						<CardTitle>{t('Recorded payments')}</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<ul className="space-y-2">
-							{recorded.map((txn) => {
+							{recordedTransfers.map((txn) => {
 								const fromId = Object.keys(txn.paidBy)[0] ?? '';
 								const toId = Object.keys(txn.paidFor)[0] ?? '';
 								return (
@@ -152,15 +205,12 @@ export function GroupSettlement() {
 										<ArrowRight className="text-muted-foreground size-4 shrink-0" />
 										<span className="truncate text-sm font-medium">{nameOf(toId)}</span>
 										<span className="tnum ml-auto font-semibold">${txn.total}</span>
-										<span className="text-muted-foreground hidden text-xs sm:inline">
-											{txn.createdAt ? new Date(txn.createdAt).toLocaleDateString() : ''}
-										</span>
 										<Button
 											type="button"
 											size="sm"
 											variant="ghost"
 											className="text-muted-foreground hover:text-destructive shrink-0"
-											onClick={() => undoTransfer(txn)}
+											onClick={() => removeTransaction(txn)}
 										>
 											<Undo2 /> {t('Undo')}
 										</Button>
