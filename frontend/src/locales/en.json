@@ -31,5 +31,15 @@
   "Remaining": "Remaining",
   "Content not found": "Content not found",
   "Actions": "Actions",
-  "Activity Log": "Activity Log"
+  "Activity Log": "Activity Log",
+  "Banker": "Banker",
+  "BankerHint": "Holds the prepaid funds and pays out refunds",
+  "Settle up": "Settle up",
+  "Balances": "Balances",
+  "Transfers": "Transfers",
+  "gets back": "gets back",
+  "owes": "owes",
+  "settled": "settled",
+  "pays": "pays",
+  "Everyone is settled up": "Everyone is settled up — no transfers needed"
 }
