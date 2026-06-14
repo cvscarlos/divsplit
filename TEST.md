@@ -43,11 +43,12 @@ Most tests below use this group:
 
 ### TC-1.1 — Home page renders
 
-1. Open http://localhost:5173/.
+1. Open http://localhost:5173/ on a **fresh profile** (or incognito).
 2. **Expected:** hero with the title "Split your group expenses with ease" and a
-   **new group** button. Below, "Your expense management groups" lists existing
-   group cards (three seeded `Grupo Teste` cards on a fresh profile). The browser
-   console has no errors.
+   **new group** button. With no groups yet, an empty-state card shows
+   "No groups yet — create your first one" and a **new group** button (no fake
+   seeded groups). The browser console has no errors.
+3. After creating groups, they list under "Your expense management groups".
 
 ### TC-1.2 — Create a new group
 
@@ -243,6 +244,21 @@ pure logic is also covered by unit tests: `npm test --workspace frontend`.
 1. A group where each member's contributions equal their consumption.
 2. **Expected:** all rows show "settled" and the Transfers panel shows
    "Everyone is settled up — no transfers needed".
+
+### TC-7.5 — Mark a transfer as paid
+
+1. With a suggested transfer (e.g. `Alice → Carol $50`), click **Mark paid**.
+2. **Expected:** a settle-up is recorded — the transfer leaves the suggested list,
+   the involved members move toward "settled", and the payment appears under
+   **Recorded payments** (`from → to · amount · date`). The Activity tab logs
+   "{from} paid {to} $X". The settle-up does **not** appear in the Transactions
+   (expenses) list.
+
+### TC-7.6 — Undo a recorded payment
+
+1. In **Recorded payments**, click **Undo** on an entry.
+2. **Expected:** the payment is removed, the balance/transfer it cleared comes
+   back, and Activity logs "Removed payment: {from} → {to} $X".
 
 ---
 

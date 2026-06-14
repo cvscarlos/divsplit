@@ -41,5 +41,9 @@
   "owes": "a pagar",
   "settled": "quitado",
   "pays": "paga a",
-  "Everyone is settled up": "Tudo certo — nenhuma transferência necessária"
+  "Everyone is settled up": "Tudo certo — nenhuma transferência necessária",
+  "No groups yet": "Nenhum grupo ainda — crie o primeiro",
+  "Mark paid": "Marcar pago",
+  "Recorded payments": "Pagamentos registrados",
+  "Undo": "Desfazer"
 }

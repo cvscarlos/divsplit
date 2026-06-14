@@ -107,7 +107,7 @@ Root scripts: `npm run dev`, `npm run format`, `npm run lint`. Frontend scripts 
 - `transaction.ts` — `getTransactionError` (form validation), unit-tested.
 - `activity-tracker.ts` — `ACTIVITY_TYPES` + pure functions appending audit entries (capped 100, newest first).
 - `tools.ts` — `jsonParseSafe` / `jsonStringifySafe`.
-- `types.ts` — shared domain types (`Group`, `Member`, `Transaction`, `Activity`, `Payment`, settlement types).
+- `types.ts` — shared domain types (`Group`, `Member`, `Transaction` incl. `TransactionType`, `Activity`, settlement types).
 
 **UI**
 - `components/ui/*` — shadcn primitives (`button`, `card`, `input`, `label`, `table`, `switch`, `badge`); `lib/utils.ts` exports `cn`.
@@ -140,13 +140,14 @@ All state is one **group object** per group id, stored in IndexedDB (typed in `t
 Group = {
   config:   { name?, bankerId? },          // bankerId = member holding the prepaid pot
   members:  Member[],                       // { id, name, prepaid }
-  transactions: Transaction[],              // expenses: { id, date, description, total,
-                                            //   paidBy:{memberId:amount}, paidFor:{memberId:amount},
-                                            //   manuallyChanged }
-  payments?: Payment[],                     // settle-up transfers: { id, fromId, toId, amount, date }
+  transactions: Transaction[],              // { id, type?: 'expense'|'transfer', date, description,
+                                            //   total, paidBy:{memberId:amount},
+                                            //   paidFor:{memberId:amount}, manuallyChanged }
   activities?: Activity[],                  // audit log (capped 100, newest first)
 }
 ```
+
+**Expenses vs. transfers are both `Transaction`s** (§1.1). An expense (`type` absent / `'expense'`) is consumption entered via the split form. A **transfer** (`type: 'transfer'`) is money between members — a settle-up (or, in future, prepaid) — with the *sender* on `paidBy` (credit) and *recipient* on `paidFor` (debit). Same shape, so it folds into balances for free; entered via the Settle up page, and filtered out of the expenses list.
 
 ### Auto-split (`Transaction.tsx`)
 Both `paidBy` and `paidFor` are `memberId → amount` maps. Toggling a member splits the remaining `total − sum(manually-typed)` equally across the others; rounding remainder lands on the current person so the parts reconcile to `total`. Most intricate code in the app.
@@ -155,10 +156,10 @@ Both `paidBy` and `paidFor` are `memberId → amount` maps. Toggling a member sp
 - `balance(m) = prepaid(m) + Σ paidBy − Σ paidFor + Σ (transfers given − received)`.
 - **Banker:** prepaid is currently a per-member number whose recipient is the **banker** (`config.bankerId`, default first member). The banker holds the pot, so their *effective* balance is reduced by `Σ prepaid`, making effective balances sum to zero.
 - `computeSettlement` runs a greedy **min-cash-flow** (largest creditor ↔ largest debtor) → fewest `transfers` (≤ n−1) plus `netBalances` (post-banker, sum to zero, match the transfers).
-- **Settle-up payments** (`payments`) fold straight into `computeBalances` (`balance(from) += amount`, `balance(to) -= amount`), so recording a payment makes that suggested transfer shrink/disappear.
+- **Settle-up** is recorded as a `type: 'transfer'` transaction, so it folds into `computeBalances` for free (sender `paidBy` +, recipient `paidFor` −); recording one shrinks/clears its suggested transfer. Undo deletes the transaction.
 
 ### Planned unification (project-owner rule, §1.1)
-Collapse `member.prepaid` (number) **and** `payments` into a single **`transfers: Transfer[]`** list (`{ id, fromId, toId, amount, kind: 'prepaid' | 'settlement', date }`). Prepaid becomes transfers *to the organizer*; the "banker" stops being a special case (it's just the recipient of prepaid transfers) and the pot adjustment + zero-sum fall out naturally. Until then, prepaid-as-number + banker is the live implementation.
+Prepaid is still a per-member number routed to the banker (mathematically equal to "everyone transferred their prepaid to the organizer"). The remaining step is to also express **prepaid as transfer transactions** to the organizer, retiring `member.prepaid` and the banker special-case so every balance is just `Σ(paidBy − paidFor)` over transactions. Settle-up already works this way.
 
 ---
 
@@ -172,7 +173,7 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 ```
 
 - **Write path:** a page builds a new group object (often via `activity-tracker` helpers), calls `updateGroup(next)`; `useApiGetGroup` stages it, persists, re-reads, and upserts the name into `groupList`.
-- **Derived, not stored:** balances and settlement transfers are computed on read from the group; only `payments` are persisted.
+- **Derived, not stored:** balances and the *suggested* settlement transfers are computed on read; recorded settle-ups are persisted as `type: 'transfer'` transactions.
 - **No network.** Fully offline; demo data from `/demo_data.json`.
 
 ---
@@ -200,8 +201,8 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 ## 10. Known Tech Debt & Code Hotspots
 
 - **`Transaction.tsx` auto-split** — complex in-place mutation + rounding; highest-risk hotspot, still untested at the component level (the pure split rules are the candidate to extract + unit-test).
-- **Prepaid model split** — prepaid (number) and settle-up (`payments`) should unify into one `transfers` list (§6); until then two shapes express the same concept.
-- **Inconsistent member ids** — members use `"${index}_${Date.now()}"` while transactions/payments/activities use ObjectId hex. Move members to UUIDs with the identity model.
+- **Prepaid still a number** — settle-up is now a transfer transaction, but prepaid remains `member.prepaid` + the banker special-case; express prepaid as transfer transactions too to retire the banker (§6).
+- **Inconsistent member ids** — members use `"${index}_${Date.now()}"` while transactions/activities use ObjectId hex. Move members to UUIDs with the identity model.
 - **`activities.userId` unused** — placeholder until the UUID identity model lands.
 - **No component/E2E tests** — only pure-logic unit tests exist.
 
@@ -212,8 +213,8 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 Source: project owner. Order indicative.
 
 1. ✅ **TypeScript migration**, dependency upgrades, **shadcn/Tailwind v4 redesign**, **CI** (lint+test+build), **settlement engine**.
-2. **Mark transfers as paid** *(in progress)* — record settle-up payments that net down balances; undoable; logged to Activity.
-3. **Unify prepaid + settle-up** into one member-to-member `transfers` model (§6), removing the banker special-case.
+2. ✅ **Mark transfers as paid** — settle-ups recorded as transfer transactions that net down balances; undoable; logged to Activity.
+3. **Finish unifying prepaid** — express prepaid as transfer transactions to the organizer too, removing `member.prepaid` and the banker special-case (§6).
 4. **Identity & privacy model** — per-event + per-member UUIDs so members contribute independently with no PII (§1.3); member identification in **v2**.
 5. **Backend sync layer** — local-first stays source of truth; reconcile multi-device offline edits (needs the UUID identities + conflict resolution).
 6. **Visual design via Stitch MCP** — generate fresh modern layouts, recorded in `DESIGN.md`.

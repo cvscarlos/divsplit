@@ -15,14 +15,22 @@ export interface Member {
 	prepaid: number;
 }
 
+/**
+ * 'expense' = consumption (the full split form). 'transfer' = money moved between
+ * members (a settle-up, or prepaid into the pot) — same shape, simpler entry.
+ */
+export type TransactionType = 'expense' | 'transfer';
+
 export interface Transaction {
 	id: string;
+	/** Defaults to 'expense' when absent. */
+	type?: TransactionType;
 	date: string | Date;
 	description: string;
 	total: number;
-	/** Who actually paid, member id -> amount. */
+	/** Money in (credit). For a transfer this is the sender, member id -> amount. */
 	paidBy: AmountMap;
-	/** Who should be charged / consumed, member id -> amount. */
+	/** Money out (debit). For a transfer this is the recipient, member id -> amount. */
 	paidFor: AmountMap;
 	/** Member ids whose amount the user typed manually (exempt from auto-split). */
 	manuallyChanged?: Record<string, boolean>;

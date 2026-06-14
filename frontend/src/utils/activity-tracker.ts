@@ -16,6 +16,10 @@ export const ACTIVITY_TYPES = {
 	TRANSACTION_CREATED: 'transaction_created',
 	TRANSACTION_UPDATED: 'transaction_updated',
 	TRANSACTION_DELETED: 'transaction_deleted',
+
+	// Settle-up transfer activities
+	TRANSFER_RECORDED: 'transfer_recorded',
+	TRANSFER_REMOVED: 'transfer_removed',
 } as const;
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[keyof typeof ACTIVITY_TYPES];
@@ -243,4 +247,26 @@ export function trackMemberChanges(group: Group, oldMembers: Member[] = [], newM
 	}
 
 	return updatedGroup;
+}
+
+/**
+ * Track a recorded settle-up transfer (one member paying another back).
+ */
+export function trackTransferRecorded(group: Group, fromName: string, toName: string, amount: number): Group {
+	const activity = createActivity(ACTIVITY_TYPES.TRANSFER_RECORDED, {
+		description: `${fromName} paid ${toName} $${amount}`,
+		details: { fromName, toName, amount },
+	});
+	return addActivityToGroup(group, activity);
+}
+
+/**
+ * Track the removal (undo) of a settle-up transfer.
+ */
+export function trackTransferRemoved(group: Group, fromName: string, toName: string, amount: number): Group {
+	const activity = createActivity(ACTIVITY_TYPES.TRANSFER_REMOVED, {
+		description: `Removed payment: ${fromName} → ${toName} $${amount}`,
+		details: { fromName, toName, amount },
+	});
+	return addActivityToGroup(group, activity);
 }

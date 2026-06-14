@@ -41,5 +41,9 @@
   "owes": "owes",
   "settled": "settled",
   "pays": "pays",
-  "Everyone is settled up": "Everyone is settled up — no transfers needed"
+  "Everyone is settled up": "Everyone is settled up — no transfers needed",
+  "No groups yet": "No groups yet — create your first one",
+  "Mark paid": "Mark paid",
+  "Recorded payments": "Recorded payments",
+  "Undo": "Undo"
 }

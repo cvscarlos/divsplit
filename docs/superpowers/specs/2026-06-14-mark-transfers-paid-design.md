@@ -2,6 +2,14 @@
 
 > Status: approved (2026-06-14). Lets users record settle-up transfers as paid so
 > the suggested-transfers list reflects what has actually been settled.
+>
+> **Revision (during implementation):** instead of a separate `payments[]` array,
+> a settle-up is stored as a **`Transaction` of `type: 'transfer'`** (project-owner
+> rule: "a transfer is just a transaction"). Sender → `paidBy` (credit), recipient
+> → `paidFor` (debit), so it folds into `computeBalances` with no new settlement
+> code and no `Payment` type. Everything below about balance effects still holds;
+> just read "payment" as "transfer transaction". Transfers are filtered out of the
+> expenses list and managed on the Settle up page.
 
 ## Goal
 
