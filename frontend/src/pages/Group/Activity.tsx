@@ -3,12 +3,13 @@ import { BiGroup, BiReceipt, BiTrash, BiEdit, BiPlus } from 'react-icons/bi';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { ACTIVITY_TYPES } from '../../utils/activity-tracker';
+import type { Activity } from '../../types';
 
 export function GroupActivity() {
 	const { t } = useTranslation();
 	const { data: group } = useGroupContext();
 
-	function getActivityIcon(type) {
+	function getActivityIcon(type: string) {
 		switch (type) {
 			case ACTIVITY_TYPES.GROUP_UPDATED:
 				return <BiGroup className="text-blue-600" />;
@@ -29,13 +30,13 @@ export function GroupActivity() {
 		}
 	}
 
-	function formatTimestamp(timestamp) {
+	function formatTimestamp(timestamp: string | Date) {
 		const date = new Date(timestamp);
 		const now = new Date();
-		const diffInHours = (now - date) / (1000 * 60 * 60);
+		const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
 		if (diffInHours < 1) {
-			const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+			const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 			return diffInMinutes <= 1 ? 'Just now' : `${diffInMinutes} minutes ago`;
 		} else if (diffInHours < 24) {
 			const hours = Math.floor(diffInHours);
@@ -49,7 +50,7 @@ export function GroupActivity() {
 		}
 	}
 
-	function renderActivity(activity) {
+	function renderActivity(activity: Activity) {
 		const { id, type, description, timestamp } = activity;
 
 		return (

@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BiTrash } from 'react-icons/bi';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { Avatar } from '../../components/Avatar';
 import { trackGroupNameChange, trackMemberChanges } from '../../utils/activity-tracker';
+import type { Member } from '../../types';
 
 export function GroupConfig() {
-	const memberBase = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
+	const memberBase: Member = { id: `0_${Date.now()}`, name: '', prepaid: 0 };
 
 	const { data: group, updateGroup } = useGroupContext();
-	const [formFields, setFormFields] = useState({ name: '' });
-	const [members, setMembers] = useState([{ ...memberBase }]);
+	const [formFields, setFormFields] = useState<{ name: string }>({ name: '' });
+	const [members, setMembers] = useState<Member[]>([{ ...memberBase }]);
 	const { t } = useTranslation();
 
 	useEffect(() => {
@@ -24,21 +26,21 @@ export function GroupConfig() {
 	function addMember() {
 		setMembers([...members, { ...memberBase, id: `${members.length}_${Date.now()}` }]);
 	}
-	function removeMember(member) {
+	function removeMember(member: Member) {
 		setMembers(members.filter((m) => m.id !== member.id));
 	}
-	function handleMemberFields(member, event) {
+	function handleMemberFields(member: Member, event: ChangeEvent<HTMLInputElement>) {
 		const { name, value } = event.target;
 		if (name == memberName) member.name = value;
 		else if (name == memberPrepaid) member.prepaid = Number(value);
 		setMembers([...members]);
 	}
 
-	function handleFieldChange(event) {
+	function handleFieldChange(event: ChangeEvent<HTMLInputElement>) {
 		setFormFields({ ...formFields, [event.target.name]: event.target.value });
 	}
 
-	function handleGroupSubmit(event) {
+	function handleGroupSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
 		let updatedGroup = { ...group };

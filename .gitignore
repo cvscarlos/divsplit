@@ -6,6 +6,7 @@ dist-ssr/
 dist/
 logs/
 node_modules/
+tmp/
 
 *.log
 *.njsproj

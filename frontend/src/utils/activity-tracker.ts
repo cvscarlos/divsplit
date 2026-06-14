@@ -1,5 +1,7 @@
 import ObjectId from 'bson-objectid';
 
+import type { Activity, Group, Member, Transaction } from '../types';
+
 /**
  * Activity types for tracking changes
  */
@@ -14,18 +16,20 @@ export const ACTIVITY_TYPES = {
 	TRANSACTION_CREATED: 'transaction_created',
 	TRANSACTION_UPDATED: 'transaction_updated',
 	TRANSACTION_DELETED: 'transaction_deleted',
-};
+} as const;
+
+export type ActivityType = (typeof ACTIVITY_TYPES)[keyof typeof ACTIVITY_TYPES];
+
+interface ActivityInput {
+	description: string;
+	details?: Record<string, unknown>;
+	userId?: string | null;
+}
 
 /**
  * Create a new activity entry
- * @param {string} type - Activity type from ACTIVITY_TYPES
- * @param {Object} data - Activity data
- * @param {string} data.description - Human readable description
- * @param {Object} data.details - Additional details about the change
- * @param {string} data.userId - ID of the user who made the change (optional)
- * @returns {Object} Activity object
  */
-export function createActivity(type, data) {
+export function createActivity(type: ActivityType, data: ActivityInput): Activity {
 	return {
 		id: new ObjectId().toHexString(),
 		type,
@@ -38,12 +42,9 @@ export function createActivity(type, data) {
 
 /**
  * Add activity to group data
- * @param {Object} group - Group object
- * @param {Object} activity - Activity object
- * @returns {Object} Updated group object
  */
-export function addActivityToGroup(group, activity) {
-	const updatedGroup = { ...group };
+export function addActivityToGroup(group: Group, activity: Activity): Group {
+	const updatedGroup: Group = { ...group };
 	updatedGroup.activities = updatedGroup.activities || [];
 	updatedGroup.activities.unshift(activity); // Add to beginning for chronological order
 
@@ -57,12 +58,8 @@ export function addActivityToGroup(group, activity) {
 
 /**
  * Track group name change
- * @param {Object} group - Group object
- * @param {string} oldName - Previous name
- * @param {string} newName - New name
- * @returns {Object} Updated group object
  */
-export function trackGroupNameChange(group, oldName, newName) {
+export function trackGroupNameChange(group: Group, oldName: string, newName: string): Group {
 	if (oldName === newName) return group;
 
 	const activity = createActivity(ACTIVITY_TYPES.GROUP_UPDATED, {
@@ -75,11 +72,8 @@ export function trackGroupNameChange(group, oldName, newName) {
 
 /**
  * Track member addition
- * @param {Object} group - Group object
- * @param {Object} member - Member object
- * @returns {Object} Updated group object
  */
-export function trackMemberAdded(group, member) {
+export function trackMemberAdded(group: Group, member: Member): Group {
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_CREATED, {
 		description: `Member "${member.name}" was added to the group`,
 		details: { memberId: member.id, memberName: member.name, prepaid: member.prepaid },
@@ -90,11 +84,8 @@ export function trackMemberAdded(group, member) {
 
 /**
  * Track member removal
- * @param {Object} group - Group object
- * @param {Object} member - Member object
- * @returns {Object} Updated group object
  */
-export function trackMemberRemoved(group, member) {
+export function trackMemberRemoved(group: Group, member: Member): Group {
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_DELETED, {
 		description: `Member "${member.name}" was removed from the group`,
 		details: { memberId: member.id, memberName: member.name },
@@ -105,13 +96,8 @@ export function trackMemberRemoved(group, member) {
 
 /**
  * Track member name change
- * @param {Object} group - Group object
- * @param {string} memberId - Member ID
- * @param {string} oldName - Previous name
- * @param {string} newName - New name
- * @returns {Object} Updated group object
  */
-export function trackMemberNameChange(group, memberId, oldName, newName) {
+export function trackMemberNameChange(group: Group, memberId: string, oldName: string, newName: string): Group {
 	if (oldName === newName) return group;
 
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_UPDATED, {
@@ -124,14 +110,14 @@ export function trackMemberNameChange(group, memberId, oldName, newName) {
 
 /**
  * Track member prepaid amount change
- * @param {Object} group - Group object
- * @param {string} memberId - Member ID
- * @param {string} memberName - Member name
- * @param {number} oldAmount - Previous prepaid amount
- * @param {number} newAmount - New prepaid amount
- * @returns {Object} Updated group object
  */
-export function trackMemberPrepaidChange(group, memberId, memberName, oldAmount, newAmount) {
+export function trackMemberPrepaidChange(
+	group: Group,
+	memberId: string,
+	memberName: string,
+	oldAmount: number,
+	newAmount: number,
+): Group {
 	if (oldAmount === newAmount) return group;
 
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_UPDATED, {
@@ -144,11 +130,8 @@ export function trackMemberPrepaidChange(group, memberId, memberName, oldAmount,
 
 /**
  * Track transaction creation
- * @param {Object} group - Group object
- * @param {Object} transaction - Transaction object
- * @returns {Object} Updated group object
  */
-export function trackTransactionCreated(group, transaction) {
+export function trackTransactionCreated(group: Group, transaction: Transaction): Group {
 	const activity = createActivity(ACTIVITY_TYPES.TRANSACTION_CREATED, {
 		description: `Transaction "${transaction.description}" was created for $${transaction.total}`,
 		details: {
@@ -164,13 +147,9 @@ export function trackTransactionCreated(group, transaction) {
 
 /**
  * Track transaction update
- * @param {Object} group - Group object
- * @param {Object} oldTransaction - Previous transaction data
- * @param {Object} newTransaction - Updated transaction data
- * @returns {Object} Updated group object
  */
-export function trackTransactionUpdated(group, oldTransaction, newTransaction) {
-	const changes = [];
+export function trackTransactionUpdated(group: Group, oldTransaction: Transaction, newTransaction: Transaction): Group {
+	const changes: string[] = [];
 
 	if (oldTransaction.description !== newTransaction.description) {
 		changes.push(`description from "${oldTransaction.description}" to "${newTransaction.description}"`);
@@ -211,11 +190,8 @@ export function trackTransactionUpdated(group, oldTransaction, newTransaction) {
 
 /**
  * Track transaction deletion
- * @param {Object} group - Group object
- * @param {Object} transaction - Transaction object that was deleted
- * @returns {Object} Updated group object
  */
-export function trackTransactionDeleted(group, transaction) {
+export function trackTransactionDeleted(group: Group, transaction: Transaction): Group {
 	const activity = createActivity(ACTIVITY_TYPES.TRANSACTION_DELETED, {
 		description: `Transaction "${transaction.description}" was deleted (was $${transaction.total})`,
 		details: {
@@ -231,13 +207,9 @@ export function trackTransactionDeleted(group, transaction) {
 
 /**
  * Compare two arrays of members and track changes
- * @param {Object} group - Group object
- * @param {Array} oldMembers - Previous members array
- * @param {Array} newMembers - New members array
- * @returns {Object} Updated group object
  */
-export function trackMemberChanges(group, oldMembers = [], newMembers = []) {
-	let updatedGroup = { ...group };
+export function trackMemberChanges(group: Group, oldMembers: Member[] = [], newMembers: Member[] = []): Group {
+	let updatedGroup: Group = { ...group };
 
 	// Create maps for easier comparison
 	const oldMembersMap = new Map(oldMembers.map((m) => [m.id, m]));

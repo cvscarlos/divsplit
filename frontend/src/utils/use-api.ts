@@ -2,43 +2,33 @@ import { useEffect, useState } from 'react';
 import localforage from 'localforage';
 import ObjectId from 'bson-objectid';
 
-/**
- * @typedef {Object} GroupListItem
- * @property {string} id
- */
-/**
- * @typedef {Object} Group
- * @property {Object} config
- */
+import type { Group, GroupListItem } from '../types';
 
 const groupListStore = localforage.createInstance({ name: 'groupList' });
 const groupStore = localforage.createInstance({ name: 'group' });
 
-function generateId() {
+function generateId(): string {
 	return new ObjectId().toHexString();
 }
 
-async function loadSampleData() {
+async function loadSampleData(): Promise<void> {
 	if (await groupListStore.getItem('groups')) return;
-	await groupListStore.setItem('groups', [
+	await groupListStore.setItem<GroupListItem[]>('groups', [
 		{ id: generateId(), name: 'Grupo Teste' },
 		{ id: generateId(), name: 'Grupo Teste' },
 		{ id: generateId(), name: 'Grupo Teste' },
 	]);
 }
 
-/**
- * @returns {{loading: boolean, groupList: GroupListItem[]}}
- */
-export function useApiListGroups() {
+export function useApiListGroups(): { loading: boolean; groupList: GroupListItem[] } {
 	const [loading, setLoading] = useState(false);
-	const [groupList, setGroupList] = useState([]);
+	const [groupList, setGroupList] = useState<GroupListItem[]>([]);
 
 	useEffect(() => {
 		setLoading(true);
 		const fetchData = async () => {
 			await loadSampleData();
-			const groups = (await groupListStore.getItem('groups')) || [];
+			const groups = (await groupListStore.getItem<GroupListItem[]>('groups')) || [];
 			setGroupList(groups);
 			setLoading(false);
 		};
@@ -48,33 +38,31 @@ export function useApiListGroups() {
 	return { loading, groupList };
 }
 
-async function updateGroupName(newName, groupId) {
-	const groups = (await groupListStore.getItem('groups')) || [];
+async function updateGroupName(newName: string | undefined, groupId: string): Promise<void> {
+	const groups = (await groupListStore.getItem<GroupListItem[]>('groups')) || [];
 	const groupIndex = groups.findIndex((group) => group.id === groupId);
 	if (groupIndex === -1) return;
-	groups[groupIndex].name = newName;
+	groups[groupIndex].name = newName ?? '';
 	await groupListStore.setItem('groups', groups);
 }
 
-function groupStandardize(group = {}) {
-	group ||= {};
-	group.config ||= {}; // Initialize config if not present
-	return group;
+function groupStandardize(group?: Group | null): Group {
+	const standardized: Group = group ?? ({} as Group);
+	standardized.config ||= {}; // Initialize config if not present
+	return standardized;
 }
 
 /**
  * Load demo data for a group
- * @param {string} groupId
- * @returns {Promise<void>}
  */
-export async function loadDemoData(groupId) {
+export async function loadDemoData(groupId: string): Promise<void> {
 	try {
 		const response = await fetch('/demo_data.json');
-		const demoData = await response.json();
+		const demoData = (await response.json()) as Group;
 		await groupStore.setItem(groupId, demoData);
 
 		// Also update the group list if this group doesn't exist
-		const groups = (await groupListStore.getItem('groups')) || [];
+		const groups = (await groupListStore.getItem<GroupListItem[]>('groups')) || [];
 		const groupExists = groups.some((group) => group.id === groupId);
 		if (!groupExists) {
 			groups.push({ id: groupId, name: demoData.config?.name || 'Demo Group' });
@@ -85,14 +73,17 @@ export async function loadDemoData(groupId) {
 	}
 }
 
-/**
- * @param {string} groupId
- * @returns {{data: Group, loading: boolean, updateGroup: (updatedData: Group) => void, loadDemo: () => Promise<void>}}
- */
-export function useApiGetGroup(groupId) {
+export interface UseApiGetGroup {
+	data: Group;
+	loading: boolean;
+	updateGroup: (updatedData: Group) => void;
+	loadDemo: () => Promise<void>;
+}
+
+export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 	const [loading, setLoading] = useState(false);
-	const [data, setData] = useState(groupStandardize());
-	const [dataToSave, setDataToSave] = useState(null);
+	const [data, setData] = useState<Group>(groupStandardize());
+	const [dataToSave, setDataToSave] = useState<Group | null>(null);
 
 	useEffect(() => {
 		let abort = false;
@@ -108,27 +99,30 @@ export function useApiGetGroup(groupId) {
 				if (!abort) await updateGroupName(dataToSave.config.name, groupId);
 			}
 
-			const group = groupStandardize(await groupStore.getItem(groupId));
+			const group = groupStandardize(await groupStore.getItem<Group>(groupId));
 
 			if (!abort) setData(group);
 			if (!abort) setLoading(false);
 		};
 		fetchData();
 
-		return () => (abort = true);
+		return () => {
+			abort = true;
+		};
 	}, [dataToSave, groupId]);
 
 	const loadDemo = async () => {
+		if (!groupId) return;
 		await loadDemoData(groupId);
 		// Trigger a re-fetch by forcing a state update
-		const group = groupStandardize(await groupStore.getItem(groupId));
+		const group = groupStandardize(await groupStore.getItem<Group>(groupId));
 		setData(group);
 	};
 
 	return {
 		data,
 		loading,
-		updateGroup: (updatedData) => {
+		updateGroup: (updatedData: Group) => {
 			setDataToSave(updatedData);
 		},
 		loadDemo,

@@ -1,26 +1,27 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { GroupConfig } from '../pages/Group/Config.jsx';
+import { GroupConfig } from '../pages/Group/Config';
 import { NotFound } from '../pages/NotFound';
-import { GroupProvider } from '../context/GroupContext.jsx';
-import { GroupHeader } from './GroupHeader.jsx';
-import { Debug } from './Debug.jsx';
-import { GroupListTransactions } from '../pages/Group/ListTransactions.jsx';
-import { GroupTransaction } from '../pages/Group/Transaction.jsx';
-import { GroupActivity } from '../pages/Group/Activity.jsx';
-import { useGroupContext } from '../context/GroupContext.jsx';
+import { GroupProvider, useGroupContext } from '../context/GroupContext';
+import { GroupHeader } from './GroupHeader';
+import { Debug } from './Debug';
+import { GroupListTransactions } from '../pages/Group/ListTransactions';
+import { GroupTransaction } from '../pages/Group/Transaction';
+import { GroupActivity } from '../pages/Group/Activity';
 
 function GroupContent() {
 	const { section, sectionItem } = useParams();
 	const { data: group, loadDemo } = useGroupContext();
 	const { t } = useTranslation();
 
-	const pages = {
+	const pages: Record<string, boolean> = {
 		config: section === 'config',
 		transactions: section === 'transactions',
 		activity: section === 'activity',
 	};
+
+	const isKnownSection = section ? Boolean(pages[section]) : false;
 
 	// Check if group needs sample data (no members or empty group name)
 	const needsSampleData =
@@ -30,7 +31,7 @@ function GroupContent() {
 		<>
 			<GroupHeader />
 			<div className="prose">
-				{!pages[section] && <NotFound />}
+				{!isKnownSection && <NotFound />}
 				{pages.config && <GroupConfig />}
 				{pages.transactions &&
 					(sectionItem ? <GroupTransaction transactionId={sectionItem} /> : <GroupListTransactions />)}

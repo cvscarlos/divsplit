@@ -1,16 +1,18 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
+import type { MouseEvent } from 'react';
 import { BiTrash } from 'react-icons/bi';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { trackTransactionDeleted } from '../../utils/activity-tracker';
+import type { Transaction } from '../../types';
 
 export function GroupListTransactions() {
 	const { t } = useTranslation();
 	const { groupId } = useParams();
 	const { data: group, updateGroup } = useGroupContext();
 
-	function handleDeleteTransaction(transaction, event) {
+	function handleDeleteTransaction(transaction: Transaction, event: MouseEvent<HTMLButtonElement>) {
 		event.preventDefault();
 		event.stopPropagation();
 
@@ -21,19 +23,19 @@ export function GroupListTransactions() {
 			updatedGroup = trackTransactionDeleted(updatedGroup, transaction);
 
 			// Remove transaction from the list
-			updatedGroup.transactions = updatedGroup.transactions.filter((t) => t.id !== transaction.id);
+			updatedGroup.transactions = (updatedGroup.transactions || []).filter((tx) => tx.id !== transaction.id);
 
 			updateGroup(updatedGroup);
 		}
 	}
 
-	function renderTransaction(transaction) {
+	function renderTransaction(transaction: Transaction) {
 		const { id, total, createdAt, description } = transaction;
 		return (
 			<tr key={id} className="hover:bg-gray-50">
 				<td>
 					<Link to={`/group/${groupId}/transactions/${id}`} className="block w-full h-full">
-						{new Date(createdAt).toLocaleDateString()}
+						{createdAt ? new Date(createdAt).toLocaleDateString() : ''}
 					</Link>
 				</td>
 				<td>

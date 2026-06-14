@@ -1,12 +1,8 @@
-import PropTypes from 'prop-types';
+import type { ReactNode } from 'react';
 
 import { useThemeContext } from '../context/ThemeContext';
 
-Container.propTypes = {
-	children: PropTypes.node.isRequired,
-};
-
-export function Container({ children }) {
+export function Container({ children }: { children: ReactNode }) {
 	const { theme } = useThemeContext();
 
 	return (

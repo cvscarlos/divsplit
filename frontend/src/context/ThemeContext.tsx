@@ -1,20 +1,25 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
+import type { ReactNode } from 'react';
+
 import { jsonParseSafe, jsonStringifySafe } from '../utils/tools';
 
-const ThemeContext = createContext();
+type Theme = 'light' | 'dark';
 
-const getInitialTheme = () => {
+interface ThemeContextValue {
+	theme: Theme;
+	toggleTheme: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+const getInitialTheme = (): Theme => {
 	const initialTheme = localStorage.getItem('divsplit_theme');
-	return initialTheme ? jsonParseSafe(initialTheme) : 'light';
+	const parsed = initialTheme ? jsonParseSafe<Theme>(initialTheme) : 'light';
+	return parsed === 'light' || parsed === 'dark' ? parsed : 'light';
 };
 
-ThemeProvider.propTypes = {
-	children: PropTypes.node.isRequired,
-};
-
-export default function ThemeProvider({ children }) {
-	const [theme, setTheme] = useState(getInitialTheme());
+export default function ThemeProvider({ children }: { children: ReactNode }) {
+	const [theme, setTheme] = useState<Theme>(getInitialTheme());
 
 	useEffect(() => {
 		localStorage.setItem('divsplit_theme', jsonStringifySafe(theme));
@@ -28,7 +33,7 @@ export default function ThemeProvider({ children }) {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function useThemeContext() {
+export function useThemeContext(): ThemeContextValue {
 	const context = useContext(ThemeContext);
 	if (context === undefined) {
 		throw new Error('useThemeContext must be used within a ThemeProvider');

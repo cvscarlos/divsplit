@@ -7,7 +7,7 @@ import { useApiListGroups } from '../utils/use-api';
 
 function HomePage() {
 	const { t } = useTranslation();
-	const { groupList, isLoading } = useApiListGroups();
+	const { groupList, loading } = useApiListGroups();
 
 	return (
 		<>
@@ -25,7 +25,7 @@ function HomePage() {
 					<button className="btn btn-primary w-64">{`+ ${t('createGroup')}`}</button>
 				</div>
 
-				{isLoading ? (
+				{loading ? (
 					<p>{t('Loading')}</p>
 				) : (
 					<CardContainer>

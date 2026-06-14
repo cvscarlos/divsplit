@@ -1,13 +1,9 @@
-import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 
+import type { GroupListItem } from '../../types';
 import './index.css';
 
-CardGroup.propTypes = {
-	group: PropTypes.object.isRequired,
-};
-
-function CardGroup({ group }) {
+function CardGroup({ group }: { group: GroupListItem }) {
 	const navigate = useNavigate();
 	const handleClick = () => navigate(`/group/${group.id}/config`);
 
