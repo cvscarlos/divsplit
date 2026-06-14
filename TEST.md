@@ -33,8 +33,9 @@ npm run build --workspace frontend # tsc type-check + production build
 
 Most tests below use this group:
 
-- **Group:** `Beach Trip`
-- **Members:** `Alice` (prepaid 100), `Bob` (prepaid 0), `Carol` (prepaid 50)
+- **Group:** `Beach Trip`, top-holder `Alice`
+- **Members:** `Alice`, `Bob`, `Carol`
+- **Top-ups:** Alice `100`, Carol `50` (added via Settle up → Top up)
 - **Expense:** `Dinner`, total `120`
 
 ---
@@ -79,14 +80,14 @@ Most tests below use this group:
 2. Change **Group name** to `Beach Trip` → **Save**.
 3. **Expected:** the large group heading updates to `Beach Trip`.
 
-### TC-2.2 — Add members with prepaid amounts
+### TC-2.2 — Add members and pick the top-holder
 
-1. On Config, fill the first member: name `Alice`, prepaid `100`.
-2. Click **member** to add a row; fill `Bob`, prepaid `0`.
-3. Click **member** again; fill `Carol`, prepaid `50`.
-4. Click **Save**.
-5. **Expected:** member count shows `3`; each member shows an initials avatar
-   (e.g. "A", "B", "C") in a colored circle. Values persist after Save.
+1. On Config, fill the first member `Alice`; **+ member** → `Bob`; **+ member** → `Carol`.
+2. Set the **Top-holder** dropdown (defaults to the first member).
+3. Click **Save**.
+4. **Expected:** member count shows `3`; each shows an initials avatar; the
+   holder choice persists. There is no per-member "prepaid" input — money is added
+   later via **Top up** (see §7). Members carry no amounts here.
 
 ### TC-2.3 — Remove a member
 
@@ -213,37 +214,39 @@ Most tests below use this group:
 
 ## 7. Settle up (balances & fewest transfers)
 
-Settlement is derived (not stored). Balances use
-`balance = prepaid + paidBy − paidFor`; the **banker** holds the prepaid pot, so
-the net balances (shown on the page) sum to zero and match the transfers. The
-pure logic is also covered by unit tests: `npm test --workspace frontend`.
+Settlement is derived (suggested transfers are not stored). `balance = ΣpaidBy −
+ΣpaidFor`; a **top-up** credits its member; the **top-holder** holds the pooled
+top-up cash and (for the transfer computation only) is offset by Σtop-ups, so
+refunds route through them. Pure logic is covered by unit tests: `npm test
+--workspace frontend`.
 
-### TC-7.1 — Choose the banker
+### TC-7.1 — Top up a member
 
-1. Open a group → **Config** → set the **Banker** dropdown to a member → **Save**.
-2. **Expected:** the choice persists across reload (defaults to the first member
-   when never set).
+1. Open a group → **Settle up** → **Top up**. Choose a member, enter an amount,
+   optionally a note → **Top up**.
+2. **Expected:** back on Settle up, the member's balance rises by that amount
+   (badge "gets back", "deposited $X"), the top-up appears under **Top-ups**, and
+   Activity logs "{member} topped up $X". Undo removes it.
 
-### TC-7.2 — Balances and transfers (worked example)
+### TC-7.2 — Holder refunds the unused pot (top-ups, no expenses)
 
-1. Use the `Beach Trip` group (Alice 100 / Bob 0 / Carol 50, banker Alice) with
-   the `Dinner` $120 expense (paid by Carol; split 40/40/40). Open **Settle up**.
-2. **Expected balances (net):** Alice owes $90, Bob owes $40, Carol gets back $130.
-3. **Expected transfers:** `Bob → Carol $40` and `Alice → Carol $90` (2 transfers);
-   the net balances sum to zero.
+1. `Beach Trip`, holder Alice. Top up: Alice $100, Carol $50 (Bob none). No expenses.
+2. **Expected:** Alice (Holder) +$100, Bob settled, Carol +$50; transfer
+   `Alice → Carol $50` (Alice holds the $150 pot, refunds Carol, keeps her own).
 
-### TC-7.3 — Prepaid-only refund via the banker
+### TC-7.3 — Out-of-pocket payer is refunded by the holder
 
-1. Same members, banker Alice, but **no transactions**. Open **Settle up**.
-2. **Expected:** Carol gets back $50, Bob settled, Alice (banker) owes $50;
-   transfer `Alice → Carol $50` (Alice returns Carol's prepaid from the pot and
-   keeps her own).
+1. Top up Alice/Bob/Carol $100 each (holder Alice). Add an expense Bob paid out of
+   pocket (e.g. $90 street food, split 30/30/30).
+2. **Expected:** transfers come *from Alice* (the holder) — she refunds Bob his
+   leftover + the $90 he fronted, and Carol her leftover.
 
-### TC-7.4 — Everyone already even
+### TC-7.4 — No top-ups → plain fewest-transfers
 
-1. A group where each member's contributions equal their consumption.
-2. **Expected:** all rows show "settled" and the Transfers panel shows
-   "Everyone is settled up — no transfers needed".
+1. A pay-as-you-go group: an expense paid by one member, split among all, **no
+   top-ups**, no holder needed.
+2. **Expected:** ordinary debtor→creditor transfers (the holder isn't special);
+   when everyone's even, "Everyone is settled up — no transfers needed".
 
 ### TC-7.5 — Mark a transfer as paid
 
@@ -273,13 +276,12 @@ pure logic is also covered by unit tests: `npm test --workspace frontend`.
 
 ## Known issues / notes
 
-- **Silent validation on transaction save (TC-3.6):** if Date, Total, or
-  Description is empty the Save is ignored without any visible message
-  (`Transaction.tsx` logs to console only — there is a `TODO` for UI feedback).
-- **Settlement banker model:** settle-up assumes one **banker** holds the prepaid
-  pot and disburses refunds (so a banker can show as "owes" while having prepaid
-  the most — that's the cash they pay out of the pot, and it matches the transfer
-  lines). Transfer minimization is greedy (near-optimal), not provably minimal.
-- **No favicon:** the initial page load logs one harmless `404` for the favicon.
+- **Settlement holder model:** the **top-holder** holds the pooled top-up cash and
+  refunds it, so when there are top-ups the suggested transfers route through the
+  holder (each other member deals only with the holder; the holder makes several).
+  Transfer minimization is greedy (near-optimal), not provably minimal.
+- **Expenses always have a payer:** an expense paid "from the pot" isn't modelled
+  as a no-payer transaction; record who actually paid (`paidBy`). Pot-funding is
+  implicit via top-ups + the holder refund.
 - **Native date input:** automated tools may need to set the date field
   programmatically; manual testing with the date picker works normally.

@@ -21,10 +21,10 @@ There are exactly **two kinds of money movement**, and keeping them distinct is 
 1. **Expenses** (`transactions`) — *consumption*. Each records, separately, *who actually paid* (`paidBy`) and *who should be charged* (`paidFor`); these need not match (the person with cash pays the street-food vendor, but someone else eats the food). An auto-split helper fills in the rest so nobody does mental arithmetic (§6).
 
 2. **Transfers** — money one member hands another that is **not** an expense, but still moves their balances. This single primitive covers two product features that are conceptually the same thing:
-   - **Prepaid** — money members put in up front, typically to one organizer. Example: ten friends rent a lake-house; one person makes the booking and pays, so everyone wires **them** first. The organizer waits until everyone has paid in before committing, and isn't left out of pocket if some people flake. That collected money sits in the organizer's balance, ready to be drawn down by the lake-house expense.
-   - **Settle-up** — a debtor paying a creditor to clear the balance the app computed (during or at the end of the trip).
+   - **Top-up** *(optional)* — a member adds money to the pot any time (generalises the old "prepaid"). Example: ten friends rent a lake-house; the **top-holder** (organizer) collects everyone's money up front before committing. A top-up credits **only the depositing member**; the holder merely *holds* the pooled cash (no balance effect) and refunds whatever's unused at the end.
+   - **Settle-up** — a debtor paying a creditor to clear the balance the app computed.
 
-   **Rule (project owner):** prepaid and settle-up are the same concept — "A gave B money, counts toward balances, is not an expense." The target model collapses both into one **member-to-member transfer** list (§6). A pleasant consequence: with transfers and expenses both balanced, every member balance sums to zero, so settlement is pure peer-to-peer with no special "banker pot" handling.
+   **Rule (project owner):** top-up and settle-up are both *transfers* — "money that moves between accounts, counts toward balances, isn't an expense" — stored as transactions (§6). A top-up is a self-credit (from = to = the member; the holder is just a note); a settle-up moves between two members. Top-up is optional: a group can pay as-you-go and settle the leftover at the end with no top-ups at all.
 
 ### 1.2 Fewest-transfers settlement
 
@@ -103,7 +103,7 @@ Root scripts: `npm run dev`, `npm run format`, `npm run lint`. Frontend scripts 
 
 **Domain & data layer (`utils/`)**
 - `use-api.ts` — the persistence boundary. localforage stores `groupList` and `group`; hooks `useApiListGroups`, `useApiGetGroup`; `loadDemoData`; `generateId()`. *Single place that touches storage.*
-- `settlement.ts` — **pure** settlement engine: `computeBalances` and `computeSettlement` (balances → banker pot adjustment → greedy min-cash-flow → fewest `transfers` + `netBalances`). Unit-tested.
+- `settlement.ts` — **pure** settlement engine: `computeBalances` (ΣpaidBy − ΣpaidFor), `topupTotal`, and `computeSettlement` (offset the holder by Σtop-ups → greedy min-cash-flow → fewest `transfers`). Unit-tested.
 - `transaction.ts` — `getTransactionError` (form validation), unit-tested.
 - `activity-tracker.ts` — `ACTIVITY_TYPES` + pure functions appending audit entries (capped 100, newest first).
 - `tools.ts` — `jsonParseSafe` / `jsonStringifySafe`.
@@ -124,7 +124,8 @@ SPA, client-side routing only (Vercel rewrites all paths to `index.html`). The s
 | Path | Renders |
 |---|---|
 | `/` | `HomePage` (group list) |
-| `/group/:groupId/config` | `GroupConfig` (name, members, prepaid, banker) |
+| `/group/:groupId/config` | `GroupConfig` (name, members, top-holder) |
+| `/group/:groupId/topup` | `GroupTopUp` (record a top-up) |
 | `/group/:groupId/transactions[/:id\|new]` | transactions list / `GroupTransaction` |
 | `/group/:groupId/settlement` | `GroupSettlement` (balances + transfers) |
 | `/group/:groupId/activity` | `GroupActivity` |
@@ -138,28 +139,26 @@ All state is one **group object** per group id, stored in IndexedDB (typed in `t
 
 ```ts
 Group = {
-  config:   { name?, bankerId? },          // bankerId = member holding the prepaid pot
-  members:  Member[],                       // { id, name, prepaid }
-  transactions: Transaction[],              // { id, type?: 'expense'|'transfer', date, description,
+  config:   { name?, holderId? },          // holderId = member holding the pooled top-up cash
+  members:  Member[],                       // { id, name }   (legacy optional `prepaid`, migrated away)
+  transactions: Transaction[],              // { id, type?: 'expense'|'transfer'|'topup', date, description,
                                             //   total, paidBy:{memberId:amount},
                                             //   paidFor:{memberId:amount}, manuallyChanged }
   activities?: Activity[],                  // audit log (capped 100, newest first)
 }
 ```
 
-**Expenses vs. transfers are both `Transaction`s** (§1.1). An expense (`type` absent / `'expense'`) is consumption entered via the split form. A **transfer** (`type: 'transfer'`) is money between members — a settle-up (or, in future, prepaid) — with the *sender* on `paidBy` (credit) and *recipient* on `paidFor` (debit). Same shape, so it folds into balances for free; entered via the Settle up page, and filtered out of the expenses list.
+**Everything is a `Transaction`** (§1.1). An expense (`type` absent / `'expense'`) is consumption via the split form. A **transfer** (`type: 'transfer'`, a settle-up) moves money between two members — *sender* on `paidBy` (credit), *recipient* on `paidFor` (debit). A **top-up** (`type: 'topup'`) is a self-credit — `paidBy = {member: amount}`, empty `paidFor`. All fold into balances for free; transfers and top-ups are entered on/near the Settle up page and filtered out of the expenses list.
 
 ### Auto-split (`Transaction.tsx`)
 Both `paidBy` and `paidFor` are `memberId → amount` maps. Toggling a member splits the remaining `total − sum(manually-typed)` equally across the others; rounding remainder lands on the current person so the parts reconcile to `total`. Most intricate code in the app.
 
 ### Settlement (`settlement.ts`) — **built & tested**
-- `balance(m) = prepaid(m) + Σ paidBy − Σ paidFor + Σ (transfers given − received)`.
-- **Banker:** prepaid is currently a per-member number whose recipient is the **banker** (`config.bankerId`, default first member). The banker holds the pot, so their *effective* balance is reduced by `Σ prepaid`, making effective balances sum to zero.
-- `computeSettlement` runs a greedy **min-cash-flow** (largest creditor ↔ largest debtor) → fewest `transfers` (≤ n−1) plus `netBalances` (post-banker, sum to zero, match the transfers).
-- **Settle-up** is recorded as a `type: 'transfer'` transaction, so it folds into `computeBalances` for free (sender `paidBy` +, recipient `paidFor` −); recording one shrinks/clears its suggested transfer. Undo deletes the transaction.
-
-### Planned unification (project-owner rule, §1.1)
-Prepaid is still a per-member number routed to the banker (mathematically equal to "everyone transferred their prepaid to the organizer"). The remaining step is to also express **prepaid as transfer transactions** to the organizer, retiring `member.prepaid` and the banker special-case so every balance is just `Σ(paidBy − paidFor)` over transactions. Settle-up already works this way.
+- `balance(m) = Σ paidBy(m) − Σ paidFor(m)` over all transactions. A **top-up** (`type: 'topup'`, `paidBy = {m: amount}`, empty `paidFor`) credits only that member. Positive = owed, negative = owes.
+- **Top-holder:** `config.holderId` (default first member) holds the pooled top-up cash — **no balance effect from holding**. For the transfer computation *only*, their position is offset by `−Σ top-ups` (`topupTotal`), making effective balances sum to zero so refunds route through them.
+- `computeSettlement` runs a greedy **min-cash-flow** → fewest `transfers` (≤ n−1). With no top-ups the offset is zero and it degrades to plain peer-to-peer fewest-transfers.
+- **Settle-up** is a `type: 'transfer'` transaction (sender `paidBy` +, recipient `paidFor` −); recording one shrinks/clears its suggested transfer, undo deletes it.
+- **Display:** the Balances panel shows each member's *raw* balance (the holder is never shown "owing") + "deposited"; the Transfers panel shows the holder doing the refunds.
 
 ---
 
@@ -201,7 +200,7 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 ## 10. Known Tech Debt & Code Hotspots
 
 - **`Transaction.tsx` auto-split** — complex in-place mutation + rounding; highest-risk hotspot, still untested at the component level (the pure split rules are the candidate to extract + unit-test).
-- **Prepaid still a number** — settle-up is now a transfer transaction, but prepaid remains `member.prepaid` + the banker special-case; express prepaid as transfer transactions too to retire the banker (§6).
+- **`member.prepaid` legacy field** — kept optional only so old groups migrate to top-ups on load (`use-api` `groupStandardize`); unused by new code. Likewise `config.bankerId` → `holderId`.
 - **Inconsistent member ids** — members use `"${index}_${Date.now()}"` while transactions/activities use ObjectId hex. Move members to UUIDs with the identity model.
 - **`activities.userId` unused** — placeholder until the UUID identity model lands.
 - **No component/E2E tests** — only pure-logic unit tests exist.
@@ -214,7 +213,7 @@ Source: project owner. Order indicative.
 
 1. ✅ **TypeScript migration**, dependency upgrades, **shadcn/Tailwind v4 redesign**, **CI** (lint+test+build), **settlement engine**.
 2. ✅ **Mark transfers as paid** — settle-ups recorded as transfer transactions that net down balances; undoable; logged to Activity.
-3. **Finish unifying prepaid** — express prepaid as transfer transactions to the organizer too, removing `member.prepaid` and the banker special-case (§6).
+3. ✅ **Top-up & top-holder** — prepaid generalised to optional top-up transactions; the holder holds the pot and refunds the unused part; the banker special-case is gone.
 4. **Identity & privacy model** — per-event + per-member UUIDs so members contribute independently with no PII (§1.3); member identification in **v2**.
 5. **Backend sync layer** — local-first stays source of truth; reconcile multi-device offline edits (needs the UUID identities + conflict resolution).
 6. **Visual design via Stitch MCP** — generate fresh modern layouts, recorded in `DESIGN.md`.
