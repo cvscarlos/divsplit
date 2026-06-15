@@ -1,18 +1,21 @@
-.DS_Store
-.idea/
-.vscode/
+# Directories
 *.local/
+.idea/
+.stitch/
+.vscode/
 dist-ssr/
 dist/
 logs/
 node_modules/
 tmp/
 
+# Files
 *.log
 *.njsproj
 *.ntvs*
 *.sln
 *.suo
 *.sw?
+.DS_Store
 eslint_report.json
 eslint_report.md
