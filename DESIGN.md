@@ -8,7 +8,7 @@
 > - **Light** → "Lime & Purple Edition" (`screens/3926dcdc053e40d297c243d3c1252fb4`)
 > - **Dark** → "Electric Nightscape Edition" (`screens/debfcbf7384c4f4e8d7aa5e1a18b8918`)
 >
-> Reference HTML + screenshots: `.stitch/designs/`. **This file defines the target
+> Reference screens live in the Stitch project (not committed; `.stitch/` is local). **This file defines the target
 > system; it does not change any current layout.** Implementation (migrating the
 > shipped tokens to these) is a separate, later step.
 
@@ -135,8 +135,8 @@ intentionally near-identical across themes; the **secondary** is what shifts the
 ## 8. References
 
 - Stitch project: `DivSplit — app screens` (`projects/15544037027988297275`).
-- Local assets (committed for reference): `.stitch/designs/light-lime-purple.{html,png}`,
-  `.stitch/designs/dark-electric-nightscape.{html,png}`.
+- Reference screens (in the Stitch project, not committed): light "Lime & Purple",
+  dark "Electric Nightscape", and the "Start the Squad" empty state.
 - Current implementation tokens (to be migrated to this system) live in
   `frontend/src/index.css` — presently a warm "travel-receipt" palette, superseded by
   the above once the redesign is implemented.
