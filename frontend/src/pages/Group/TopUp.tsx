@@ -36,7 +36,7 @@ export function GroupTopUp() {
 	function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		if (!memberId || !amount) {
-			setError(t('Please fill in the date, total and description.'));
+			setError(t('Please choose a member and an amount.'));
 			return;
 		}
 		const name = members.find((m) => m.id === memberId)?.name ?? '';

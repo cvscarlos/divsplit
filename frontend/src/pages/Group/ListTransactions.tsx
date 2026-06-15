@@ -58,8 +58,8 @@ export function GroupListTransactions() {
 		);
 	}
 
-	// Settle-up transfers live on the Settle up page; the expenses list shows expenses only.
-	const expenses = (group.transactions ?? []).filter((tx) => tx.type !== 'transfer');
+	// Settle-up transfers and top-ups live on the Settle up page; the expenses list shows expenses only.
+	const expenses = (group.transactions ?? []).filter((tx) => tx.type !== 'transfer' && tx.type !== 'topup');
 	const hasTransactions = expenses.length > 0;
 
 	return (

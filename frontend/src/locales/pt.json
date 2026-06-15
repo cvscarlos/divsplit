@@ -54,5 +54,6 @@
   "Top-ups": "Adições de saldo",
   "Amount": "Valor",
   "Member": "Membro",
-  "Note": "Nota"
+  "Note": "Nota",
+  "Please choose a member and an amount.": "Escolha um membro e um valor."
 }
