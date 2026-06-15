@@ -5,6 +5,12 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
+	// Emit to the repository-root `dist/` so Vercel finds the output directory
+	// even when the dashboard's Output Directory is left at the default `dist`.
+	build: {
+		outDir: '../dist',
+		emptyOutDir: true,
+	},
 	resolve: {
 		alias: {
 			'@': fileURLToPath(new URL('./src', import.meta.url)),
