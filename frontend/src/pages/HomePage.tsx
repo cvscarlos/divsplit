@@ -16,8 +16,8 @@ function HomePage() {
 	const createGroup = () => navigate(`/group/${new ObjectId().toHexString()}/config`);
 
 	return (
-		<div className="space-y-14">
-			<section className="border-border bg-card relative overflow-hidden rounded-3xl border px-6 py-16 text-center shadow-sm sm:py-20">
+		<div>
+			<section className="bg-background relative flex min-h-[calc(100vh-4rem)] w-full flex-col items-center justify-center overflow-hidden px-6 py-20 text-center">
 				{/* neon grid + ambient glows + scan-line (theme-aware via tokens) */}
 				<div
 					aria-hidden
@@ -32,6 +32,7 @@ function HomePage() {
 				<div aria-hidden className="pointer-events-none absolute right-1/4 bottom-0 size-72 translate-y-1/3 rounded-full blur-3xl" style={{ backgroundColor: 'color-mix(in srgb, var(--chart-4) 14%, transparent)' }} />
 				<div aria-hidden className="hero-scan" />
 
+				<div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center">
 				{/* floating emblem with two counter-spinning orbital rings */}
 				<div className="relative mx-auto flex size-48 items-center justify-center md:size-56">
 					<div className="hero-float relative flex size-full items-center justify-center">
@@ -70,9 +71,10 @@ function HomePage() {
 						<Plus /> {t('createGroup')}
 					</Button>
 				</div>
+				</div>
 			</section>
 
-			<section>
+			<section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
 				{loading ? (
 					<div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
 						<Loader2 className="size-5 animate-spin" /> {t('Loading')}
