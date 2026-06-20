@@ -33,6 +33,7 @@ The app nets everyone's balances and emits the **minimum** set of transfers, so 
 ### 1.3 Local-first & privacy
 
 - **Local-first by design.** The app must run with **no internet** (trips often have none). All data persists in the browser. A backend/database is intentionally deferred and will act as a **sync layer** *after* local save — letting multiple people record on their own devices offline and reconcile later. Fonts are self-hosted and avatars generated locally so nothing breaks offline.
+- **Installable PWA.** A Workbox **service worker** (`vite-plugin-pwa`) precaches the built **app shell** (HTML/JS/CSS + fonts), so the app launches and reloads with **no network** and can be **installed** to the home screen (web manifest + maskable icons). Generated only in the production build (`dist/sw.js`, `dist/manifest.webmanifest`); `registerType: 'autoUpdate'`.
 - **Privacy by default (project owner rule).** No email or personal data is required — it stays optional, to protect people's privacy. Identity is **trust-based** (opaque UUIDs, no accounts), not authenticated:
   - each **event** (group) has a secret UUID the creator shares; **anyone with the link can edit** (like a shared Google Doc).
   - a **device** gets one local id (`localStorage["divsplit_uid"]`), generated on first use via `generateId()` (`utils/identity.ts`).
@@ -65,6 +66,7 @@ Because anyone with the link can edit, safety comes from an **auditable, restora
 | Fonts | self-hosted via **@fontsource** (sans-serif only: Hanken Grotesk / JetBrains Mono) |
 | Avatars | **@dicebear/core** + **@dicebear/collection** ("thumbs"), generated **locally** (no remote API) |
 | Versioning / diff | **jsondiffpatch** (reversible deltas for the version history) |
+| PWA / offline shell | **vite-plugin-pwa** (Workbox service worker + web manifest) |
 | i18n | **i18next** + **react-i18next** + browser language detector (EN / pt-BR, switchable in the header) |
 | Local persistence | **localforage** (IndexedDB) |
 | ID generation | **bson-objectid** via a single `generateId()` (`utils/id.ts`) — one scheme (24-char ObjectId hex) for every id: events, members, transactions, activities, device id |
@@ -204,6 +206,7 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 - **Theme:** `.dark` class on `<html>`; tokens defined in `index.css` (oklch); persisted at `localStorage["divsplit_theme"]`.
 - **Vite aliases:** `@`, `@components`, `@context`, `@pages`, `@utils`, `@routes`, `@locales` → `src/*` (mirrored in `tsconfig`).
 - **Deploy (Vercel):** build `npm run build --workspace frontend` → `frontend/dist`; SPA rewrite.
+- **PWA:** `vite-plugin-pwa` emits `sw.js` + `manifest.webmanifest` at build; the SW precaches the shell and falls back to `index.html` for client routes. Test with `npm run build` + `vite preview` (the SW is off in `dev`).
 
 ---
 

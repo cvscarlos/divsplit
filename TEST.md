@@ -210,11 +210,20 @@ Most tests below use this event:
 2. **Expected:** name, members and transactions are all still present (and your
    identity — you're not re-prompted by the gate).
 
-### TC-7.2 — Works offline
+### TC-7.2 — Works offline (PWA)
 
-1. With the app loaded, DevTools → Network → **Offline**; reload and use the app.
-2. **Expected:** everything works; fonts and **avatars render** (both bundled /
-   generated locally, never fetched from a CDN).
+1. The service worker only runs in a production build: `npm run build --workspace
+   frontend` then `npm run preview --workspace frontend` (e.g. http://localhost:4173/).
+   Load the page once (lets the SW precache the shell).
+2. DevTools → Network → **Offline**, then **reload**.
+3. **Expected:** the app still launches and works fully — the SW serves the app shell
+   from cache; fonts and avatars render (bundled / generated locally). In dev mode
+   (`npm run dev`) there is no SW, so an offline reload would fail.
+
+### TC-7.2b — Installable
+
+1. In the built/preview app, the browser offers **Install** (address bar / menu).
+2. **Expected:** installs as a standalone app (DivSplit name + piggy icon, pink theme).
 
 ### TC-7.3 — Load sample data
 
