@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, ArrowLeftRight, Check, Undo2, PiggyBank } from 'lucide-react';
-import ObjectId from 'bson-objectid';
 
 import { useGroupContext } from '../../context/GroupContext';
+import { generateId } from '../../utils/id';
 import { computeSettlement, type Transfer } from '../../utils/settlement';
 import { trackTransferRecorded, trackTransferRemoved, trackTopupRemoved } from '../../utils/activity-tracker';
 import { Avatar } from '../../components/Avatar';
@@ -33,7 +33,7 @@ export function GroupSettlement() {
 
 	function markPaid(transfer: Transfer) {
 		const txn: Transaction = {
-			id: String(new ObjectId()),
+			id: generateId(),
 			type: 'transfer',
 			date: new Date(),
 			createdAt: new Date(),

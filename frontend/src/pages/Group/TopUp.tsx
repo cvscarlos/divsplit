@@ -2,11 +2,11 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import ObjectId from 'bson-objectid';
 import { PiggyBank } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { trackTopupRecorded } from '../../utils/activity-tracker';
+import { generateId } from '../../utils/id';
 import type { Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +41,7 @@ export function GroupTopUp() {
 		}
 		const name = members.find((m) => m.id === memberId)?.name ?? '';
 		const txn: Transaction = {
-			id: String(new ObjectId()),
+			id: generateId(),
 			type: 'topup',
 			date: new Date(),
 			createdAt: new Date(),

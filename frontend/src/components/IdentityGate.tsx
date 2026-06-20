@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import ObjectId from 'bson-objectid';
 import { UserPlus } from 'lucide-react';
 
 import { useGroupContext } from '../context/GroupContext';
 import { trackEventCreated, trackMemberAdded } from '../utils/activity-tracker';
 import { getPreferredName } from '../utils/identity';
+import { generateId } from '../utils/id';
 import { Avatar } from './Avatar';
 import type { Group, Member } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +35,7 @@ export function IdentityGate() {
 		const trimmed = name.trim();
 		if (!trimmed) return;
 
-		const member: Member = { id: new ObjectId().toHexString(), name: trimmed };
+		const member: Member = { id: generateId(), name: trimmed };
 		identify(member); // sets the acting identity before we record any activity
 
 		let updated: Group = { ...group, members: [...(group.members ?? []), member] };

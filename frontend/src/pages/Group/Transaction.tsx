@@ -2,12 +2,12 @@ import { useRef, useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import ObjectId from 'bson-objectid';
 import { Wallet, HandCoins, Save, Check } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { trackTransactionCreated, trackTransactionUpdated } from '../../utils/activity-tracker';
 import { getTransactionError } from '../../utils/transaction';
+import { generateId } from '../../utils/id';
 import type { AmountMap, Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -127,7 +127,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			let updatedGroup = { ...group };
 			const transactionDate = new Date(date);
 			const isNew = transactionId === 'new';
-			const id = isNew ? String(new ObjectId()) : transactionId;
+			const id = isNew ? generateId() : transactionId;
 
 			const transactionData: Transaction = {
 				id,

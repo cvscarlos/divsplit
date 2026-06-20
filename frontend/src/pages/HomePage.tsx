@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import ObjectId from 'bson-objectid';
 import { Plus, Loader2, Users, Infinity as InfinityIcon, ArrowUpRight, ShieldCheck, Gauge } from 'lucide-react';
 
 import CardContainer from '../components/CardContainer';
 import CardGroup from '../components/CardGroup';
 import { useApiListGroups } from '../utils/use-api';
+import { generateId } from '../utils/id';
 import { Button } from '@/components/ui/button';
 
 function HomePage() {
@@ -13,7 +13,7 @@ function HomePage() {
 	const navigate = useNavigate();
 	const { groupList, loading } = useApiListGroups();
 
-	const createGroup = () => navigate(`/group/${new ObjectId().toHexString()}/config`);
+	const createGroup = () => navigate(`/group/${generateId()}/config`);
 
 	return (
 		<div>

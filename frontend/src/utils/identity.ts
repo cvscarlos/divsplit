@@ -6,6 +6,8 @@
  *   of the event's secret link). Used to attribute activity to a name.
  */
 
+import { generateId } from './id';
+
 const UID_KEY = 'divsplit_uid';
 const NAME_KEY = 'divsplit_name';
 const identityKey = (eventId: string) => `divsplit_identity_${eventId}`;
@@ -13,7 +15,7 @@ const identityKey = (eventId: string) => `divsplit_identity_${eventId}`;
 export function getDeviceUid(): string {
 	let uid = localStorage.getItem(UID_KEY);
 	if (!uid) {
-		uid = crypto.randomUUID();
+		uid = generateId();
 		localStorage.setItem(UID_KEY, uid);
 	}
 	return uid;

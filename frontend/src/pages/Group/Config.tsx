@@ -6,6 +6,7 @@ import { Trash2, UserPlus, Save } from 'lucide-react';
 import { useGroupContext } from '../../context/GroupContext';
 import { Avatar } from '../../components/Avatar';
 import { trackGroupNameChange, trackMemberChanges } from '../../utils/activity-tracker';
+import { generateId } from '../../utils/id';
 import type { Member } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function GroupConfig() {
-	const memberBase: Member = { id: `0_${Date.now()}`, name: '' };
+	const memberBase: Member = { id: generateId(), name: '' };
 
 	const { data: group, updateGroup } = useGroupContext();
 	const [formFields, setFormFields] = useState<{ name: string }>({ name: '' });
@@ -28,7 +29,7 @@ export function GroupConfig() {
 	}, [group]);
 
 	function addMember() {
-		setMembers([...members, { ...memberBase, id: `${members.length}_${Date.now()}` }]);
+		setMembers([...members, { ...memberBase, id: generateId() }]);
 	}
 	function removeMember(member: Member) {
 		setMembers(members.filter((m) => m.id !== member.id));

@@ -1,6 +1,5 @@
-import ObjectId from 'bson-objectid';
-
 import type { Activity, Group, Member, Transaction } from '../types';
+import { generateId } from './id';
 
 /**
  * Activity types for tracking changes
@@ -49,7 +48,7 @@ export function setCurrentActor(actor: { id: string; name: string } | null): voi
  */
 export function createActivity(type: ActivityType, data: ActivityInput): Activity {
 	return {
-		id: new ObjectId().toHexString(),
+		id: generateId(),
 		type,
 		description: data.description,
 		details: { ...(data.details || {}), ...(currentActor?.name ? { actorName: currentActor.name } : {}) },
