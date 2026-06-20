@@ -4,6 +4,7 @@ import {
 	Plus,
 	Loader2,
 	Users,
+	Infinity as InfinityIcon,
 	ArrowUpRight,
 	ShieldCheck,
 	Gauge,
@@ -46,11 +47,9 @@ function HomePage() {
 				/>
 
 				<div className="relative z-10 flex max-w-3xl flex-col items-center gap-14">
-					<img
-						src="/logo.png"
-						alt=""
-						aria-hidden
-						className="size-24 md:size-32"
+					<InfinityIcon
+						className="text-primary size-24 md:size-32"
+						strokeWidth={1.25}
 						style={{ filter: 'drop-shadow(0 0 18px color-mix(in srgb, var(--primary) 45%, transparent))' }}
 					/>
 
