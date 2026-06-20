@@ -1,7 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import ObjectId from 'bson-objectid';
-import { Plus, Loader2, Users } from 'lucide-react';
+import { Plus, Loader2, Users, Plane, UtensilsCrossed, Flame } from 'lucide-react';
 
 import CardContainer from '../components/CardContainer';
 import CardGroup from '../components/CardGroup';
@@ -12,6 +13,22 @@ function HomePage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const { groupList, loading } = useApiListGroups();
+
+	const glowPink = useRef<HTMLDivElement>(null);
+	const glowGreen = useRef<HTMLDivElement>(null);
+
+	// Parallax: the ambient glows drift with the cursor (disabled if reduced-motion).
+	useEffect(() => {
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const onMove = (e: MouseEvent) => {
+			const x = e.clientX - window.innerWidth / 2;
+			const y = e.clientY - window.innerHeight / 2;
+			if (glowPink.current) glowPink.current.style.transform = `translate(${x / 20}px, ${y / 20}px)`;
+			if (glowGreen.current) glowGreen.current.style.transform = `translate(${-x / 25}px, ${-y / 25}px)`;
+		};
+		window.addEventListener('mousemove', onMove);
+		return () => window.removeEventListener('mousemove', onMove);
+	}, []);
 
 	const createGroup = () => navigate(`/group/${new ObjectId().toHexString()}/config`);
 
@@ -28,8 +45,8 @@ function HomePage() {
 						backgroundSize: '40px 40px',
 					}}
 				/>
-				<div aria-hidden className="bg-primary/10 pointer-events-none absolute top-0 left-1/4 size-80 -translate-y-1/3 rounded-full blur-3xl" />
-				<div aria-hidden className="pointer-events-none absolute right-1/4 bottom-0 size-72 translate-y-1/3 rounded-full blur-3xl" style={{ backgroundColor: 'color-mix(in srgb, var(--chart-4) 14%, transparent)' }} />
+				<div ref={glowPink} aria-hidden className="bg-primary/15 pointer-events-none absolute top-4 left-1/4 size-80 rounded-full blur-3xl" />
+				<div ref={glowGreen} aria-hidden className="pointer-events-none absolute right-1/4 bottom-4 size-72 rounded-full blur-3xl" style={{ backgroundColor: 'color-mix(in srgb, var(--chart-4) 16%, transparent)' }} />
 				<div aria-hidden className="hero-scan" />
 
 				<div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center">
@@ -71,6 +88,24 @@ function HomePage() {
 						<Plus /> {t('createGroup')}
 					</Button>
 				</div>
+				<div className="text-muted-foreground/60 mt-10 flex items-center gap-3 text-xs tracking-widest uppercase">
+					<span className="bg-border h-px w-8" />
+					{t('Ready to split the future')}
+					<span className="bg-border h-px w-8" />
+				</div>
+				</div>
+
+				{/* decorative category pills */}
+				<div className="absolute right-6 bottom-10 left-6 z-10 flex flex-wrap justify-center gap-3 opacity-70 md:gap-6">
+					<span className="border-border bg-card/60 flex items-center gap-2 rounded-full border px-4 py-2 text-xs backdrop-blur-sm">
+						<Plane className="size-4" style={{ color: 'var(--chart-4)' }} /> {t('Group Trips')}
+					</span>
+					<span className="border-border bg-card/60 flex items-center gap-2 rounded-full border px-4 py-2 text-xs backdrop-blur-sm">
+						<UtensilsCrossed className="size-4" style={{ color: 'var(--chart-3)' }} /> {t('Restaurant Bills')}
+					</span>
+					<span className="border-border bg-card/60 flex items-center gap-2 rounded-full border px-4 py-2 text-xs backdrop-blur-sm">
+						<Flame className="text-primary size-4" /> {t('BBQ Parties')}
+					</span>
 				</div>
 			</section>
 
@@ -103,6 +138,20 @@ function HomePage() {
 					</>
 				)}
 			</section>
+
+			<footer className="border-border border-t border-dashed">
+				<div className="text-muted-foreground mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 py-8 text-xs sm:flex-row sm:px-6">
+					<span>© {new Date().getFullYear()} DivSplit — {t('All rights reserved')}.</span>
+					<div className="flex gap-4">
+						<a href="#" className="hover:text-primary transition-colors hover:underline">
+							{t('Privacy Policy')}
+						</a>
+						<a href="#" className="hover:text-primary transition-colors hover:underline">
+							{t('Terms of Service')}
+						</a>
+					</div>
+				</div>
+			</footer>
 		</div>
 	);
 }

@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Moon, Sun } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { useThemeContext } from '../../context/ThemeContext';
 import { Button } from '@/components/ui/button';
 
 function Header() {
+	const { t } = useTranslation();
 	const { theme, toggleTheme } = useThemeContext();
 	const isDark = theme === 'dark';
 
@@ -21,6 +23,18 @@ function Header() {
 						Div<span className="text-primary">Split</span>
 					</span>
 				</Link>
+
+				<nav className="hidden items-center gap-7 md:flex">
+					<a href="#" className="text-muted-foreground hover:text-primary text-sm font-medium transition-colors">
+						{t('How it works')}
+					</a>
+					<a href="#" className="text-muted-foreground hover:text-primary text-sm font-medium transition-colors">
+						{t('Pricing')}
+					</a>
+					<a href="#" className="text-muted-foreground hover:text-primary text-sm font-medium transition-colors">
+						{t('Support')}
+					</a>
+				</nav>
 
 				<Button
 					variant="ghost"
