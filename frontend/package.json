@@ -9,7 +9,6 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"@fontsource-variable/fraunces": "^5.2.9",
 		"@fontsource-variable/hanken-grotesk": "^5.2.8",
 		"@fontsource-variable/jetbrains-mono": "^5.2.8",
 		"@radix-ui/react-label": "^2.1.9",

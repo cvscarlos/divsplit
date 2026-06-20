@@ -35,7 +35,7 @@ function CardGroup({ group }: { group: GroupListItem }) {
 				<Icon className="size-5 text-black/80" />
 			</span>
 			<div>
-				<h3 className="font-serif text-2xl font-bold tracking-tight">{group.name}</h3>
+				<h3 className="font-sans text-2xl font-bold tracking-tight">{group.name}</h3>
 				<p className="tnum mt-1 truncate text-xs text-black/55 italic">{group.id}</p>
 			</div>
 		</button>

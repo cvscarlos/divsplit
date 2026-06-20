@@ -6,7 +6,7 @@
 /*
  * DivSplit — "travel receipt / boarding pass" aesthetic.
  * Warm paper backgrounds, ink text, one confident tangerine accent,
- * an expressive display serif and a tabular mono for money.
+ * a sans-serif type system and a tabular mono for money.
  */
 :root {
 	--radius: 0.5rem;
@@ -114,7 +114,6 @@
 	--color-chart-5: var(--chart-5);
 
 	--font-sans: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
-	--font-serif: 'Fraunces Variable', ui-serif, Georgia, serif;
 	--font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
 }
 
@@ -144,7 +143,7 @@
 	h1,
 	h2,
 	h3 {
-		@apply font-serif tracking-tight;
+		@apply font-sans tracking-tight;
 		font-optical-sizing: auto;
 	}
 }

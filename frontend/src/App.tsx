@@ -1,5 +1,4 @@
 import './index.css';
-import '@fontsource-variable/fraunces';
 import '@fontsource-variable/hanken-grotesk';
 import '@fontsource-variable/jetbrains-mono';
 import './i18n';

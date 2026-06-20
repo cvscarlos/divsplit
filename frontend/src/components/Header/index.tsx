@@ -17,7 +17,7 @@ function Header() {
 						alt="DivSplit"
 						className="size-9 transition-transform group-hover:-rotate-6"
 					/>
-					<span className="font-serif text-2xl font-semibold tracking-tight">
+					<span className="font-sans text-2xl font-semibold tracking-tight">
 						Div<span className="text-primary">Split</span>
 					</span>
 				</Link>

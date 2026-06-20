@@ -20,7 +20,7 @@ export function GroupHeader() {
 	return (
 		<div className="mb-9">
 			<p className="text-muted-foreground text-center text-xs font-semibold tracking-[0.2em] uppercase">Group</p>
-			<h1 className="mt-1.5 text-center font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
+			<h1 className="mt-1.5 text-center font-sans text-4xl font-semibold tracking-tight sm:text-5xl">
 				{group.config?.name || 'Untitled group'}
 			</h1>
 
