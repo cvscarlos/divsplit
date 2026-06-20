@@ -9,6 +9,8 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
+		"@dicebear/collection": "^9.4.2",
+		"@dicebear/core": "^9.4.2",
 		"@fontsource-variable/hanken-grotesk": "^5.2.8",
 		"@fontsource-variable/jetbrains-mono": "^5.2.8",
 		"@radix-ui/react-label": "^2.1.9",
