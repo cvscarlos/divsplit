@@ -2,7 +2,7 @@
 
 > Living architectural reference for **DivSplit**, written for both human developers and AI coding agents.
 >
-> This file describes **what you are working with** (structure, data, flow, constraints). It complements — and does not replace — `.github/copilot-instructions.md` / `CLAUDE.md` (which say *how to work*) and `DESIGN.md` (the visual design system, currently a placeholder).
+> This file describes **what you are working with** (structure, data, flow, constraints) — the **software architecture**. Anything purely **visual** (palette, typography, layout, components, motion) lives in `DESIGN.md`, not here. It also complements `.github/copilot-instructions.md` / `CLAUDE.md` (which say *how to work*).
 >
 > Keep this file current: update it in the same change that alters structure, the data model, routes, or a constraint. A stale architecture doc is worse than none.
 >
@@ -33,11 +33,19 @@ The app nets everyone's balances and emits the **minimum** set of transfers, so 
 ### 1.3 Local-first & privacy
 
 - **Local-first by design.** The app must run with **no internet** (trips often have none). All data persists in the browser. A backend/database is intentionally deferred and will act as a **sync layer** *after* local save — letting multiple people record on their own devices offline and reconcile later. Fonts are self-hosted and avatars generated locally so nothing breaks offline.
-- **Privacy by default (project owner rule).** No email or personal data is required — it stays optional, to protect people's privacy. Identity is modeled with opaque UUIDs, not accounts:
-  - each **event** (group) has a UUID the creator shares with members;
-  - each **member** gets their own per-event UUID;
-  - a member uses their UUID to record expenses **independently**, without waiting for the creator — this is what later enables multi-device offline contribution.
-  - Real **member identification/auth is a v2 concern**; today there is no PII and `activities.userId` is unused.
+- **Privacy by default (project owner rule).** No email or personal data is required — it stays optional, to protect people's privacy. Identity is **trust-based** (opaque UUIDs, no accounts), not authenticated:
+  - each **event** (group) has a secret UUID the creator shares; **anyone with the link can edit** (like a shared Google Doc).
+  - a **device** gets one local UUID (`localStorage["divsplit_uid"]`), generated on first use (`utils/identity.ts`).
+  - on first open of an event link the app shows a **"Who are you?"** gate — pick an existing member or add yourself; the choice persists locally per event (`localStorage["divsplit_identity_<eventId>"]`). The creator of a new event names themselves first. Names stay editable.
+  - the chosen member **attributes** every change — `activities` now carry `userId` + `actorName`, and each version records its `author`.
+  - This is *trust*, not auth: real cryptographic member auth remains a **v2 concern**.
+
+### 1.4 Version history & restore (the trust safety net)
+
+Because anyone with the link can edit, safety comes from an **auditable, restorable history** (git / Google-Docs style) rather than permissions:
+- every save records **one reversible delta** of the event "core" (`config` / `members` / `transactions`) via **jsondiffpatch** — **no full snapshots**, so storage stays tiny (`utils/versioning.ts`).
+- the **Versions** tab shows the timeline, a human-readable diff, and lets anyone **restore** an earlier state. A restore is a **new forward version** (history is never destroyed), like reverting a git commit.
+- past states are reconstructed by reverse-applying ("unpatch") deltas from the current state; history lives in a separate store (`localforage "history"`, key = eventId) so the event document stays small.
 
 ---
 
@@ -54,10 +62,12 @@ The app nets everyone's balances and emits the **minimum** set of transfers, so 
 | Routing | **react-router-dom 7** |
 | Styling | **Tailwind CSS v4** (`@tailwindcss/vite`, CSS-first `@theme`) + **shadcn/ui** primitives |
 | Icons | **lucide-react** |
-| Fonts | self-hosted via **@fontsource** (Fraunces / Hanken Grotesk / JetBrains Mono) |
-| i18n | **i18next** + **react-i18next** + browser language detector |
+| Fonts | self-hosted via **@fontsource** (sans-serif only: Hanken Grotesk / JetBrains Mono) |
+| Avatars | **@dicebear/core** + **@dicebear/collection** ("thumbs"), generated **locally** (no remote API) |
+| Versioning / diff | **jsondiffpatch** (reversible deltas for the version history) |
+| i18n | **i18next** + **react-i18next** + browser language detector (EN / pt-BR, switchable in the header) |
 | Local persistence | **localforage** (IndexedDB) |
-| ID generation | **bson-objectid** (Mongo-style ObjectIds) |
+| ID generation | **bson-objectid** (Mongo-style ObjectIds) + `crypto.randomUUID()` (device id) |
 | Unit tests | **Vitest** |
 
 ### Backend (`backend/`)
@@ -79,7 +89,7 @@ divsplit/
 ├─ frontend/             # Vite + React 19 + TS SPA (all current application code)
 ├─ backend/              # empty placeholder workspace (future sync API)
 ├─ ARCHITECTURE.md       # this file
-├─ DESIGN.md             # visual design system (placeholder; to be built via Stitch MCP)
+├─ DESIGN.md             # visual design system (palette, type, layout, components)
 ├─ TEST.md               # manual QA procedures per feature
 ├─ docs/superpowers/specs # design specs (settlement, mark-as-paid, …)
 └─ .github/              # CI (lint + test + build) + copilot-instructions.md
@@ -99,21 +109,24 @@ Root scripts: `npm run dev`, `npm run format`, `npm run lint`. Frontend scripts 
 
 **Cross-cutting state (React Context)**
 - `context/ThemeContext.tsx` — light/dark, persisted to `localStorage["divsplit_theme"]`; toggles the `.dark` class on `<html>`.
-- `context/GroupContext.tsx` — loads/exposes the active group (`data`, `updateGroup`, `loadDemo`).
+- `context/GroupContext.tsx` — loads/exposes the active group (`data`, `updateGroup(next, meta?)`, `loadDemo`) **and the trust-based identity** (`currentMemberId`, `currentMember`, `identify`, `clearIdentity`); syncs the activity-tracker actor.
 
 **Domain & data layer (`utils/`)**
-- `use-api.ts` — the persistence boundary. localforage stores `groupList` and `group`; hooks `useApiListGroups`, `useApiGetGroup`; `loadDemoData`; `generateId()`. *Single place that touches storage.*
+- `use-api.ts` — the persistence boundary. localforage stores `groupList`, `group`, and `history`; hooks `useApiListGroups`, `useApiGetGroup`. On each save it records a version (author from the local identity) and logs "Event created" on first persist. *Single place that touches event storage.*
+- `versioning.ts` — version history engine (jsondiffpatch): `recordVersion`, `listVersions`, `reconstructCore` (reverse-apply), `buildRestore`, `describeChange` (human diff). Stores one reversible delta per save in `localforage "history"`.
+- `identity.ts` — trust-based identity: `getDeviceUid`, `get/setEventMemberId`, `getPreferredName` (all `localStorage`).
 - `settlement.ts` — **pure** settlement engine: `computeBalances` (ΣpaidBy − ΣpaidFor), `topupTotal`, and `computeSettlement` (offset the holder by Σtop-ups → greedy min-cash-flow → fewest `transfers`). Unit-tested.
 - `transaction.ts` — `getTransactionError` (form validation), unit-tested.
-- `activity-tracker.ts` — `ACTIVITY_TYPES` + pure functions appending audit entries (capped 100, newest first).
+- `activity-tracker.ts` — `ACTIVITY_TYPES` + pure functions appending audit entries (capped 100, newest first); `setCurrentActor` so each entry records `userId` + `actorName`.
 - `tools.ts` — `jsonParseSafe` / `jsonStringifySafe`.
 - `types.ts` — shared domain types (`Group`, `Member`, `Transaction` incl. `TransactionType`, `Activity`, settlement types).
 
 **UI**
 - `components/ui/*` — shadcn primitives (`button`, `card`, `input`, `label`, `table`, `switch`, `badge`); `lib/utils.ts` exports `cn`.
-- Pages (`pages/`): `HomePage`, `Group/Config`, `Group/Transaction` (hosts auto-split), `Group/ListTransactions`, `Group/Settlement`, `Group/Activity`, `NotFound`.
-- `components/GroupPageWrapper.tsx` — wraps a group route in `GroupProvider`, dispatches `:section`, shows the empty-group prompt, mounts `Debug`.
-- `Header`, `GroupHeader` (tab nav), `Avatar` (local initials), `Hr`, `Loading`, `Container`, `CardGroup`, `CardContainer`, `Debug`.
+- Pages (`pages/`): `HomePage`, `Group/Config`, `Group/Transaction` (hosts auto-split), `Group/ListTransactions`, `Group/Settlement`, `Group/Activity`, `Group/History` (version timeline + restore), `NotFound`.
+- `components/GroupPageWrapper.tsx` — wraps a group route in `GroupProvider`, **shows the `IdentityGate` until you've picked who you are**, then dispatches `:section`, shows the empty-group prompt, mounts `Debug`.
+- `components/IdentityGate.tsx` — the "Who are you?" step (pick a member / add yourself / name a new event).
+- `Header` (logo + EVENTS link + language selector + theme toggle), `GroupHeader` (tab nav + "You: <name>"), `Avatar` (DiceBear "thumbs", local), `Loading`, `Container`, `CardGroup`, `CardContainer`, `Debug`.
 
 ---
 
@@ -128,8 +141,11 @@ SPA, client-side routing only (Vercel rewrites all paths to `index.html`). The s
 | `/group/:groupId/topup` | `GroupTopUp` (record a top-up) |
 | `/group/:groupId/transactions[/:id\|new]` | transactions list / `GroupTransaction` |
 | `/group/:groupId/settlement` | `GroupSettlement` (balances + transfers) |
-| `/group/:groupId/activity` | `GroupActivity` |
+| `/group/:groupId/activity` | `GroupActivity` (per-action log, with actor) |
+| `/group/:groupId/versions` | `GroupHistory` (version timeline, diff, restore) |
 | `*` | `NotFound` |
+
+Opening any `/group/:groupId/*` path shows the **`IdentityGate`** first if this device hasn't picked a member for that event.
 
 ---
 
@@ -144,9 +160,11 @@ Group = {
   transactions: Transaction[],              // { id, type?: 'expense'|'transfer'|'topup', date, description,
                                             //   total, paidBy:{memberId:amount},
                                             //   paidFor:{memberId:amount}, manuallyChanged }
-  activities?: Activity[],                  // audit log (capped 100, newest first)
+  activities?: Activity[],                  // audit log (capped 100, newest first); each carries userId + actorName
 }
 ```
+
+**Version history is stored separately** (not in the `Group`, to keep the document and its diffs small): `localforage "history"`, key = eventId → `EventVersion[]`, where `EventVersion = { v, ts, message, author, delta }` and `delta` is a reversible jsondiffpatch delta of the event core (`config`/`members`/`transactions`). See §1.4 and `utils/versioning.ts`.
 
 **Everything is a `Transaction`** (§1.1). An expense (`type` absent / `'expense'`) is consumption via the split form. A **transfer** (`type: 'transfer'`, a settle-up) moves money between two members — *sender* on `paidBy` (credit), *recipient* on `paidFor` (debit). A **top-up** (`type: 'topup'`) is a self-credit — `paidBy = {member: amount}`, empty `paidFor`. All fold into balances for free; transfers and top-ups are entered on/near the Settle up page and filtered out of the expenses list.
 
@@ -171,8 +189,9 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
                                           localforage "groupList" (name index)
 ```
 
-- **Write path:** a page builds a new group object (often via `activity-tracker` helpers), calls `updateGroup(next)`; `useApiGetGroup` stages it, persists, re-reads, and upserts the name into `groupList`.
-- **Derived, not stored:** balances and the *suggested* settlement transfers are computed on read; recorded settle-ups are persisted as `type: 'transfer'` transactions.
+- **Write path:** a page builds a new group object (often via `activity-tracker` helpers), calls `updateGroup(next, meta?)`; `useApiGetGroup` stages it, persists, **records a version** (`recordVersion`, author from the local identity) and re-reads, then upserts the name into `groupList`.
+- **Identity:** read locally per event (`utils/identity.ts`); the `IdentityGate` writes it before any contribution, and `GroupContext` keeps the activity-tracker actor in sync so writes are attributed.
+- **Derived, not stored:** balances and the *suggested* settlement transfers are computed on read; recorded settle-ups are persisted as `type: 'transfer'` transactions. Past event states are reconstructed on demand from the delta history.
 - **No network.** Fully offline; demo data from `/demo_data.json`.
 
 ---
@@ -201,9 +220,10 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 
 - **`Transaction.tsx` auto-split** — complex in-place mutation + rounding; highest-risk hotspot, still untested at the component level (the pure split rules are the candidate to extract + unit-test).
 - **`member.prepaid` legacy field** — kept optional only so old groups migrate to top-ups on load (`use-api` `groupStandardize`); unused by new code. Likewise `config.bankerId` → `holderId`.
-- **Inconsistent member ids** — members use `"${index}_${Date.now()}"` while transactions/activities use ObjectId hex. Move members to UUIDs with the identity model.
-- **`activities.userId` unused** — placeholder until the UUID identity model lands.
-- **No component/E2E tests** — only pure-logic unit tests exist.
+- **Inconsistent member ids** — members added in `Config` use `"${index}_${Date.now()}"` while those added via the `IdentityGate` and transactions/activities use ObjectId/UUID hex. Harmless (ids only need to be unique) but worth unifying.
+- **No keyframe snapshots in versioning** — reconstructing an old state replays all deltas from the current head; fine for small events, add periodic keyframes if histories get very long.
+- **Activity log vs. version history overlap** — two adjacent views (per-action `activity` log and per-save `versions`); candidate to merge into one history view.
+- **No component/E2E tests** — only pure-logic unit tests exist; versioning (`versioning.ts`) is a good candidate for unit tests.
 
 ---
 
@@ -214,9 +234,10 @@ Source: project owner. Order indicative.
 1. ✅ **TypeScript migration**, dependency upgrades, **shadcn/Tailwind v4 redesign**, **CI** (lint+test+build), **settlement engine**.
 2. ✅ **Mark transfers as paid** — settle-ups recorded as transfer transactions that net down balances; undoable; logged to Activity.
 3. ✅ **Top-up & top-holder** — prepaid generalised to optional top-up transactions; the holder holds the pot and refunds the unused part; the banker special-case is gone.
-4. **Identity & privacy model** — per-event + per-member UUIDs so members contribute independently with no PII (§1.3); member identification in **v2**.
-5. **Backend sync layer** — local-first stays source of truth; reconcile multi-device offline edits (needs the UUID identities + conflict resolution).
-6. **Visual design via Stitch MCP** — generate fresh modern layouts, recorded in `DESIGN.md`.
+4. ✅ **Visual design via Stitch MCP** — neon pink/green system + minimal full-screen landing, recorded in `DESIGN.md`.
+5. ✅ **Trust-based identity** — device UUID + per-event "who are you?" gate attributing every change (§1.3); real cryptographic member auth still **v2**.
+6. ✅ **Version history & restore** — reversible jsondiffpatch deltas, diff view, restore-as-new-version (§1.4).
+7. **Backend sync layer** — local-first stays source of truth; reconcile multi-device offline edits (the version-delta model + identities are the foundation; needs conflict resolution / vector clocks).
 
 ---
 
