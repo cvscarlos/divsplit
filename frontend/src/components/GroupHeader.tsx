@@ -19,9 +19,9 @@ export function GroupHeader() {
 
 	return (
 		<div className="mb-9">
-			<p className="text-muted-foreground text-center text-xs font-semibold tracking-[0.2em] uppercase">Group</p>
+			<p className="text-muted-foreground text-center text-xs font-semibold tracking-[0.2em] uppercase">{t('Event')}</p>
 			<h1 className="mt-1.5 text-center font-sans text-4xl font-semibold tracking-tight sm:text-5xl">
-				{group.config?.name || 'Untitled group'}
+				{group.config?.name || t('Untitled event')}
 			</h1>
 
 			<nav className="mt-6 flex justify-center">

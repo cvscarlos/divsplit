@@ -7,6 +7,7 @@ import type { Activity, Group, Member, Transaction } from '../types';
  */
 export const ACTIVITY_TYPES = {
 	// Group activities
+	GROUP_CREATED: 'group_created',
 	GROUP_UPDATED: 'group_updated',
 	MEMBER_CREATED: 'member_created',
 	MEMBER_UPDATED: 'member_updated',
@@ -65,13 +66,23 @@ export function addActivityToGroup(group: Group, activity: Activity): Group {
 }
 
 /**
+ * Track event creation. Appended at the end so it stays the oldest entry.
+ */
+export function trackEventCreated(group: Group): Group {
+	const activity = createActivity(ACTIVITY_TYPES.GROUP_CREATED, { description: 'Event created' });
+	const updatedGroup: Group = { ...group };
+	updatedGroup.activities = [...(updatedGroup.activities || []), activity];
+	return updatedGroup;
+}
+
+/**
  * Track group name change
  */
 export function trackGroupNameChange(group: Group, oldName: string, newName: string): Group {
 	if (oldName === newName) return group;
 
 	const activity = createActivity(ACTIVITY_TYPES.GROUP_UPDATED, {
-		description: `Group name changed from "${oldName}" to "${newName}"`,
+		description: `Event name changed from "${oldName}" to "${newName}"`,
 		details: { oldName, newName },
 	});
 
@@ -83,7 +94,7 @@ export function trackGroupNameChange(group: Group, oldName: string, newName: str
  */
 export function trackMemberAdded(group: Group, member: Member): Group {
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_CREATED, {
-		description: `Member "${member.name}" was added to the group`,
+		description: `Member "${member.name}" was added to the event`,
 		details: { memberId: member.id, memberName: member.name, prepaid: member.prepaid },
 	});
 
@@ -95,7 +106,7 @@ export function trackMemberAdded(group: Group, member: Member): Group {
  */
 export function trackMemberRemoved(group: Group, member: Member): Group {
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_DELETED, {
-		description: `Member "${member.name}" was removed from the group`,
+		description: `Member "${member.name}" was removed from the event`,
 		details: { memberId: member.id, memberName: member.name },
 	});
 

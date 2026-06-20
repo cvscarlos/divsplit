@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import localforage from 'localforage';
 
 import type { Group, GroupListItem } from '../types';
+import { trackEventCreated } from './activity-tracker';
 
 const groupListStore = localforage.createInstance({ name: 'groupList' });
 const groupStore = localforage.createInstance({ name: 'group' });
@@ -115,9 +116,12 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 			if (!groupId) return;
 
 			if (dataToSave) {
-				await groupStore.setItem(groupId, dataToSave);
+				// First time this event is persisted → log an "Event created" entry.
+				const existed = (await groupStore.getItem<Group>(groupId)) != null;
+				const toSave = existed ? dataToSave : trackEventCreated(dataToSave);
+				await groupStore.setItem(groupId, toSave);
 				if (!abort) setDataToSave(null);
-				if (!abort) await updateGroupName(dataToSave.config.name, groupId);
+				if (!abort) await updateGroupName(toSave.config.name, groupId);
 			}
 
 			const group = groupStandardize(await groupStore.getItem<Group>(groupId));

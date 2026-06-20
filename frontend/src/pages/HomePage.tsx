@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import ObjectId from 'bson-objectid';
-import { Plus, Loader2, Users, Plane, UtensilsCrossed, Flame } from 'lucide-react';
+import { Plus, Loader2, Users, Infinity as InfinityIcon, ArrowUpRight, ShieldCheck, Gauge } from 'lucide-react';
 
 import CardContainer from '../components/CardContainer';
 import CardGroup from '../components/CardGroup';
@@ -14,98 +13,67 @@ function HomePage() {
 	const navigate = useNavigate();
 	const { groupList, loading } = useApiListGroups();
 
-	const glowPink = useRef<HTMLDivElement>(null);
-	const glowGreen = useRef<HTMLDivElement>(null);
-
-	// Parallax: the ambient glows drift with the cursor (disabled if reduced-motion).
-	useEffect(() => {
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		const onMove = (e: MouseEvent) => {
-			const x = e.clientX - window.innerWidth / 2;
-			const y = e.clientY - window.innerHeight / 2;
-			if (glowPink.current) glowPink.current.style.transform = `translate(${x / 20}px, ${y / 20}px)`;
-			if (glowGreen.current) glowGreen.current.style.transform = `translate(${-x / 25}px, ${-y / 25}px)`;
-		};
-		window.addEventListener('mousemove', onMove);
-		return () => window.removeEventListener('mousemove', onMove);
-	}, []);
-
 	const createGroup = () => navigate(`/group/${new ObjectId().toHexString()}/config`);
 
 	return (
 		<div>
 			<section className="bg-background relative flex min-h-[calc(100vh-4rem)] w-full flex-col items-center justify-center overflow-hidden px-6 py-20 text-center">
-				{/* neon grid + ambient glows + scan-line (theme-aware via tokens) */}
+				{/* static "liquid" gradient glows (theme-aware tints) */}
 				<div
 					aria-hidden
-					className="pointer-events-none absolute inset-0"
+					className="pointer-events-none absolute -top-40 -left-32 size-[34rem] rounded-full blur-[110px]"
 					style={{
-						backgroundImage:
-							'linear-gradient(color-mix(in srgb, var(--primary) 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--primary) 7%, transparent) 1px, transparent 1px)',
-						backgroundSize: '40px 40px',
+						background:
+							'linear-gradient(135deg, color-mix(in srgb, var(--secondary) 20%, transparent), color-mix(in srgb, var(--primary) 12%, transparent))',
 					}}
 				/>
-				<div ref={glowPink} aria-hidden className="bg-primary/15 pointer-events-none absolute top-4 left-1/4 size-80 rounded-full blur-3xl" />
-				<div ref={glowGreen} aria-hidden className="pointer-events-none absolute right-1/4 bottom-4 size-72 rounded-full blur-3xl" style={{ backgroundColor: 'color-mix(in srgb, var(--chart-4) 16%, transparent)' }} />
-				<div aria-hidden className="hero-scan" />
+				<div
+					aria-hidden
+					className="pointer-events-none absolute -right-32 -bottom-40 size-[30rem] rounded-full blur-[110px]"
+					style={{
+						background:
+							'linear-gradient(135deg, color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--secondary) 12%, transparent))',
+					}}
+				/>
 
-				<div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center">
-				{/* floating emblem with two counter-spinning orbital rings */}
-				<div className="relative mx-auto flex size-48 items-center justify-center md:size-56">
-					<div className="hero-float relative flex size-full items-center justify-center">
-						<div aria-hidden className="bg-primary/20 absolute inset-8 rounded-full blur-2xl" />
-						<img
-							src="/logo.png"
-							alt=""
-							aria-hidden
-							className="relative size-24"
-							style={{ filter: 'drop-shadow(0 0 18px color-mix(in srgb, var(--primary) 55%, transparent))' }}
-						/>
-						<div aria-hidden className="hero-orbit border-primary/30 absolute inset-0 rounded-full border">
-							<span
-								className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rounded-full"
-								style={{ backgroundColor: 'var(--chart-4)', boxShadow: '0 0 12px var(--chart-4)' }}
-							/>
-						</div>
-						<div aria-hidden className="hero-orbit-reverse border-primary/20 absolute inset-5 rounded-full border">
-							<span
-								className="absolute -bottom-1.5 left-1/2 size-2.5 -translate-x-1/2 rounded-full"
-								style={{ backgroundColor: 'var(--chart-3)', boxShadow: '0 0 12px var(--chart-3)' }}
-							/>
+				<div className="relative z-10 flex max-w-3xl flex-col items-center gap-14">
+					<InfinityIcon
+						className="text-primary size-24 md:size-32"
+						strokeWidth={1.25}
+						style={{ filter: 'drop-shadow(0 0 18px color-mix(in srgb, var(--primary) 45%, transparent))' }}
+					/>
+
+					<div className="space-y-6">
+						<h1 className="text-foreground text-5xl font-extralight tracking-tight md:text-7xl">
+							{t('HeroLine1')}
+							<br />
+							<span className="from-primary to-secondary bg-gradient-to-r bg-clip-text font-bold text-transparent">
+								{t('HeroAccent')}
+							</span>
+						</h1>
+						<p className="text-muted-foreground mx-auto max-w-xl text-lg font-light text-pretty md:text-xl">
+							{t('HeroSubtitle')}
+						</p>
+					</div>
+
+					<div className="flex flex-col items-center gap-10">
+						<Button
+							size="lg"
+							onClick={createGroup}
+							className="group rounded-full px-12 py-7 text-base font-semibold tracking-wider uppercase shadow-[0_18px_50px_-12px_color-mix(in_srgb,var(--primary)_55%,transparent)] transition-transform hover:-translate-y-1"
+						>
+							{t('Create an event')}
+							<ArrowUpRight className="transition-transform group-hover:rotate-45" />
+						</Button>
+						<div className="text-muted-foreground/50 flex items-center gap-8 text-[10px] tracking-[0.3em] uppercase">
+							<span className="flex items-center gap-2">
+								<ShieldCheck className="size-4" /> {t('Encrypted')}
+							</span>
+							<span className="flex items-center gap-2">
+								<Gauge className="size-4" /> {t('Real-time')}
+							</span>
 						</div>
 					</div>
-				</div>
-
-				<h1 className="text-foreground relative mt-10 text-4xl font-extrabold tracking-tight sm:text-6xl">
-					{t('HeroLine1')}{' '}
-					<span className="text-primary block [text-shadow:0_0_28px_color-mix(in_srgb,var(--primary)_60%,transparent)]">
-						{t('HeroAccent')}
-					</span>
-				</h1>
-				<p className="text-muted-foreground relative mx-auto mt-6 max-w-md text-lg text-pretty">{t('HeroSubtitle')}</p>
-				<div className="relative mt-8">
-					<Button size="lg" onClick={createGroup}>
-						<Plus /> {t('createGroup')}
-					</Button>
-				</div>
-				<div className="text-muted-foreground/60 mt-10 flex items-center gap-3 text-xs tracking-widest uppercase">
-					<span className="bg-border h-px w-8" />
-					{t('Ready to split the future')}
-					<span className="bg-border h-px w-8" />
-				</div>
-				</div>
-
-				{/* decorative category pills */}
-				<div className="absolute right-6 bottom-10 left-6 z-10 flex flex-wrap justify-center gap-3 opacity-70 md:gap-6">
-					<span className="border-border bg-card/60 flex items-center gap-2 rounded-full border px-4 py-2 text-xs backdrop-blur-sm">
-						<Plane className="size-4" style={{ color: 'var(--chart-4)' }} /> {t('Group Trips')}
-					</span>
-					<span className="border-border bg-card/60 flex items-center gap-2 rounded-full border px-4 py-2 text-xs backdrop-blur-sm">
-						<UtensilsCrossed className="size-4" style={{ color: 'var(--chart-3)' }} /> {t('Restaurant Bills')}
-					</span>
-					<span className="border-border bg-card/60 flex items-center gap-2 rounded-full border px-4 py-2 text-xs backdrop-blur-sm">
-						<Flame className="text-primary size-4" /> {t('BBQ Parties')}
-					</span>
 				</div>
 			</section>
 
@@ -119,7 +87,7 @@ function HomePage() {
 						<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
 							<Users className="size-7" />
 						</span>
-						<p className="text-muted-foreground">{t('No groups yet')}</p>
+						<p className="text-muted-foreground">{t('No events yet')}</p>
 						<Button onClick={createGroup}>
 							<Plus /> {t('createGroup')}
 						</Button>
@@ -134,6 +102,16 @@ function HomePage() {
 							{groupList.map((groupItem) => (
 								<CardGroup key={groupItem.id} group={groupItem} />
 							))}
+							<button
+								type="button"
+								onClick={createGroup}
+								className="group border-border text-muted-foreground hover:border-primary hover:text-primary flex min-h-44 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed transition-colors"
+							>
+								<span className="bg-muted group-hover:bg-primary/10 flex size-12 items-center justify-center rounded-full transition-colors">
+									<Plus className="size-6" />
+								</span>
+								<span className="text-sm font-medium">{t('createGroup')}</span>
+							</button>
 						</CardContainer>
 					</>
 				)}

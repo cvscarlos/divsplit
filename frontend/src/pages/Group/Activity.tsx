@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Users, Receipt, Trash2, Pencil, Plus, History, ArrowLeftRight, PiggyBank } from 'lucide-react';
+import { Users, Receipt, Trash2, Pencil, Plus, History, ArrowLeftRight, PiggyBank, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
@@ -13,6 +13,8 @@ export function GroupActivity() {
 
 	function getActivityIcon(type: string): { Icon: LucideIcon; tone: string } {
 		switch (type) {
+			case ACTIVITY_TYPES.GROUP_CREATED:
+				return { Icon: Sparkles, tone: 'bg-primary/15 text-primary' };
 			case ACTIVITY_TYPES.GROUP_UPDATED:
 				return { Icon: Users, tone: 'bg-accent text-accent-foreground' };
 			case ACTIVITY_TYPES.MEMBER_CREATED:
@@ -93,7 +95,7 @@ export function GroupActivity() {
 						</span>
 						<p className="text-muted-foreground">No activity yet</p>
 						<p className="text-muted-foreground/70 max-w-xs text-sm">
-							Activity will appear here when you make changes to the group or transactions.
+							Activity will appear here when you make changes to the event or transactions.
 						</p>
 					</div>
 				)}
