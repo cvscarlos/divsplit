@@ -1,5 +1,6 @@
 # Directories
 *.local/
+.fallow/
 .idea/
 .stitch/
 .vscode/
