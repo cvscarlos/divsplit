@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, ArrowLeftRight, Check, Undo2, PiggyBank } from 'lucide-react';
@@ -14,6 +15,26 @@ import { cn } from '@/lib/utils';
 import type { Transaction } from '../../types';
 
 const SETTLED_EPS = 0.005;
+
+// Shared row for the Top-ups / Recorded-payments lists: left content + amount + Undo.
+function UndoRow({ children, amount, onUndo }: { children: ReactNode; amount: number; onUndo: () => void }) {
+	const { t } = useTranslation();
+	return (
+		<li className="border-border/60 flex items-center gap-2 rounded-lg border px-3 py-2">
+			{children}
+			<span className="tnum ml-auto font-semibold">${amount}</span>
+			<Button
+				type="button"
+				size="sm"
+				variant="ghost"
+				className="text-muted-foreground hover:text-destructive shrink-0"
+				onClick={onUndo}
+			>
+				<Undo2 /> {t('Undo')}
+			</Button>
+		</li>
+	);
+}
 
 export function GroupSettlement() {
 	const { t } = useTranslation();
@@ -168,20 +189,10 @@ export function GroupSettlement() {
 							{recordedTopups.map((txn) => {
 								const memberId = Object.keys(txn.paidBy)[0] ?? '';
 								return (
-									<li key={txn.id} className="border-border/60 flex items-center gap-2 rounded-lg border px-3 py-2">
+									<UndoRow key={txn.id} amount={txn.total} onUndo={() => removeTransaction(txn)}>
 										<PiggyBank className="text-primary size-4 shrink-0" />
 										<span className="truncate text-sm font-medium">{nameOf(memberId)}</span>
-										<span className="tnum ml-auto font-semibold">${txn.total}</span>
-										<Button
-											type="button"
-											size="sm"
-											variant="ghost"
-											className="text-muted-foreground hover:text-destructive shrink-0"
-											onClick={() => removeTransaction(txn)}
-										>
-											<Undo2 /> {t('Undo')}
-										</Button>
-									</li>
+									</UndoRow>
 								);
 							})}
 						</ul>
@@ -200,21 +211,11 @@ export function GroupSettlement() {
 								const fromId = Object.keys(txn.paidBy)[0] ?? '';
 								const toId = Object.keys(txn.paidFor)[0] ?? '';
 								return (
-									<li key={txn.id} className="border-border/60 flex items-center gap-2 rounded-lg border px-3 py-2">
+									<UndoRow key={txn.id} amount={txn.total} onUndo={() => removeTransaction(txn)}>
 										<span className="truncate text-sm font-medium">{nameOf(fromId)}</span>
 										<ArrowRight className="text-muted-foreground size-4 shrink-0" />
 										<span className="truncate text-sm font-medium">{nameOf(toId)}</span>
-										<span className="tnum ml-auto font-semibold">${txn.total}</span>
-										<Button
-											type="button"
-											size="sm"
-											variant="ghost"
-											className="text-muted-foreground hover:text-destructive shrink-0"
-											onClick={() => removeTransaction(txn)}
-										>
-											<Undo2 /> {t('Undo')}
-										</Button>
-									</li>
+									</UndoRow>
 								);
 							})}
 						</ul>

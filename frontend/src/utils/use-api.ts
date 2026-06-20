@@ -86,7 +86,7 @@ function groupStandardize(group?: Group | null): Group {
 /**
  * Load demo data for a group
  */
-export async function loadDemoData(groupId: string): Promise<void> {
+async function loadDemoData(groupId: string): Promise<void> {
 	try {
 		const response = await fetch('/demo_data.json');
 		const demoData = (await response.json()) as Group;

@@ -77,17 +77,9 @@ export function IdentityGate() {
 					)}
 
 					<form onSubmit={join} className="space-y-2">
-						{!isNewEvent && (
-							<p className="text-muted-foreground text-center text-xs">{t("I'm not listed")}</p>
-						)}
+						{!isNewEvent && <p className="text-muted-foreground text-center text-xs">{t("I'm not listed")}</p>}
 						<div className="flex gap-2">
-							<Input
-								autoFocus
-								type="text"
-								placeholder={t('Your name')}
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-							/>
+							<Input type="text" placeholder={t('Your name')} value={name} onChange={(e) => setName(e.target.value)} />
 							<Button type="submit" disabled={!name.trim()}>
 								<UserPlus /> {isNewEvent ? t('Continue') : t('Join')}
 							</Button>

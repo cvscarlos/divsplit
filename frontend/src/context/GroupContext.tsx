@@ -5,7 +5,13 @@ import { useParams } from 'react-router-dom';
 import { useApiGetGroup } from '../utils/use-api';
 import type { SaveMeta } from '../utils/use-api';
 import type { Group, Member } from '../types';
-import { getDeviceUid, getEventMemberId, setEventMemberId, clearEventMemberId, setPreferredName } from '../utils/identity';
+import {
+	getDeviceUid,
+	getEventMemberId,
+	setEventMemberId,
+	clearEventMemberId,
+	setPreferredName,
+} from '../utils/identity';
 import { setCurrentActor } from '../utils/activity-tracker';
 import Loading from '../components/Loading';
 

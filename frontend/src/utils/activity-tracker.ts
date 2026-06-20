@@ -46,7 +46,7 @@ export function setCurrentActor(actor: { id: string; name: string } | null): voi
 /**
  * Create a new activity entry
  */
-export function createActivity(type: ActivityType, data: ActivityInput): Activity {
+function createActivity(type: ActivityType, data: ActivityInput): Activity {
 	return {
 		id: generateId(),
 		type,
@@ -60,7 +60,7 @@ export function createActivity(type: ActivityType, data: ActivityInput): Activit
 /**
  * Add activity to group data
  */
-export function addActivityToGroup(group: Group, activity: Activity): Group {
+function addActivityToGroup(group: Group, activity: Activity): Group {
 	const updatedGroup: Group = { ...group };
 	updatedGroup.activities = updatedGroup.activities || [];
 	updatedGroup.activities.unshift(activity); // Add to beginning for chronological order
@@ -112,7 +112,7 @@ export function trackMemberAdded(group: Group, member: Member): Group {
 /**
  * Track member removal
  */
-export function trackMemberRemoved(group: Group, member: Member): Group {
+function trackMemberRemoved(group: Group, member: Member): Group {
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_DELETED, {
 		description: `Member "${member.name}" was removed from the event`,
 		details: { memberId: member.id, memberName: member.name },
@@ -124,7 +124,7 @@ export function trackMemberRemoved(group: Group, member: Member): Group {
 /**
  * Track member name change
  */
-export function trackMemberNameChange(group: Group, memberId: string, oldName: string, newName: string): Group {
+function trackMemberNameChange(group: Group, memberId: string, oldName: string, newName: string): Group {
 	if (oldName === newName) return group;
 
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_UPDATED, {

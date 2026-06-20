@@ -119,14 +119,16 @@ function HomePage() {
 
 			<footer className="border-border border-t border-dashed">
 				<div className="text-muted-foreground mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 py-8 text-xs sm:flex-row sm:px-6">
-					<span>© {new Date().getFullYear()} DivSplit — {t('All rights reserved')}.</span>
+					<span>
+						© {new Date().getFullYear()} DivSplit — {t('All rights reserved')}.
+					</span>
 					<div className="flex gap-4">
-						<a href="#" className="hover:text-primary transition-colors hover:underline">
+						<button type="button" className="hover:text-primary transition-colors hover:underline">
 							{t('Privacy Policy')}
-						</a>
-						<a href="#" className="hover:text-primary transition-colors hover:underline">
+						</button>
+						<button type="button" className="hover:text-primary transition-colors hover:underline">
 							{t('Terms of Service')}
-						</a>
+						</button>
 					</div>
 				</div>
 			</footer>
