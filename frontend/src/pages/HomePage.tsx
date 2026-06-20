@@ -17,34 +17,54 @@ function HomePage() {
 
 	return (
 		<div className="space-y-14">
-			<section
-				className="relative overflow-hidden rounded-3xl px-6 py-16 text-center sm:py-20"
-				style={{
-					backgroundColor: '#0A0A12',
-					backgroundImage:
-						'repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 40px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 40px)',
-				}}
-			>
-				{/* top neon scanline + ambient glows */}
-				<div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#ff2d78] to-transparent" />
-				<div aria-hidden className="pointer-events-none absolute -top-24 left-1/2 size-80 -translate-x-1/2 rounded-full bg-[#ff2d78]/20 blur-3xl" />
-				<div aria-hidden className="pointer-events-none absolute -bottom-24 right-0 size-72 rounded-full bg-[#00ffcc]/15 blur-3xl" />
+			<section className="border-border bg-card relative overflow-hidden rounded-3xl border px-6 py-16 text-center shadow-sm sm:py-20">
+				{/* neon grid + ambient glows + scan-line (theme-aware via tokens) */}
+				<div
+					aria-hidden
+					className="pointer-events-none absolute inset-0"
+					style={{
+						backgroundImage:
+							'linear-gradient(color-mix(in srgb, var(--primary) 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--primary) 7%, transparent) 1px, transparent 1px)',
+						backgroundSize: '40px 40px',
+					}}
+				/>
+				<div aria-hidden className="bg-primary/10 pointer-events-none absolute top-0 left-1/4 size-80 -translate-y-1/3 rounded-full blur-3xl" />
+				<div aria-hidden className="pointer-events-none absolute right-1/4 bottom-0 size-72 translate-y-1/3 rounded-full blur-3xl" style={{ backgroundColor: 'color-mix(in srgb, var(--chart-4) 14%, transparent)' }} />
+				<div aria-hidden className="hero-scan" />
 
-				{/* glowing emblem inside rotated diamond frames */}
-				<div className="relative mx-auto flex size-48 items-center justify-center">
-					<div aria-hidden className="absolute inset-0 rotate-45 rounded-[28%] border border-[#00ffcc]/25" />
-					<div aria-hidden className="absolute inset-3 rotate-[38deg] rounded-[28%] border border-[#ffe04a]/20" />
-					<div aria-hidden className="absolute inset-8 rounded-full bg-[#ff2d78]/25 blur-2xl" />
-					<img src="/logo.png" alt="" aria-hidden className="relative size-24 drop-shadow-[0_0_24px_rgba(255,45,120,0.5)]" />
-					<span aria-hidden className="absolute top-1/2 left-1 size-3 rounded-full bg-[#00ffcc] shadow-[0_0_12px_#00ffcc]" />
-					<span aria-hidden className="absolute right-3 bottom-9 size-3 rounded-full bg-[#ffe04a] shadow-[0_0_12px_#ffe04a]" />
+				{/* floating emblem with two counter-spinning orbital rings */}
+				<div className="relative mx-auto flex size-48 items-center justify-center md:size-56">
+					<div className="hero-float relative flex size-full items-center justify-center">
+						<div aria-hidden className="bg-primary/20 absolute inset-8 rounded-full blur-2xl" />
+						<img
+							src="/logo.png"
+							alt=""
+							aria-hidden
+							className="relative size-24"
+							style={{ filter: 'drop-shadow(0 0 18px color-mix(in srgb, var(--primary) 55%, transparent))' }}
+						/>
+						<div aria-hidden className="hero-orbit border-primary/30 absolute inset-0 rounded-full border">
+							<span
+								className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rounded-full"
+								style={{ backgroundColor: 'var(--chart-4)', boxShadow: '0 0 12px var(--chart-4)' }}
+							/>
+						</div>
+						<div aria-hidden className="hero-orbit-reverse border-primary/20 absolute inset-5 rounded-full border">
+							<span
+								className="absolute -bottom-1.5 left-1/2 size-2.5 -translate-x-1/2 rounded-full"
+								style={{ backgroundColor: 'var(--chart-3)', boxShadow: '0 0 12px var(--chart-3)' }}
+							/>
+						</div>
+					</div>
 				</div>
 
-				<h1 className="relative mt-10 text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
+				<h1 className="text-foreground relative mt-10 text-4xl font-extrabold tracking-tight sm:text-6xl">
 					{t('HeroLine1')}{' '}
-					<span className="block text-[#5BFFC7] [text-shadow:0_0_28px_rgba(91,255,199,0.7)]">{t('HeroAccent')}</span>
+					<span className="text-primary block [text-shadow:0_0_28px_color-mix(in_srgb,var(--primary)_60%,transparent)]">
+						{t('HeroAccent')}
+					</span>
 				</h1>
-				<p className="relative mx-auto mt-6 max-w-md text-lg text-pretty text-white/55">{t('HeroSubtitle')}</p>
+				<p className="text-muted-foreground relative mx-auto mt-6 max-w-md text-lg text-pretty">{t('HeroSubtitle')}</p>
 				<div className="relative mt-8">
 					<Button size="lg" onClick={createGroup}>
 						<Plus /> {t('createGroup')}
