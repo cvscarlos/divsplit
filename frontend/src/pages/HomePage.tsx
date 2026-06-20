@@ -17,20 +17,34 @@ function HomePage() {
 
 	return (
 		<div className="space-y-14">
-			<section className="border-border bg-card relative overflow-hidden rounded-3xl border px-6 py-16 text-center shadow-sm sm:py-20">
-				<div
-					aria-hidden
-					className="bg-primary/10 pointer-events-none absolute -top-24 -right-24 size-64 rounded-full blur-3xl"
-				/>
-				<div
-					aria-hidden
-					className="bg-accent/40 pointer-events-none absolute -bottom-24 -left-24 size-64 rounded-full blur-3xl"
-				/>
-				<p className="text-primary relative text-sm font-semibold tracking-[0.22em] uppercase">DivSplit</p>
-				<h1 className="relative mx-auto mt-4 max-w-2xl font-serif text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-					{t('MainTitle')}
+			<section
+				className="relative overflow-hidden rounded-3xl px-6 py-16 text-center sm:py-20"
+				style={{
+					backgroundColor: '#0A0A12',
+					backgroundImage:
+						'repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 40px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 40px)',
+				}}
+			>
+				{/* top neon scanline + ambient glows */}
+				<div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#ff2d78] to-transparent" />
+				<div aria-hidden className="pointer-events-none absolute -top-24 left-1/2 size-80 -translate-x-1/2 rounded-full bg-[#ff2d78]/20 blur-3xl" />
+				<div aria-hidden className="pointer-events-none absolute -bottom-24 right-0 size-72 rounded-full bg-[#00ffcc]/15 blur-3xl" />
+
+				{/* glowing emblem inside rotated diamond frames */}
+				<div className="relative mx-auto flex size-48 items-center justify-center">
+					<div aria-hidden className="absolute inset-0 rotate-45 rounded-[28%] border border-[#00ffcc]/25" />
+					<div aria-hidden className="absolute inset-3 rotate-[38deg] rounded-[28%] border border-[#ffe04a]/20" />
+					<div aria-hidden className="absolute inset-8 rounded-full bg-[#ff2d78]/25 blur-2xl" />
+					<img src="/logo.png" alt="" aria-hidden className="relative size-24 drop-shadow-[0_0_24px_rgba(255,45,120,0.5)]" />
+					<span aria-hidden className="absolute top-1/2 left-1 size-3 rounded-full bg-[#00ffcc] shadow-[0_0_12px_#00ffcc]" />
+					<span aria-hidden className="absolute right-3 bottom-9 size-3 rounded-full bg-[#ffe04a] shadow-[0_0_12px_#ffe04a]" />
+				</div>
+
+				<h1 className="relative mt-10 text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
+					{t('HeroLine1')}{' '}
+					<span className="block text-[#5BFFC7] [text-shadow:0_0_28px_rgba(91,255,199,0.7)]">{t('HeroAccent')}</span>
 				</h1>
-				<p className="text-muted-foreground relative mx-auto mt-5 max-w-md text-lg text-pretty">{t('MainSubTitle')}</p>
+				<p className="relative mx-auto mt-6 max-w-md text-lg text-pretty text-white/55">{t('HeroSubtitle')}</p>
 				<div className="relative mt-8">
 					<Button size="lg" onClick={createGroup}>
 						<Plus /> {t('createGroup')}
@@ -56,7 +70,7 @@ function HomePage() {
 				) : (
 					<>
 						<div className="mb-6 flex flex-col gap-1">
-							<h2 className="font-serif text-2xl font-semibold tracking-tight">{t('GenGroupTitle')}</h2>
+							<h2 className="font-sans text-2xl font-semibold tracking-tight">{t('GenGroupTitle')}</h2>
 							<p className="text-muted-foreground text-sm">{t('GenGroupSubTitle')}</p>
 						</div>
 						<CardContainer>
