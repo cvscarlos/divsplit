@@ -18,7 +18,7 @@ function Header() {
 			<div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
 				<Link to="/" className="group flex items-center gap-2.5">
 					<span className="flex size-9 items-center justify-center rounded-lg bg-[#0f0f1a] transition-transform group-hover:-rotate-6">
-						<img src="/logo.png" alt="DivSplit" className="size-7" />
+						<img src="/logo.png" alt="DivSplit" className="w-7" />
 					</span>
 					<span className="font-sans text-2xl font-semibold tracking-tight">
 						Div<span className="text-primary">Split</span>

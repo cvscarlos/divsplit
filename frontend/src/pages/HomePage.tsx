@@ -50,7 +50,7 @@ function HomePage() {
 						src="/logo.png"
 						alt=""
 						aria-hidden
-						className="size-24 md:size-32"
+						className="h-24 w-auto md:h-32"
 						style={{ filter: 'drop-shadow(0 0 18px color-mix(in srgb, var(--primary) 45%, transparent))' }}
 					/>
 
