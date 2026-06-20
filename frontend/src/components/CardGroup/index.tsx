@@ -21,7 +21,7 @@ function variantFor(id: string) {
 
 function CardGroup({ group }: { group: GroupListItem }) {
 	const navigate = useNavigate();
-	const open = () => navigate(`/group/${group.id}/config`);
+	const open = () => navigate(`/group/${group.id}/transactions`);
 	const { bg, icon: Icon } = variantFor(group.id);
 
 	return (

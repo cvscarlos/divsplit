@@ -11,9 +11,9 @@ export function GroupHeader() {
 	const { groupId, section } = useParams();
 
 	const tabs = [
-		{ key: 'config', label: t('Config'), icon: Settings2 },
 		{ key: 'transactions', label: t('Transactions'), icon: Receipt },
 		{ key: 'settlement', label: t('Settle up'), icon: ArrowLeftRight },
+		{ key: 'config', label: t('Config'), icon: Settings2 },
 		{ key: 'activity', label: t('Activity'), icon: History },
 		{ key: 'versions', label: t('Versions'), icon: GitCommitVertical },
 	];
