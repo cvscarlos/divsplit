@@ -62,8 +62,9 @@ export function GroupActivity() {
 	}
 
 	function renderActivity(activity: Activity) {
-		const { id, type, description, timestamp } = activity;
+		const { id, type, description, timestamp, details } = activity;
 		const { Icon, tone } = getActivityIcon(type);
+		const actor = (details as { actorName?: string })?.actorName;
 
 		return (
 			<li key={id} className="flex items-start gap-4 py-4">
@@ -72,7 +73,10 @@ export function GroupActivity() {
 				</span>
 				<div className="min-w-0 flex-1">
 					<p className="text-sm leading-snug">{description}</p>
-					<p className="text-muted-foreground mt-0.5 text-xs">{formatTimestamp(timestamp)}</p>
+					<p className="text-muted-foreground mt-0.5 text-xs">
+						{actor ? `${actor} · ` : ''}
+						{formatTimestamp(timestamp)}
+					</p>
 				</div>
 			</li>
 		);

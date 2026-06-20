@@ -1,15 +1,23 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { useApiGetGroup } from '../utils/use-api';
-import type { Group } from '../types';
+import type { SaveMeta } from '../utils/use-api';
+import type { Group, Member } from '../types';
+import { getDeviceUid, getEventMemberId, setEventMemberId, clearEventMemberId, setPreferredName } from '../utils/identity';
+import { setCurrentActor } from '../utils/activity-tracker';
 import Loading from '../components/Loading';
 
 interface GroupContextValue {
 	data: Group;
-	updateGroup: (updatedData: Group) => void;
+	updateGroup: (updatedData: Group, meta?: SaveMeta) => void;
 	loadDemo: () => Promise<void>;
+	/** The member this device is acting as (trust-based identity). */
+	currentMemberId: string | null;
+	currentMember: Member | undefined;
+	identify: (member: Member) => void;
+	clearIdentity: () => void;
 }
 
 const GroupContext = createContext<GroupContextValue | undefined>(undefined);
@@ -17,7 +25,44 @@ const GroupContext = createContext<GroupContextValue | undefined>(undefined);
 export function GroupProvider({ children }: { children: ReactNode }) {
 	const { groupId } = useParams();
 	const { data, loading, updateGroup, loadDemo } = useApiGetGroup(groupId);
-	const value: GroupContextValue = { data, updateGroup, loadDemo };
+	const [currentMemberId, setCurrentMemberId] = useState<string | null>(groupId ? getEventMemberId(groupId) : null);
+
+	// Ensure this device has a stable id, and load the saved identity for this event.
+	useEffect(() => {
+		getDeviceUid();
+		setCurrentMemberId(groupId ? getEventMemberId(groupId) : null);
+	}, [groupId]);
+
+	const currentMember = data.members?.find((m) => m.id === currentMemberId);
+
+	// Keep the activity-tracker actor in sync so changes get attributed.
+	useEffect(() => {
+		if (currentMember) setCurrentActor({ id: currentMember.id, name: currentMember.name });
+	}, [currentMember]);
+
+	const identify = (member: Member) => {
+		if (!groupId) return;
+		setEventMemberId(groupId, member.id);
+		setPreferredName(member.name);
+		setCurrentActor({ id: member.id, name: member.name });
+		setCurrentMemberId(member.id);
+	};
+
+	const clearIdentity = () => {
+		if (groupId) clearEventMemberId(groupId);
+		setCurrentActor(null);
+		setCurrentMemberId(null);
+	};
+
+	const value: GroupContextValue = {
+		data,
+		updateGroup,
+		loadDemo,
+		currentMemberId,
+		currentMember,
+		identify,
+		clearIdentity,
+	};
 
 	return (
 		<GroupContext.Provider value={value}>

@@ -3,6 +3,15 @@ import localforage from 'localforage';
 
 import type { Group, GroupListItem } from '../types';
 import { trackEventCreated } from './activity-tracker';
+import { recordVersion } from './versioning';
+import { getEventMemberId } from './identity';
+
+export interface SaveMeta {
+	/** Human label for the version entry (e.g. "Restored to version 3"). */
+	message?: string;
+	/** Member name to attribute the version to. */
+	author?: string;
+}
 
 const groupListStore = localforage.createInstance({ name: 'groupList' });
 const groupStore = localforage.createInstance({ name: 'group' });
@@ -98,14 +107,14 @@ export async function loadDemoData(groupId: string): Promise<void> {
 export interface UseApiGetGroup {
 	data: Group;
 	loading: boolean;
-	updateGroup: (updatedData: Group) => void;
+	updateGroup: (updatedData: Group, meta?: SaveMeta) => void;
 	loadDemo: () => Promise<void>;
 }
 
 export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 	const [loading, setLoading] = useState(false);
 	const [data, setData] = useState<Group>(groupStandardize());
-	const [dataToSave, setDataToSave] = useState<Group | null>(null);
+	const [dataToSave, setDataToSave] = useState<{ group: Group; meta?: SaveMeta } | null>(null);
 
 	useEffect(() => {
 		let abort = false;
@@ -116,10 +125,13 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 			if (!groupId) return;
 
 			if (dataToSave) {
+				const prev = await groupStore.getItem<Group>(groupId);
 				// First time this event is persisted → log an "Event created" entry.
-				const existed = (await groupStore.getItem<Group>(groupId)) != null;
-				const toSave = existed ? dataToSave : trackEventCreated(dataToSave);
+				const toSave = prev ? dataToSave.group : trackEventCreated(dataToSave.group);
 				await groupStore.setItem(groupId, toSave);
+				const memberId = getEventMemberId(groupId);
+				const author = dataToSave.meta?.author ?? toSave.members?.find((m) => m.id === memberId)?.name ?? '';
+				await recordVersion(groupId, prev, toSave, { message: dataToSave.meta?.message, author });
 				if (!abort) setDataToSave(null);
 				if (!abort) await updateGroupName(toSave.config.name, groupId);
 			}
@@ -147,8 +159,8 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 	return {
 		data,
 		loading,
-		updateGroup: (updatedData: Group) => {
-			setDataToSave(updatedData);
+		updateGroup: (updatedData: Group, meta?: SaveMeta) => {
+			setDataToSave({ group: updatedData, meta });
 		},
 		loadDemo,
 	};

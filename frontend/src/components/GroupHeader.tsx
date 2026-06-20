@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
-import { Settings2, Receipt, History, ArrowLeftRight } from 'lucide-react';
+import { Settings2, Receipt, History, ArrowLeftRight, GitCommitVertical } from 'lucide-react';
 
 import { useGroupContext } from '../context/GroupContext';
 import { cn } from '@/lib/utils';
 
 export function GroupHeader() {
-	const { data: group } = useGroupContext();
+	const { data: group, currentMember, clearIdentity } = useGroupContext();
 	const { t } = useTranslation();
 	const { groupId, section } = useParams();
 
@@ -15,6 +15,7 @@ export function GroupHeader() {
 		{ key: 'transactions', label: t('Transactions'), icon: Receipt },
 		{ key: 'settlement', label: t('Settle up'), icon: ArrowLeftRight },
 		{ key: 'activity', label: t('Activity'), icon: History },
+		{ key: 'versions', label: t('Versions'), icon: GitCommitVertical },
 	];
 
 	return (
@@ -23,6 +24,15 @@ export function GroupHeader() {
 			<h1 className="mt-1.5 text-center font-sans text-4xl font-semibold tracking-tight sm:text-5xl">
 				{group.config?.name || t('Untitled event')}
 			</h1>
+
+			{currentMember && (
+				<p className="text-muted-foreground mt-2 text-center text-xs">
+					{t('You')}: <span className="text-foreground font-medium">{currentMember.name}</span> ·{' '}
+					<button type="button" onClick={clearIdentity} className="hover:text-foreground underline">
+						{t('change')}
+					</button>
+				</p>
+			)}
 
 			<nav className="mt-6 flex justify-center">
 				<div className="bg-muted inline-flex gap-1 rounded-full p-1">

@@ -6,18 +6,23 @@ import { GroupConfig } from '../pages/Group/Config';
 import { NotFound } from '../pages/NotFound';
 import { GroupProvider, useGroupContext } from '../context/GroupContext';
 import { GroupHeader } from './GroupHeader';
+import { IdentityGate } from './IdentityGate';
 import { Debug } from './Debug';
 import { GroupListTransactions } from '../pages/Group/ListTransactions';
 import { GroupTransaction } from '../pages/Group/Transaction';
 import { GroupActivity } from '../pages/Group/Activity';
+import { GroupHistory } from '../pages/Group/History';
 import { GroupSettlement } from '../pages/Group/Settlement';
 import { GroupTopUp } from '../pages/Group/TopUp';
 import { Button } from '@/components/ui/button';
 
 function GroupContent() {
 	const { section, sectionItem } = useParams();
-	const { data: group, loadDemo } = useGroupContext();
+	const { data: group, loadDemo, currentMemberId } = useGroupContext();
 	const { t } = useTranslation();
+
+	// Trust-based identity: pick who you are before viewing/editing the event.
+	if (!currentMemberId) return <IdentityGate />;
 
 	const pages: Record<string, boolean> = {
 		config: section === 'config',
@@ -25,6 +30,7 @@ function GroupContent() {
 		settlement: section === 'settlement',
 		topup: section === 'topup',
 		activity: section === 'activity',
+		versions: section === 'versions',
 	};
 
 	const isKnownSection = section ? Boolean(pages[section]) : false;
@@ -44,6 +50,7 @@ function GroupContent() {
 				{pages.settlement && <GroupSettlement />}
 				{pages.topup && <GroupTopUp />}
 				{pages.activity && <GroupActivity />}
+				{pages.versions && <GroupHistory />}
 			</div>
 
 			{/* Global load sample data prompt — shows when the group is empty */}

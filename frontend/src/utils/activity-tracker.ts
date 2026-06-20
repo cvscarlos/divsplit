@@ -36,6 +36,15 @@ interface ActivityInput {
 }
 
 /**
+ * The member currently acting on this device (trust-based identity, no login).
+ * Set from GroupContext so every tracked change is attributed to a name.
+ */
+let currentActor: { id: string; name: string } | null = null;
+export function setCurrentActor(actor: { id: string; name: string } | null): void {
+	currentActor = actor;
+}
+
+/**
  * Create a new activity entry
  */
 export function createActivity(type: ActivityType, data: ActivityInput): Activity {
@@ -43,8 +52,8 @@ export function createActivity(type: ActivityType, data: ActivityInput): Activit
 		id: new ObjectId().toHexString(),
 		type,
 		description: data.description,
-		details: data.details || {},
-		userId: data.userId || null,
+		details: { ...(data.details || {}), ...(currentActor?.name ? { actorName: currentActor.name } : {}) },
+		userId: data.userId ?? currentActor?.id ?? null,
 		timestamp: new Date(),
 	};
 }
