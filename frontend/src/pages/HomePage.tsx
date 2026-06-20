@@ -1,6 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Loader2, Users, Infinity as InfinityIcon, ArrowUpRight, ShieldCheck, Gauge, Sparkles } from 'lucide-react';
+import {
+	Plus,
+	Loader2,
+	Users,
+	Infinity as InfinityIcon,
+	ArrowUpRight,
+	ShieldCheck,
+	Gauge,
+	Sparkles,
+	FileSpreadsheet,
+} from 'lucide-react';
 
 import CardContainer from '../components/CardContainer';
 import CardGroup from '../components/CardGroup';
@@ -65,12 +75,15 @@ function HomePage() {
 							{t('Create an event')}
 							<ArrowUpRight className="transition-transform group-hover:rotate-45" />
 						</Button>
-						<div className="text-muted-foreground/50 flex items-center gap-8 text-[10px] tracking-[0.3em] uppercase">
+						<div className="text-muted-foreground/50 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] tracking-[0.3em] uppercase">
 							<span className="flex items-center gap-2">
-								<ShieldCheck className="size-4" /> {t('Encrypted')}
+								<ShieldCheck className="size-4" /> {t('Secure')}
 							</span>
 							<span className="flex items-center gap-2">
 								<Gauge className="size-4" /> {t('Real-time')}
+							</span>
+							<span className="flex items-center gap-2">
+								<FileSpreadsheet className="size-4" /> {t('No spreadsheets')}
 							</span>
 						</div>
 					</div>
