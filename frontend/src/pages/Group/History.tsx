@@ -8,17 +8,18 @@ import { listVersions, buildRestore } from '../../utils/versioning';
 import type { EventVersion } from '../../utils/versioning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-function relativeTime(ts: string) {
+function relativeTime(ts: string, lng: string) {
 	const mins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
-	if (mins < 1) return 'Just now';
-	if (mins < 60) return `${mins} min ago`;
+	const rtf = new Intl.RelativeTimeFormat(lng, { numeric: 'auto' });
+	if (mins < 1) return rtf.format(0, 'minute');
+	if (mins < 60) return rtf.format(-mins, 'minute');
 	const hours = Math.floor(mins / 60);
-	if (hours < 24) return `${hours}h ago`;
-	return new Date(ts).toLocaleDateString();
+	if (hours < 24) return rtf.format(-hours, 'hour');
+	return new Date(ts).toLocaleDateString(lng);
 }
 
 export function GroupHistory() {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const { groupId } = useParams();
 	const { data: group, updateGroup } = useGroupContext();
 	const [versions, setVersions] = useState<EventVersion[]>([]);
@@ -66,7 +67,7 @@ export function GroupHistory() {
 										</ul>
 										<p className="text-muted-foreground mt-1 text-xs">
 											v{version.v}
-											{version.author ? ` · ${version.author}` : ''} · {relativeTime(version.ts)}
+											{version.author ? ` · ${version.author}` : ''} · {relativeTime(version.ts, i18n.language)}
 											{isHead ? ` · ${t('Current')}` : ''}
 										</p>
 										{!isHead && (

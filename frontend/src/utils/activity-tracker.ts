@@ -81,8 +81,11 @@ function addActivityToGroup(group: Group, activity: Activity): Group {
 
 /**
  * Track event creation. Appended at the end so it stays the oldest entry.
+ * Idempotent: a group only ever gets one "created" entry, even if a first-persist
+ * runs more than once (e.g. a save race or a re-render).
  */
 export function trackEventCreated(group: Group): Group {
+	if ((group.activities ?? []).some((a) => a.type === ACTIVITY_TYPES.GROUP_CREATED)) return group;
 	const activity = createActivity(ACTIVITY_TYPES.GROUP_CREATED, { description: 'EVENT_CREATED' });
 	const updatedGroup: Group = { ...group };
 	updatedGroup.activities = [...(updatedGroup.activities || []), activity];
