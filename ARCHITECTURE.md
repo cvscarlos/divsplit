@@ -72,15 +72,15 @@ The local model is **event-sourced** (append-only reversible deltas + a state fo
 
 **Offline calculations:** balances/settlement are computed on the backend (source of truth) **and** locally (for offline use). Locally-computed values that aren't yet confirmed by the backend should be shown as **provisional** in the UI (a subtle "not synced yet" affordance — *not* italics, which read as de-emphasis).
 
-**Hosting:** **Vercel Functions** (serverless) — the frontend already deploys to Vercel and the API surface is small (append a change, fetch changes the device hasn't seen, fetch/rebuild the projection). Reuse one **module-scoped `MongoClient`** across warm invocations (a *connection* cache — not a data cache — to avoid opening a pool per request) with **MongoDB Atlas**.
+**Hosting:** **Vercel Functions** in `api/` (serverless) — the app already deploys to Vercel and the API surface is small (append a change, fetch changes the device hasn't seen, fetch/rebuild the projection). **Mongoose** on **MongoDB Atlas** (`MONGO_URI`), with one **connection cached across warm invocations** (`api/_lib/db.ts`) — a *connection* cache, not a data cache, to avoid opening a pool per request.
 
 ---
 
 ## 2. Stack & Dependencies
 
-**Monorepo** managed with **npm workspaces** (`frontend`, `backend`). Node **24** (`.nvmrc`). ES modules throughout (`"type": "module"`). The frontend is **TypeScript** (strict).
+**Single project at the repo root** (no npm workspaces). Node **24** (`.nvmrc`). ES modules throughout (`"type": "module"`). TypeScript (strict). The React app lives at the root (`src/`, `index.html`, `vite.config.ts`); the serverless API lives in `api/`. Both deploy as one Vercel project.
 
-### Frontend (`frontend/`) — the only live workspace today
+### Frontend (`src/`)
 | Concern | Choice |
 |---|---|
 | Language | **TypeScript 6** (strict; project references) |
@@ -98,24 +98,27 @@ The local model is **event-sourced** (append-only reversible deltas + a state fo
 | ID generation | **bson-objectid** via a single `generateId()` (`utils/id.ts`) — one scheme (24-char ObjectId hex) for every id: events, members, transactions, device id |
 | Unit tests | **Vitest** |
 
-### Backend (`backend/`)
-Placeholder workspace (`package.json` is `{}`). Reserved for the future sync layer — see **§1.5** for the planned event-sourced model (append-only hash-chained `changes` + an `events` projection on MongoDB Atlas, served by Vercel Functions).
+### Backend (`api/`) — Vercel serverless functions
+The sync layer (see **§1.5**): **Mongoose** models on **MongoDB Atlas** (`MONGO_URI`). Helper code lives in `api/_lib/` (the `_` prefix keeps it off Vercel's route table): `db.ts` (one connection cached across warm invocations) and `models.ts` (the append-only `Change` Merkle DAG + the `Event` projection). Route functions (`api/*.ts`) are added per endpoint. Not part of the Vite build — `tsc -b` only includes `src/`; Vercel bundles `api/` separately.
 
 ### Tooling
-**ESLint 10** (flat config) + **typescript-eslint** + **Prettier**. CI (`.github/workflows/frontend.yml`) runs **lint**, **unit tests**, and **type-check + build** on the Node version from `.nvmrc`. Deployed on **Vercel** (`vercel.json`).
+**ESLint 10** (flat config) + **typescript-eslint** + **Prettier**. CI (`.github/workflows/frontend.yml`) runs **lint**, **unit tests**, and **type-check + build** on the Node version from `.nvmrc`. Deployed on **Vercel** (`vercel.json`, SPA rewrite to `/index.html`).
 
 > Note: `eslint` is pinned via a root `overrides` because `eslint-plugin-react` 7.37 doesn't yet declare ESLint 10 support; the React version is also pinned in the flat config to avoid its removed-API crash on ESLint 10.
 
 ---
 
-## 3. Monorepo Structure
+## 3. Project Structure
 
 ```
 divsplit/
-├─ package.json          # root: workspaces, shared dev tooling, eslint override, scripts
-├─ vercel.json           # builds frontend workspace, SPA rewrite → index.html
-├─ frontend/             # Vite + React 19 + TS SPA (all current application code)
-├─ backend/              # empty placeholder workspace (future sync API)
+├─ package.json          # single root project (no workspaces); deps, scripts, eslint override
+├─ vercel.json           # SPA rewrite → /index.html
+├─ index.html            # Vite entry
+├─ vite.config.ts        # + tsconfig.*.json, vitest.config.ts, eslint.config.js, components.json
+├─ src/                  # Vite + React 19 + TS SPA (all application code)
+├─ public/               # static assets shipped as-is (logo, icons, demo_data.json)
+├─ api/                  # Vercel serverless functions (sync backend); _lib/ = shared helpers
 ├─ ARCHITECTURE.md       # this file
 ├─ DESIGN.md             # visual design system (palette, type, layout, components)
 ├─ TEST.md               # manual QA procedures per feature
@@ -123,11 +126,11 @@ divsplit/
 └─ .github/              # CI (lint + test + build) + copilot-instructions.md
 ```
 
-Root scripts: `npm run dev`, `npm run format`, `npm run lint`. Frontend scripts add `build` (`tsc -b && vite build`), `test` (`vitest run`), `typecheck`.
+Scripts: `npm run dev`, `build` (`tsc -b && vite build`), `test` (`vitest run`), `typecheck`, `lint`, `format`.
 
 ---
 
-## 4. Module Map (`frontend/src`)
+## 4. Module Map (`src/`)
 
 **Entry & shell**
 - `renderApp.tsx` — bootstrap only; mounts `<App/>` into `#app-root` under `StrictMode`.
@@ -229,7 +232,7 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 - **i18n:** detection order querystring `?lang=` → `localStorage["i18nLang"]` → navigator; fallback `en`. Locales `en`, `pt`.
 - **Theme:** `.dark` class on `<html>`; tokens defined in `index.css` (oklch); persisted at `localStorage["divsplit_theme"]`.
 - **Vite aliases:** `@`, `@components`, `@context`, `@pages`, `@utils`, `@routes`, `@locales` → `src/*` (mirrored in `tsconfig`).
-- **Deploy (Vercel):** build `npm run build --workspace frontend` → `frontend/dist`; SPA rewrite.
+- **Deploy (Vercel):** Vite auto-detected at the repo root; `npm run build` → `dist`; SPA rewrite to `/index.html`.
 - **PWA:** `vite-plugin-pwa` emits `sw.js` + `manifest.webmanifest` at build; the SW precaches the shell and falls back to `index.html` for client routes. Test with `npm run build` + `vite preview` (the SW is off in `dev`).
 
 ---

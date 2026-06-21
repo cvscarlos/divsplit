@@ -18,5 +18,6 @@ tmp/
 *.suo
 *.sw?
 .DS_Store
+.env
 eslint_report.json
 eslint_report.md
