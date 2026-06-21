@@ -5,15 +5,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Wallet, HandCoins, Save, Check, Trash2 } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
-import {
-	trackTransactionCreated,
-	trackTransactionUpdated,
-	trackTransactionDeleted,
-} from '../../utils/activity-tracker';
 import { getTransactionError, autoSplit, round } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
-import type { AmountMap, Transaction } from '../../types';
+import type { AmountMap, Group, Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,7 +100,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		setError(null);
 
 		try {
-			let updatedGroup = { ...group };
+			const updatedGroup: Group = { ...group };
 			const transactionDate = new Date(date);
 			const isNew = transactionId === 'new';
 			const id = isNew ? generateId() : transactionId;
@@ -121,23 +116,15 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				...(isNew ? { createdAt: new Date() } : { updatedAt: new Date() }),
 			};
 
+			const transactions = updatedGroup.transactions ?? [];
 			if (isNew) {
-				// Track transaction creation
-				updatedGroup = trackTransactionCreated(updatedGroup, transactionData);
-				updatedGroup.transactions = [...(updatedGroup.transactions ?? []), transactionData];
+				updatedGroup.transactions = [...transactions, transactionData];
 			} else {
-				const transactions = updatedGroup.transactions ?? [];
 				const transactionIndex = transactions.findIndex(({ id: txId }) => txId === transactionId);
-				if (transactionIndex !== -1) {
-					const oldTransaction = transactions[transactionIndex];
-					// Track transaction update
-					updatedGroup = trackTransactionUpdated(updatedGroup, oldTransaction, transactionData);
-					const newTransactions = [...(updatedGroup.transactions ?? [])];
-					newTransactions[transactionIndex] = { ...newTransactions[transactionIndex], ...transactionData };
-					updatedGroup.transactions = newTransactions;
-				} else {
-					throw new Error('Transaction not found');
-				}
+				if (transactionIndex === -1) throw new Error('Transaction not found');
+				const newTransactions = [...transactions];
+				newTransactions[transactionIndex] = { ...newTransactions[transactionIndex], ...transactionData };
+				updatedGroup.transactions = newTransactions;
 			}
 			updateGroup(updatedGroup);
 			setSaved(true);
@@ -153,8 +140,10 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 
 	function confirmDelete() {
 		if (!existingTransaction) return;
-		const updatedGroup = trackTransactionDeleted({ ...group }, existingTransaction);
-		updatedGroup.transactions = (updatedGroup.transactions ?? []).filter((tx) => tx.id !== existingTransaction.id);
+		const updatedGroup: Group = {
+			...group,
+			transactions: (group.transactions ?? []).filter((tx) => tx.id !== existingTransaction.id),
+		};
 		updateGroup(updatedGroup);
 		navigate(`/group/${groupId}/transactions`);
 	}

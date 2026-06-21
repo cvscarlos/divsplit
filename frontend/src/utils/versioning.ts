@@ -6,8 +6,9 @@
  * current state back to the target version. Restoring is a NEW forward version
  * (history is never destroyed), like reverting a git commit.
  *
- * Only the "core" of the event (config, members, transactions) is versioned — the
- * activity log and the history itself are excluded so deltas stay tiny.
+ * The versioned "core" is the whole event except the history itself: config,
+ * members, and transactions. Change lines are derived by diffing those root keys
+ * (see describeChanges), so every change is logged straight from the data.
  */
 import localforage from 'localforage';
 import { create } from 'jsondiffpatch';
@@ -58,7 +59,7 @@ export interface VersionedCore {
 
 /**
  * One change line, stored as a translatable named key + params (NOT baked text),
- * so history renders in the user's language. See activity-tracker for the keys.
+ * so history renders in the user's language. Keys are produced by describeChanges.
  */
 export interface ChangeEntry {
 	key: string;
@@ -88,6 +89,73 @@ export async function listVersions(eventId: string): Promise<EventVersion[]> {
 	return (await historyStore.getItem<EventVersion[]>(eventId)) ?? [];
 }
 
+const memberName = (id: string, members: Member[]): string => members.find((m) => m.id === id)?.name ?? id;
+
+/** A named change line for a transaction, picking the key by its type. */
+function describeTransaction(tx: Transaction, members: Member[], removed: boolean): ChangeEntry {
+	const type = tx.type ?? 'expense';
+	if (type === 'transfer') {
+		const from = memberName(Object.keys(tx.paidBy)[0] ?? '', members);
+		const to = memberName(Object.keys(tx.paidFor)[0] ?? '', members);
+		return { key: removed ? 'TRANSFER_UNDONE' : 'TRANSFER_PAID', params: { from, to, amount: tx.total } };
+	}
+	if (type === 'topup') {
+		const name = memberName(Object.keys(tx.paidBy)[0] ?? '', members);
+		return { key: removed ? 'TOPUP_UNDONE' : 'TOPUP_ADDED', params: { name, amount: tx.total } };
+	}
+	return { key: removed ? 'TX_REMOVED' : 'TX_ADDED', params: { description: tx.description, total: tx.total } };
+}
+
+const txModified = (a: Transaction, b: Transaction): boolean =>
+	a.description !== b.description ||
+	a.total !== b.total ||
+	new Date(a.date).getTime() !== new Date(b.date).getTime() ||
+	JSON.stringify(a.paidBy) !== JSON.stringify(b.paidBy) ||
+	JSON.stringify(a.paidFor) !== JSON.stringify(b.paidFor);
+
+/**
+ * Derive the human change lines for a save by diffing each versioned root key
+ * (config / members / transactions) of the prev vs next state — so every change
+ * is described from the data itself, never depending on a UI action to log it.
+ * Config sub-changes only fire when the old value existed, so creation stays quiet
+ * (the caller prepends EVENT_CREATED for the first save).
+ */
+export function describeChanges(prev: VersionedCore, next: VersionedCore): ChangeEntry[] {
+	const changes: ChangeEntry[] = [];
+	const members = [...next.members, ...prev.members]; // union for name lookups (covers removed members)
+	const pc = prev.config ?? {};
+	const nc = next.config ?? {};
+
+	// config
+	if (pc.name && nc.name && pc.name !== nc.name)
+		changes.push({ key: 'EVENT_RENAMED', params: { old: pc.name, new: nc.name } });
+	if (pc.holderId && pc.holderId !== nc.holderId)
+		changes.push({ key: 'HOLDER_CHANGED', params: { name: memberName(nc.holderId ?? '', members) } });
+	if (pc.icon !== undefined && pc.icon !== nc.icon) changes.push({ key: 'ICON_CHANGED' });
+
+	// members
+	const prevM = new Map(prev.members.map((m) => [m.id, m]));
+	const nextM = new Map(next.members.map((m) => [m.id, m]));
+	for (const m of next.members) if (!prevM.has(m.id)) changes.push({ key: 'MEMBER_ADDED', params: { name: m.name } });
+	for (const m of prev.members) if (!nextM.has(m.id)) changes.push({ key: 'MEMBER_REMOVED', params: { name: m.name } });
+	for (const m of next.members) {
+		const p = prevM.get(m.id);
+		if (p && p.name !== m.name) changes.push({ key: 'MEMBER_RENAMED', params: { old: p.name, new: m.name } });
+	}
+
+	// transactions
+	const prevT = new Map(prev.transactions.map((t) => [t.id, t]));
+	const nextT = new Map(next.transactions.map((t) => [t.id, t]));
+	for (const t of next.transactions) if (!prevT.has(t.id)) changes.push(describeTransaction(t, members, false));
+	for (const t of prev.transactions) if (!nextT.has(t.id)) changes.push(describeTransaction(t, members, true));
+	for (const t of next.transactions) {
+		const p = prevT.get(t.id);
+		if (p && txModified(p, t)) changes.push({ key: 'TX_UPDATED', params: { description: t.description } });
+	}
+
+	return changes;
+}
+
 /** Record a version if the core changed. Returns the new version (or null). */
 export async function recordVersion(
 	eventId: string,
@@ -101,12 +169,11 @@ export async function recordVersion(
 	if (!delta) return null;
 
 	const author = opts.author || '';
-	// The per-action changes are whatever activities this save added — each carries
-	// a named key + params, translated at render time.
-	const prevActivityIds = new Set((prev?.activities ?? []).map((a) => a.id));
-	const changes: ChangeEntry[] = (next.activities ?? [])
-		.filter((a) => !prevActivityIds.has(a.id))
-		.map((a) => ({ key: a.description, params: a.details }));
+	// Derive the change lines from the actual state diff (per root key), so nothing is
+	// ever missed. The first-ever save is the event's creation.
+	const changes: ChangeEntry[] = opts.change
+		? [opts.change]
+		: [...(prev ? [] : [{ key: 'EVENT_CREATED' }]), ...describeChanges(prevCore, nextCore)];
 
 	const versions = await listVersions(eventId);
 	const last = versions[versions.length - 1];
@@ -129,7 +196,7 @@ export async function recordVersion(
 		return last;
 	}
 
-	const entries: ChangeEntry[] = opts.change ? [opts.change] : changes.length ? changes : [{ key: 'EVENT_UPDATED' }];
+	const entries: ChangeEntry[] = changes.length ? changes : [{ key: 'EVENT_UPDATED' }];
 	const version: EventVersion = {
 		v: (last?.v ?? 0) + 1,
 		ts: new Date().toISOString(),

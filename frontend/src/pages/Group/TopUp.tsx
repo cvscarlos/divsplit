@@ -5,7 +5,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PiggyBank } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
-import { trackTopupRecorded } from '../../utils/activity-tracker';
 import { generateId } from '../../utils/id';
 import type { Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +38,6 @@ export function GroupTopUp() {
 			setError(t('Please choose a member and an amount.'));
 			return;
 		}
-		const name = members.find((m) => m.id === memberId)?.name ?? '';
 		const txn: Transaction = {
 			id: generateId(),
 			type: 'topup',
@@ -50,9 +48,7 @@ export function GroupTopUp() {
 			paidBy: { [memberId]: amount },
 			paidFor: {},
 		};
-		const updated = trackTopupRecorded(group, name, amount);
-		updated.transactions = [...(updated.transactions ?? []), txn];
-		updateGroup(updated);
+		updateGroup({ ...group, transactions: [...(group.transactions ?? []), txn] });
 		navigate(`/group/${groupId}/settlement`);
 	}
 

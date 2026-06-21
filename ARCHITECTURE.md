@@ -38,7 +38,7 @@ The app nets everyone's balances and emits the **minimum** set of transfers, so 
   - each **event** (group) has a secret UUID the creator shares; **anyone with the link can edit** (like a shared Google Doc).
   - a **device** gets one local id (`localStorage["divsplit_uid"]`), generated on first use via `generateId()` (`utils/identity.ts`).
   - on first open of an event link the app shows a **"Who are you?"** gate — pick an existing member or add yourself; the choice persists locally per event (`localStorage["divsplit_identity_<eventId>"]`). The creator of a new event names themselves first. Names stay editable.
-  - the chosen member **attributes** every change — `activities` now carry `userId` + `actorName`, and each version records its `author`.
+  - the chosen member **attributes** every change — each recorded version stores its `author` (the acting member's name).
   - This is *trust*, not auth: real cryptographic member auth remains a **v2 concern**.
 
 ### 1.4 Version history & restore (the trust safety net)
@@ -71,7 +71,7 @@ Because there are no accounts and anyone with the link can edit, data integrity 
 | PWA / offline shell | **vite-plugin-pwa** (Workbox service worker + web manifest) |
 | i18n | **i18next** + **react-i18next** + browser language detector (EN / pt-BR, switchable in the header) |
 | Local persistence | **localforage** (IndexedDB) |
-| ID generation | **bson-objectid** via a single `generateId()` (`utils/id.ts`) — one scheme (24-char ObjectId hex) for every id: events, members, transactions, activities, device id |
+| ID generation | **bson-objectid** via a single `generateId()` (`utils/id.ts`) — one scheme (24-char ObjectId hex) for every id: events, members, transactions, device id |
 | Unit tests | **Vitest** |
 
 ### Backend (`backend/`)
@@ -113,7 +113,7 @@ Root scripts: `npm run dev`, `npm run format`, `npm run lint`. Frontend scripts 
 
 **Cross-cutting state (React Context)**
 - `context/ThemeContext.tsx` — light/dark, persisted to `localStorage["divsplit_theme"]`; toggles the `.dark` class on `<html>`.
-- `context/GroupContext.tsx` — loads/exposes the active group (`data`, `updateGroup(next, meta?)`, `loadDemo`) **and the trust-based identity** (`currentMemberId`, `currentMember`, `identify`, `clearIdentity`); syncs the activity-tracker actor.
+- `context/GroupContext.tsx` — loads/exposes the active group (`data`, `updateGroup(next, meta?)`, `loadDemo`) **and the trust-based identity** (`currentMemberId`, `currentMember`, `identify`, `clearIdentity`), used to attribute each save's `author`.
 
 **Domain & data layer (`utils/`)**
 - `use-api.ts` — the persistence boundary. localforage stores `groupList`, `group`, and `history`; hooks `useApiListGroups`, `useApiGetGroup`. On each save it records a version (author from the local identity) and logs "Event created" on first persist. *Single place that touches event storage.*
@@ -121,8 +121,7 @@ Root scripts: `npm run dev`, `npm run format`, `npm run lint`. Frontend scripts 
 - `identity.ts` — trust-based identity: `getDeviceUid`, `get/setEventMemberId`, `getPreferredName` (all `localStorage`).
 - `id.ts` — `generateId()`: the **single** id generator (ObjectId hex) for every entity, so id formats never diverge.
 - `settlement.ts` — **pure** settlement engine: `computeBalances` (ΣpaidBy − ΣpaidFor), `topupTotal`, and `computeSettlement` (offset the holder by Σtop-ups → greedy min-cash-flow → fewest `transfers`). Unit-tested.
-- `transaction.ts` — `getTransactionError` (form validation), unit-tested.
-- `activity-tracker.ts` — `ACTIVITY_TYPES` + pure functions appending audit entries (capped 100, newest first); `setCurrentActor` so each entry records `userId` + `actorName`. Each entry's `description` is a **named message key** (e.g. `MEMBER_ADDED`), with the render params in `details` — translated at display, not baked English.
+- `transaction.ts` — `getTransactionError` (form validation) + `autoSplit` (paid-by/paid-for distribution), unit-tested.
 - `money.ts` — `formatMoney(value, lng)`: currency with 2 decimals and the language's separators (pt-BR → `1.234,50`). Wired as the i18next `money` formatter, so locale templates can write `{{amount, money}}`.
 - `tools.ts` — `jsonParseSafe` / `jsonStringifySafe`.
 - `types.ts` — shared domain types (`Group`, `Member`, `Transaction` incl. `TransactionType`, `Activity`, settlement types).
@@ -147,8 +146,7 @@ SPA, client-side routing only (Vercel rewrites all paths to `index.html`). The s
 | `/group/:groupId/topup` | `GroupTopUp` (record a top-up) |
 | `/group/:groupId/transactions[/:id\|new]` | transactions list / `GroupTransaction` |
 | `/group/:groupId/settlement` | `GroupSettlement` (balances + transfers) |
-| `/group/:groupId/activity` | `GroupActivity` (per-action log, with actor) |
-| `/group/:groupId/versions` | `GroupHistory` (version timeline, diff, restore) |
+| `/group/:groupId/history` | `GroupHistory` (version timeline, attributed, with per-action revert) |
 | `*` | `NotFound` |
 
 Opening any `/group/:groupId/*` path shows the **`IdentityGate`** first if this device hasn't picked a member for that event.
@@ -166,7 +164,6 @@ Group = {
   transactions: Transaction[],              // { id, type?: 'expense'|'transfer'|'topup', date, description,
                                             //   total, paidBy:{memberId:amount},
                                             //   paidFor:{memberId:amount}, manuallyChanged }
-  activities?: Activity[],                  // audit log (capped 100, newest first); each carries userId + actorName
 }
 ```
 
@@ -195,8 +192,8 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
                                           localforage "groupList" (name index)
 ```
 
-- **Write path:** a page builds a new group object (often via `activity-tracker` helpers), calls `updateGroup(next, meta?)`; `useApiGetGroup` stages it, persists, **records a version** (`recordVersion`, author from the local identity) and re-reads, then upserts the name into `groupList`.
-- **Identity:** read locally per event (`utils/identity.ts`); the `IdentityGate` writes it before any contribution, and `GroupContext` keeps the activity-tracker actor in sync so writes are attributed.
+- **Write path:** a page builds a new group object and calls `updateGroup(next, meta?)`; `useApiGetGroup` stages it, persists, **records a version** (`recordVersion` diffs prev vs next to derive the change lines, author from the local identity) and re-reads, then upserts the name into `groupList`.
+- **Identity:** read locally per event (`utils/identity.ts`); the `IdentityGate` writes it before any contribution, so each save is attributed to the acting member.
 - **Derived, not stored:** balances and the *suggested* settlement transfers are computed on read; recorded settle-ups are persisted as `type: 'transfer'` transactions. Past event states are reconstructed on demand from the delta history.
 - **No network.** Fully offline; demo data from `/demo_data.json`.
 
@@ -229,8 +226,7 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 - **`member.prepaid` legacy field** — kept optional only so old groups migrate to top-ups on load (`use-api` `groupStandardize`); unused by new code. Likewise `config.bankerId` → `holderId`.
 - **Legacy ids in old data** — all ids are now generated by one `generateId()` (`utils/id.ts`, ObjectId hex). Events created before this may still hold old-format member ids (`"${index}_${Date.now()}"`) in storage; harmless (ids only need to be unique) and not migrated.
 - **No keyframe snapshots in versioning** — reconstructing an old state replays all deltas from the current head; fine for small events, add periodic keyframes if histories get very long.
-- **Activity log vs. version history overlap** — two adjacent views (per-action `activity` log and per-save `versions`); candidate to merge into one history view.
-- **No component/E2E tests** — only pure-logic unit tests exist; versioning (`versioning.ts`) is a good candidate for unit tests.
+- **No component/E2E tests** — only pure-logic unit tests exist (settlement, transaction/autoSplit, versioning/describeChanges + consolidation).
 
 ---
 

@@ -38,15 +38,6 @@ export interface Transaction {
 	updatedAt?: string | Date;
 }
 
-export interface Activity {
-	id: string;
-	type: string;
-	description: string;
-	details: Record<string, unknown>;
-	userId: string | null;
-	timestamp: string | Date;
-}
-
 export interface GroupConfig {
 	name?: string;
 	/** Chosen emoji icon for the event (shown on its card). */
@@ -61,9 +52,6 @@ export interface Group {
 	config: GroupConfig;
 	members?: Member[];
 	transactions?: Transaction[];
-	activities?: Activity[];
-	/** Legacy field present in demo data; the live UI uses `config.name`. */
-	header?: { name?: string };
 }
 
 export interface GroupListItem {

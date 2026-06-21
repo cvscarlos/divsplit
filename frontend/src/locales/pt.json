@@ -28,6 +28,8 @@
   "EVENT_CREATED": "Evento criado",
   "EVENT_RENAMED": "Renomeado de \"{{old}}\" para \"{{new}}\"",
   "EVENT_UPDATED": "Evento atualizado",
+  "HOLDER_CHANGED": "Caixa alterado para {{name}}",
+  "ICON_CHANGED": "Ícone do evento alterado",
   "MEMBER_ADDED": "{{name}} foi adicionado",
   "MEMBER_REMOVED": "{{name}} foi removido",
   "MEMBER_RENAMED": "Membro renomeado de \"{{old}}\" para \"{{new}}\"",

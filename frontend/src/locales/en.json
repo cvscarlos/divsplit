@@ -28,6 +28,8 @@
   "EVENT_CREATED": "Event created",
   "EVENT_RENAMED": "Renamed from \"{{old}}\" to \"{{new}}\"",
   "EVENT_UPDATED": "Updated event",
+  "HOLDER_CHANGED": "Cash holder changed to {{name}}",
+  "ICON_CHANGED": "Changed the event icon",
   "MEMBER_ADDED": "{{name}} was added",
   "MEMBER_REMOVED": "{{name}} was removed",
   "MEMBER_RENAMED": "Member renamed from \"{{old}}\" to \"{{new}}\"",

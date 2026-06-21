@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import localforage from 'localforage';
 
 import type { Group, GroupListItem } from '../types';
-import { trackEventCreated } from './activity-tracker';
 import { recordVersion } from './versioning';
 import type { ChangeEntry } from './versioning';
 import { getEventMemberId } from './identity';
@@ -128,11 +127,11 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 
 			if (dataToSave) {
 				const prev = await groupStore.getItem<Group>(groupId);
-				// First time this event is persisted → log an "Event created" entry.
-				const toSave = prev ? dataToSave.group : trackEventCreated(dataToSave.group);
+				const toSave = dataToSave.group;
 				await groupStore.setItem(groupId, toSave);
 				const memberId = getEventMemberId(groupId);
 				const author = dataToSave.meta?.author ?? toSave.members?.find((m) => m.id === memberId)?.name ?? '';
+				// recordVersion derives change lines from the state diff (and logs creation on the first save).
 				await recordVersion(groupId, prev, toSave, { change: dataToSave.meta?.change, author });
 				if (!abort) setDataToSave(null);
 				if (!abort) await updateGroupIndex(toSave, groupId);

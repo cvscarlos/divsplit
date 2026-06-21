@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { create } from 'jsondiffpatch';
 
-import { reconstructCore, shouldConsolidate } from './versioning';
+import { reconstructCore, shouldConsolidate, describeChanges } from './versioning';
 import type { EventVersion, VersionedCore } from './versioning';
 
 const differ = create({ objectHash: (o: unknown) => (o as { id?: string })?.id ?? JSON.stringify(o) });
@@ -64,5 +64,56 @@ describe('shouldConsolidate', () => {
 
 	it('does not fold when there is no prior version', () => {
 		expect(shouldConsolidate(undefined, [{ key: 'TX_ADDED' }], 'Ana', false, now)).toBe(false);
+	});
+});
+
+describe('describeChanges', () => {
+	const keys = (prev: Partial<VersionedCore>, next: Partial<VersionedCore>) =>
+		describeChanges(core(prev), core(next)).map((c) => c.key);
+
+	it('logs a removed member (regression: member deletes were silently unlogged)', () => {
+		const prev = {
+			members: [
+				{ id: '1', name: 'Ana' },
+				{ id: '2', name: 'Bob' },
+			],
+		};
+		const next = { members: [{ id: '1', name: 'Ana' }] };
+		expect(describeChanges(core(prev), core(next))).toContainEqual({ key: 'MEMBER_REMOVED', params: { name: 'Bob' } });
+	});
+
+	it('captures the member + transaction ripple of a deletion together', () => {
+		// Deleting Bob reassigns his transaction to Ana → both keys change in one save.
+		const tx = (paidBy: Record<string, number>) => ({
+			id: 't1',
+			description: 'Taxi',
+			total: 20,
+			date: '2026-06-01',
+			paidBy,
+			paidFor: { '1': 20 },
+		});
+		const prev = {
+			members: [
+				{ id: '1', name: 'Ana' },
+				{ id: '2', name: 'Bob' },
+			],
+			transactions: [tx({ '2': 20 })],
+		};
+		const next = { members: [{ id: '1', name: 'Ana' }], transactions: [tx({ '1': 20 })] };
+		const result = keys(prev, next);
+		expect(result).toContain('MEMBER_REMOVED');
+		expect(result).toContain('TX_UPDATED');
+	});
+
+	it('names adds, renames, and config changes', () => {
+		expect(keys({ members: [] }, { members: [{ id: '1', name: 'Ana' }] })).toEqual(['MEMBER_ADDED']);
+		expect(keys({ members: [{ id: '1', name: 'Ana' }] }, { members: [{ id: '1', name: 'Ana M.' }] })).toEqual([
+			'MEMBER_RENAMED',
+		]);
+		expect(keys({ config: { name: 'Trip' } }, { config: { name: 'Beach' } })).toEqual(['EVENT_RENAMED']);
+	});
+
+	it('stays quiet about config values first set on creation (empty → value)', () => {
+		expect(keys({ config: {} }, { config: { name: 'Trip', icon: 'beach', holderId: '1' } })).toEqual([]);
 	});
 });

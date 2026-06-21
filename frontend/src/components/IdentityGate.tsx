@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { UserPlus } from 'lucide-react';
 
 import { useGroupContext } from '../context/GroupContext';
-import { trackEventCreated, trackMemberAdded } from '../utils/activity-tracker';
 import { getPreferredName } from '../utils/identity';
 import { generateId } from '../utils/id';
 import { Avatar } from './Avatar';
@@ -36,15 +35,14 @@ export function IdentityGate() {
 		if (!trimmed) return;
 
 		const member: Member = { id: generateId(), name: trimmed };
-		identify(member); // sets the acting identity before we record any activity
+		identify(member); // sets the acting identity so the save is attributed to them
 
-		let updated: Group = { ...group, members: [...(group.members ?? []), member] };
-		if (isNewEvent) {
-			updated.config = { ...updated.config, holderId: updated.config?.holderId || member.id };
-			updated = trackEventCreated(updated);
-		} else {
-			updated = trackMemberAdded(updated, member);
-		}
+		const updated: Group = {
+			...group,
+			members: [...(group.members ?? []), member],
+			// The creator of a brand-new event also becomes the default cash holder.
+			...(isNewEvent ? { config: { ...group.config, holderId: group.config?.holderId || member.id } } : {}),
+		};
 		updateGroup(updated);
 	}
 

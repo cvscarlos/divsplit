@@ -12,7 +12,6 @@ import {
 	clearEventMemberId,
 	setPreferredName,
 } from '../utils/identity';
-import { setCurrentActor } from '../utils/activity-tracker';
 import Loading from '../components/Loading';
 
 interface GroupContextValue {
@@ -41,22 +40,15 @@ export function GroupProvider({ children }: { children: ReactNode }) {
 
 	const currentMember = data.members?.find((m) => m.id === currentMemberId);
 
-	// Keep the activity-tracker actor in sync so changes get attributed.
-	useEffect(() => {
-		if (currentMember) setCurrentActor({ id: currentMember.id, name: currentMember.name });
-	}, [currentMember]);
-
 	const identify = (member: Member) => {
 		if (!groupId) return;
 		setEventMemberId(groupId, member.id);
 		setPreferredName(member.name);
-		setCurrentActor({ id: member.id, name: member.name });
 		setCurrentMemberId(member.id);
 	};
 
 	const clearIdentity = () => {
 		if (groupId) clearEventMemberId(groupId);
-		setCurrentActor(null);
 		setCurrentMemberId(null);
 	};
 

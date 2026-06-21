@@ -7,7 +7,6 @@ import { useGroupContext } from '../../context/GroupContext';
 import { generateId } from '../../utils/id';
 import { computeSettlement, type Transfer } from '../../utils/settlement';
 import { formatMoney } from '../../utils/money';
-import { trackTransferRecorded, trackTransferRemoved, trackTopupRemoved } from '../../utils/activity-tracker';
 import { Avatar } from '../../components/Avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,19 +63,11 @@ export function GroupSettlement() {
 			paidBy: { [transfer.fromId]: transfer.amount },
 			paidFor: { [transfer.toId]: transfer.amount },
 		};
-		const updated = trackTransferRecorded(group, transfer.fromName, transfer.toName, transfer.amount);
-		updated.transactions = [...(updated.transactions ?? []), txn];
-		updateGroup(updated);
+		updateGroup({ ...group, transactions: [...(group.transactions ?? []), txn] });
 	}
 
 	function removeTransaction(txn: Transaction) {
-		const fromId = Object.keys(txn.paidBy)[0] ?? '';
-		const updated =
-			txn.type === 'topup'
-				? trackTopupRemoved(group, nameOf(fromId), txn.total)
-				: trackTransferRemoved(group, nameOf(fromId), nameOf(Object.keys(txn.paidFor)[0] ?? ''), txn.total);
-		updated.transactions = (updated.transactions ?? []).filter((tx) => tx.id !== txn.id);
-		updateGroup(updated);
+		updateGroup({ ...group, transactions: (group.transactions ?? []).filter((tx) => tx.id !== txn.id) });
 	}
 
 	if (!group.members || group.members.length === 0) {

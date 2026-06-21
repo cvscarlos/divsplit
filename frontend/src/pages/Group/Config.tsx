@@ -5,11 +5,10 @@ import { Trash2, UserPlus, Save, Check } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { Avatar } from '../../components/Avatar';
-import { trackGroupNameChange, trackMemberChanges } from '../../utils/activity-tracker';
 import { generateId } from '../../utils/id';
 import { EVENT_ICONS } from '../../utils/event-icons';
 import { memberInTransactions, reassignMember } from '../../utils/members';
-import type { Member, Transaction } from '../../types';
+import type { Group, Member, Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,8 +31,7 @@ export function GroupConfig() {
 
 	useEffect(() => {
 		setFormFields({ name: group.config?.name || '---' });
-		// Clone so edits don't mutate the context's member objects (which would make
-		// trackMemberChanges see "no change" when comparing old vs new).
+		// Clone so editing a name doesn't mutate the context's member objects in place.
 		if (group.members) setMembers(group.members.map((m) => ({ ...m })));
 		setHolderId(group.config?.holderId || group.members?.[0]?.id || '');
 		setIcon(group.config?.icon || '');
@@ -75,16 +73,13 @@ export function GroupConfig() {
 	function handleGroupSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
-		let updatedGroup = { ...group };
-
-		const oldGroupName = group.config?.name || '';
-		updatedGroup = trackGroupNameChange(updatedGroup, oldGroupName, formFields.name);
-		updatedGroup = trackMemberChanges(updatedGroup, group.members || [], members);
-
 		const validHolder = members.some((m) => m.id === holderId) ? holderId : members[0]?.id;
-		updatedGroup.config = { ...updatedGroup.config, name: formFields.name, holderId: validHolder, icon };
-		updatedGroup.members = members;
-		updatedGroup.transactions = transactions;
+		const updatedGroup: Group = {
+			...group,
+			config: { ...group.config, name: formFields.name, holderId: validHolder, icon },
+			members,
+			transactions,
+		};
 
 		updateGroup(updatedGroup);
 		setSaved(true);
