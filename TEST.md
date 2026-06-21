@@ -50,15 +50,16 @@ Most tests below use this event:
 ### TC-1.1 — Home page renders
 
 1. Open http://localhost:5173/ on a **fresh profile** (or incognito).
-2. **Expected:** a full-screen hero — a pink infinity (∞) emblem, the headline
-   **"Zero Balances."** / **"Pure Intent."** (the second line a pink→green gradient),
-   a subtitle, a glowing pill **CREATE AN EVENT**, and small `ENCRYPTED · REAL-TIME`
-   labels. The header shows the DivSplit logo (on a dark chip), an **EVENTS** link, a
-   **language selector** (EN/PT) and a **theme toggle**. No console errors.
-3. Below the hero, with no events yet, an empty-state card shows
-   **"No events yet — create your first one"**. After events exist they list under
-   **"Your shared-expense events"** as vibrant colored cards, followed by a dashed
-   **new event** tile.
+2. **Expected:** a full-screen hero — the pink/green **logo** emblem (with a glow), the
+   headline **"Split expenses, / drama-free."** (PT: "Divida gastos / sem climão.", the
+   second line a pink→green gradient), a subtitle, a glowing pill **Create your first
+   event**, and small `Secure · Real-time · No spreadsheets` labels. The header shows the
+   DivSplit logo (on a dark chip), an **EVENTS** link, a **language selector** (EN/PT) and
+   a **theme toggle**. No console errors.
+3. Below the hero: two messaging sections (privacy + "enjoy the moment"), then — with no
+   events yet — an empty-state card **"Nothing to split yet — create your first event"**.
+   After events exist they list under **"Your shared-expense events"** as vibrant colored
+   cards (each with its chosen/auto icon), followed by a dashed **new event** tile.
 
 ### TC-1.2 — Create a new event (creator identity)
 
@@ -67,8 +68,12 @@ Most tests below use this event:
    intercepts first: **"Welcome to DivSplit / What's your name?"** with a name field.
 3. Type your name → **Continue**.
 4. **Expected:** the gate closes; you are now member #1, the Config page shows with the
-   event eyebrow **"EVENT"**, title **"Untitled event"**, and **"You: <name> · change"**
-   under it. The Activity log will contain an **"Event created"** entry (TC-6.1).
+   event eyebrow **"EVENT"**, title **"Untitled event"**, and **"You/Você é: <name> ·
+   change"** under it. The History will contain an **"Event created"** entry (§6).
+
+> **Tabs & default:** an event's tabs are **Transactions · Settle up · Config · History**
+> (in that order). Opening an existing event card lands on **Transactions**; a brand-new
+> event opens **Config** for setup.
 
 ### TC-1.3 — New event appears on the home list after saving
 
@@ -103,11 +108,36 @@ Most tests below use this event:
    (DiceBear "thumbs", rendered locally); the holder choice persists. There is no
    per-member "prepaid" input — money is added later via **Top up** (see §8).
 
-### TC-2.3 — Remove a member
+### TC-2.3 — Remove a member with no transactions
 
-1. On Config, click the trash icon next to a member row → **Save**.
-2. **Expected:** the member disappears and the count decreases. The Activity log
-   records a "removed" entry (see TC-6.1).
+1. On Config, click the trash icon next to a member who appears in **no** transaction → **Save**.
+2. **Expected:** the member disappears immediately and the count decreases; History records the removal.
+
+### TC-2.4 — Remove a member who has transactions (reassign)
+
+1. On a populated event, click the trash icon next to a member referenced in transactions.
+2. **Expected:** a **"Move transactions"** dialog: "{name} has transactions. Move them to
+   which member?" with a member dropdown + **Cancel** / **Move and remove**.
+3. Pick a target → **Move and remove**.
+4. **Expected:** the member is removed and their amounts (paidBy/paidFor) are merged into
+   the chosen member across all transactions. **Save** persists it. Cancel aborts.
+
+### TC-2.5 — Remove the cash holder
+
+1. Delete the member currently set as **Top-holder** (reassigning transactions if prompted).
+2. **Expected:** the holder role moves to the member you reassigned to (or the first
+   remaining member); the **Top-holder** dropdown updates. No orphaned holder on Save.
+
+### TC-2.6 — Choose an event icon
+
+1. On Config (last field, **Icon**), click one of the 28 line icons → **Save**.
+2. **Expected:** the icon highlights; after saving, the event's home card shows it (click
+   again to deselect → card falls back to the deterministic icon).
+
+### TC-2.7 — Save confirmation
+
+1. Click **Save** on Config.
+2. **Expected:** a green **✓ Saved / Salvo** flashes next to the button and fades out.
 
 ---
 
@@ -189,16 +219,32 @@ Most tests below use this event:
 
 ---
 
-## 6. Activity log
+## 6. History (changes, diff, restore)
+
+The **History** tab is the single timeline of changes (it merges the old Activity log and
+Versions). Every save records one reversible delta of the event core (config/members/
+transactions); reconstruct/restore logic is unit-tested (`versioning.test.ts`).
 
 ### TC-6.1 — Changes are recorded and attributed
 
-1. After TC-2.1 / TC-2.2 / TC-3.6, open the **Activity** tab.
-2. **Expected:** a reverse-chronological list (newest first): "Event name changed …",
-   "Member \"Alice\" was added to the event", "Transaction \"Dinner\" was created …",
-   and an **"Event created"** entry at the bottom. Each row shows an icon and, when the
-   author is known, **"<name> · <relative time>"** (see §9 identity).
-3. **Empty case:** a brand-new event before any save shows "No activity yet".
+1. After TC-2.1 / TC-2.4 / TC-3.6, open the **History** tab.
+2. **Expected:** a reverse-chronological list (newest first). Each entry lists its
+   per-action change line(s) — "Event name changed …", "Member \"Alice\" was added …",
+   "Transaction \"Dinner\" was created …" — with **`v{n} · {author} · {time}`**, the
+   latest marked **Current**, and an **"Event created"** entry at the bottom.
+3. **Empty case:** a brand-new event before any save shows "No history yet".
+
+### TC-6.2 — Consolidation (Google-Docs style)
+
+1. Make two edits in quick succession (same person, within ~5 min), saving each.
+2. **Expected:** they fold into **one** History entry (not two) listing both change lines.
+   Restores still revert the full combined change (the delta captures everything).
+
+### TC-6.3 — Restore creates a new forward version
+
+1. Click **Restore** on an older entry.
+2. **Expected:** the event reverts to that state **and** a new **"Restored to version N"**
+   entry is appended as the Current head — history is never destroyed.
 
 ---
 
@@ -239,11 +285,12 @@ Settlement is derived (suggested transfers are not stored). `balance = ΣpaidBy 
 cash and (for the transfer computation only) is offset by Σtop-ups, so refunds route
 through them. Pure logic is covered by unit tests (`npm run test --workspace frontend`).
 
-### TC-8.1 — Top up a member
+### TC-8.1 — Advance payment (top-up)
 
-1. **Settle up** → **Top up**. Choose a member, enter an amount → **Top up**.
-2. **Expected:** the member's balance rises (badge "gets back", "deposited $X"), the
-   top-up appears under **Top-ups**, Activity logs "{member} topped up $X". Undo removes it.
+1. **Settle up** → **Pagamento antecipado / Advance payment**. Choose a member, enter an
+   amount → confirm.
+2. **Expected:** the member's balance rises (badge "gets back", "deposited $X"), it
+   appears under **Advance payments**, and History records it. Undo removes it.
 
 ### TC-8.2 — Holder refunds the unused pot (top-ups, no expenses)
 
@@ -267,10 +314,10 @@ through them. Pure logic is covered by unit tests (`npm run test --workspace fro
 
 1. With a suggested transfer (`Alice → Carol $50`), click **Mark paid**.
    **Expected:** it leaves the suggested list, members move toward "settled", the
-   payment appears under **Recorded payments**, Activity logs "{from} paid {to} $X". It
+   payment appears under **Recorded payments**, History records "{from} paid {to} $X". It
    does **not** appear in the Transactions (expenses) list.
 2. In **Recorded payments**, click **Undo** → the payment is removed and the cleared
-   transfer comes back; Activity logs "Removed payment: {from} → {to} $X".
+   transfer comes back; History records "Removed payment: {from} → {to} $X".
 
 ---
 
@@ -284,57 +331,29 @@ member you are (stored locally per event).
 1. On a **fresh profile**, open an existing event's link (e.g. `/group/<id>/config`).
 2. **Expected:** the **"Who are you?"** gate — a list of existing members (avatar +
    name) to pick from, plus an "I'm not listed" name field.
-3. Click a member → the gate closes and the header shows **"You: <name> · change"**.
+3. Click a member → the gate closes and the header shows **"You/Você é: <name> · change"**.
 
 ### TC-9.2 — Joiner adds themselves
 
 1. At the gate (TC-9.1), type a new name in "I'm not listed" → **Join**.
-2. **Expected:** a new member is created, you're identified as them, and Activity logs
+2. **Expected:** a new member is created, you're identified as them, and History records
    "Member \"<name>\" was added to the event" attributed to you.
 
 ### TC-9.3 — Attribution
 
 1. While identified as e.g. `Ana`, make a change (rename, add expense) and **Save**.
-2. **Expected:** the new **Activity** entry and the new **Version** (§10) both show
-   `Ana` as the author.
+2. **Expected:** the new **History** entry shows `Ana` as the author.
 
 ### TC-9.4 — Switch identity
 
-1. Click **change** next to "You: <name>".
+1. Click **change** next to "You/Você é: <name>".
 2. **Expected:** the gate returns so you can pick a different member.
 
 ---
 
-## 10. Version history & restore
+## 10. Routing
 
-Every save records one reversible delta of the event core (config/members/
-transactions). Pure logic covered by unit tests (`versioning.test.ts`).
-
-### TC-10.1 — Versions are recorded
-
-1. Make a couple of edits (rename, add a member), saving each → open the **Versions** tab.
-2. **Expected:** a newest-first timeline; each entry shows `v{n} · {author} · {time}`
-   and a coarse message ("Updated event details", "Updated members"). The latest is
-   labelled **Current**.
-
-### TC-10.2 — View a diff
-
-1. Click **Changes** on a version.
-2. **Expected:** a human-readable diff of that save, e.g. `Name: "Praia" → "Praia Grande"`,
-   `Added member "Bruno"`, `"Dinner": $80 → $100`.
-
-### TC-10.3 — Restore creates a new forward version
-
-1. Click **Restore** on an older version.
-2. **Expected:** the event reverts to that state, AND a **new** version
-   **"Restored to version N"** is appended as the Current head — history is never
-   destroyed (older versions and their Restore links remain).
-
----
-
-## 11. Routing
-
-### TC-11.1 — Unknown route shows 404
+### TC-10.1 — Unknown route shows 404
 
 1. Navigate to a nonsense path, e.g. `/group/abc/does-not-exist`.
 2. **Expected:** the 404 page ("404 / Content not found") with a link home. (You may
@@ -348,8 +367,8 @@ transactions). Pure logic covered by unit tests (`versioning.test.ts`).
   **top-holder**; minimization is greedy (near-optimal), not provably minimal.
 - **Expenses always have a payer:** pot-funding is implicit via top-ups + the holder
   refund, not a no-payer transaction.
-- **Activity/version messages are English-only:** they're stored at write time, so they
-  don't translate when you switch language (UI chrome does).
+- **History messages are English-only:** they're stored at write time, so they don't
+  translate when you switch language (UI chrome does).
 - **No version keyframes:** restoring replays all deltas from the head; fine for small
   events.
 - **Native date input:** automated tools may need to set the date field

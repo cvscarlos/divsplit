@@ -50,12 +50,17 @@ export function GroupConfig() {
 			setReassignFrom(member);
 			return;
 		}
-		setMembers(members.filter((m) => m.id !== member.id));
+		const remaining = members.filter((m) => m.id !== member.id);
+		setMembers(remaining);
+		// If we removed the cash holder, hand the role to the first remaining member.
+		if (member.id === holderId) setHolderId(remaining[0]?.id ?? '');
 	}
 	function confirmReassign() {
 		if (!reassignFrom || !reassignTo) return;
 		setTransactions(reassignMember(transactions, reassignFrom.id, reassignTo));
 		setMembers(members.filter((m) => m.id !== reassignFrom.id));
+		// The member taking over the transactions also takes over as cash holder.
+		if (reassignFrom.id === holderId) setHolderId(reassignTo);
 		setReassignFrom(null);
 	}
 	function handleMemberName(member: Member, event: ChangeEvent<HTMLInputElement>) {
