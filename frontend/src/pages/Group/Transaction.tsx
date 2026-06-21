@@ -7,6 +7,7 @@ import { Wallet, HandCoins, Save, Check } from 'lucide-react';
 import { useGroupContext } from '../../context/GroupContext';
 import { trackTransactionCreated, trackTransactionUpdated } from '../../utils/activity-tracker';
 import { getTransactionError } from '../../utils/transaction';
+import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
 import type { AmountMap, Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +26,7 @@ function round(value: number): number {
 }
 
 export function GroupTransaction({ transactionId }: { transactionId: string }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const navigate = useNavigate();
 	const { groupId } = useParams();
 	const { data: group, updateGroup, loadDemo } = useGroupContext();
@@ -46,9 +47,10 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const [paidFor, setPaidFor] = useState<AmountMap>(existingTransaction?.paidFor || {});
 	const [total, setTotal] = useState<number>(existingTransaction?.total || 0);
 	const [description, setDescription] = useState<string>(existingTransaction?.description || '');
-	const [date, setDate] = useState<string>(formatDateForInput(existingTransaction?.date));
+	const [date, setDate] = useState<string>(formatDateForInput(existingTransaction?.date ?? new Date()));
 	const manuallyChanged = useRef<Record<string, boolean>>(existingTransaction?.manuallyChanged || {});
 	const [error, setError] = useState<string | null>(null);
+	const [saved, setSaved] = useState(false);
 
 	// Update state when transaction changes (e.g., navigating between transactions)
 	useEffect(() => {
@@ -56,7 +58,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		setPaidFor(existingTransaction?.paidFor || {});
 		setTotal(existingTransaction?.total || 0);
 		setDescription(existingTransaction?.description || '');
-		setDate(formatDateForInput(existingTransaction?.date));
+		setDate(formatDateForInput(existingTransaction?.date ?? new Date()));
 		manuallyChanged.current = existingTransaction?.manuallyChanged || {};
 	}, [existingTransaction]);
 
@@ -159,6 +161,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				}
 			}
 			updateGroup(updatedGroup);
+			setSaved(true);
+			setTimeout(() => setSaved(false), 2000);
 			if (isNew) {
 				navigate(`/group/${groupId}/transactions/${id}`);
 			}
@@ -223,7 +227,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						balanced ? 'text-muted-foreground' : 'text-primary',
 					)}
 				>
-					{balanced && <Check className="size-4" />}${remaining}
+					{balanced && <Check className="size-4" />}
+					{formatMoney(remaining, i18n.language)}
 				</span>
 			</div>
 		);
@@ -257,7 +262,14 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						<Label htmlFor="tx-date" className="mb-1.5">
 							{t('Date')}
 						</Label>
-						<Input id="tx-date" type="date" name="date" value={date} onChange={(e) => setDate(e.target.value)} />
+						<Input
+							id="tx-date"
+							type="date"
+							name="date"
+							aria-invalid={Boolean(error) && !date}
+							value={date}
+							onChange={(e) => setDate(e.target.value)}
+						/>
 					</div>
 					<div>
 						<Label htmlFor="tx-total" className="mb-1.5">
@@ -273,6 +285,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 								type="number"
 								name="total"
 								placeholder="0"
+								aria-invalid={Boolean(error) && !total}
 								value={total || ''}
 								onChange={(e) => setTotal(Number(e.target.value) || total)}
 							/>
@@ -287,6 +300,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 							type="text"
 							name="description"
 							placeholder={t('TypeHere')}
+							aria-invalid={Boolean(error) && !description}
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 						/>
@@ -325,6 +339,14 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					<p role="alert" className="text-destructive text-sm font-medium">
 						{error}
 					</p>
+				)}
+				{saved && (
+					<span
+						key={Date.now()}
+						className="save-flash inline-flex items-center gap-1.5 text-sm font-medium text-green-600"
+					>
+						<Check className="size-4" /> {t('Saved')}
+					</span>
 				)}
 				<Button type="submit" size="lg">
 					<Save /> {t('Save')}

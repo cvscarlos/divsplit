@@ -1,20 +1,34 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import type { MouseEvent } from 'react';
-import { Trash2, Plus, ReceiptText } from 'lucide-react';
+import { Trash2, Plus, ReceiptText, ArrowUp, ArrowDown } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { trackTransactionDeleted } from '../../utils/activity-tracker';
+import { formatMoney } from '../../utils/money';
 import type { Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+type SortKey = 'date' | 'description' | 'total';
+
 export function GroupListTransactions() {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const { groupId } = useParams();
 	const navigate = useNavigate();
 	const { data: group, updateGroup } = useGroupContext();
+	const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'date', dir: 'desc' });
+
+	function toggleSort(key: SortKey) {
+		// Click a new column → sensible default (text asc, date/number desc); same column → flip.
+		setSort((s) =>
+			s.key === key
+				? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' }
+				: { key, dir: key === 'description' ? 'asc' : 'desc' },
+		);
+	}
 
 	function handleDeleteTransaction(transaction: Transaction, event: MouseEvent<HTMLButtonElement>) {
 		event.preventDefault();
@@ -33,15 +47,17 @@ export function GroupListTransactions() {
 		}
 	}
 
+	const locale = i18n.language.startsWith('pt') ? 'pt-BR' : 'en-US';
+
 	function renderTransaction(transaction: Transaction) {
-		const { id, total, createdAt, description } = transaction;
+		const { id, total, date, description } = transaction;
 		return (
 			<TableRow key={id} className="cursor-pointer" onClick={() => navigate(`/group/${groupId}/transactions/${id}`)}>
 				<TableCell className="text-muted-foreground tnum">
-					{createdAt ? new Date(createdAt).toLocaleDateString() : '—'}
+					{date ? new Date(date).toLocaleDateString(locale) : '—'}
 				</TableCell>
 				<TableCell className="font-medium">{description}</TableCell>
-				<TableCell className="tnum text-right font-semibold">${total}</TableCell>
+				<TableCell className="tnum text-right font-semibold">{formatMoney(total, i18n.language)}</TableCell>
 				<TableCell className="w-12 text-right">
 					<Button
 						type="button"
@@ -62,6 +78,30 @@ export function GroupListTransactions() {
 	const expenses = (group.transactions ?? []).filter((tx) => tx.type !== 'transfer' && tx.type !== 'topup');
 	const hasTransactions = expenses.length > 0;
 
+	const sorted = [...expenses].sort((a, b) => {
+		const cmp =
+			sort.key === 'date'
+				? new Date(a.date).getTime() - new Date(b.date).getTime()
+				: sort.key === 'total'
+					? a.total - b.total
+					: a.description.localeCompare(b.description);
+		return sort.dir === 'asc' ? cmp : -cmp;
+	});
+
+	const SortHead = ({ col, label, align }: { col: SortKey; label: string; align?: 'right' }) => (
+		<TableHead className={align === 'right' ? 'text-right' : undefined}>
+			<button
+				type="button"
+				onClick={() => toggleSort(col)}
+				className={`hover:text-foreground inline-flex items-center gap-1 ${align === 'right' ? 'flex-row-reverse' : ''}`}
+			>
+				{label}
+				{sort.key === col &&
+					(sort.dir === 'asc' ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />)}
+			</button>
+		</TableHead>
+	);
+
 	return (
 		<Card>
 			<CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
@@ -79,13 +119,13 @@ export function GroupListTransactions() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t('Date')}</TableHead>
-								<TableHead>{t('Description')}</TableHead>
-								<TableHead className="text-right">{t('Total')}</TableHead>
+								<SortHead col="date" label={t('Date')} />
+								<SortHead col="description" label={t('Description')} />
+								<SortHead col="total" label={t('Total')} align="right" />
 								<TableHead className="text-right">{t('Actions')}</TableHead>
 							</TableRow>
 						</TableHeader>
-						<TableBody>{expenses.map(renderTransaction)}</TableBody>
+						<TableBody>{sorted.map(renderTransaction)}</TableBody>
 					</Table>
 				) : (
 					<div className="flex flex-col items-center gap-4 py-12 text-center">
