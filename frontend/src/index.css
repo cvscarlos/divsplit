@@ -160,26 +160,9 @@
 		mask-composite: intersect;
 	}
 
-	/* Transient "saved" confirmation — visible, then fades out. */
-	.save-flash {
-		animation: save-flash 2s ease forwards;
-	}
-
 	/* Toast pill — fades in, holds, then fades out. */
 	.save-pill {
 		animation: save-pill 2.4s ease forwards;
-	}
-}
-
-@keyframes save-flash {
-	0%,
-	60% {
-		opacity: 1;
-		transform: none;
-	}
-	100% {
-		opacity: 0;
-		transform: translateY(-4px);
 	}
 }
 

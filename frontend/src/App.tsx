@@ -6,13 +6,16 @@ import './i18n';
 import AppRouter from '@routes/AppRouter';
 import ThemeProvider from '@context/ThemeContext';
 import { Container } from '@components/Container';
+import { ToastProvider } from '@components/Toast';
 
 function App() {
 	return (
 		<ThemeProvider>
-			<Container>
-				<AppRouter />
-			</Container>
+			<ToastProvider>
+				<Container>
+					<AppRouter />
+				</Container>
+			</ToastProvider>
 		</ThemeProvider>
 	);
 }

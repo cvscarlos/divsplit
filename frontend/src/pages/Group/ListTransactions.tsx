@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Pencil, Plus, ReceiptText, ArrowUp, ArrowDown, Check } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Pencil, Plus, ReceiptText, ArrowUp, ArrowDown } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { formatMoney } from '../../utils/money';
@@ -16,19 +16,8 @@ export function GroupListTransactions() {
 	const { t, i18n } = useTranslation();
 	const { groupId } = useParams();
 	const navigate = useNavigate();
-	const location = useLocation();
 	const { data: group } = useGroupContext();
 	const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'date', dir: 'desc' });
-	// Saving a transaction navigates here with { saved: true }; show a pill, then consume the flag.
-	const [justSaved, setJustSaved] = useState(Boolean((location.state as { saved?: boolean } | null)?.saved));
-
-	useEffect(() => {
-		if (!justSaved) return;
-		navigate(location.pathname, { replace: true, state: null }); // so a reload won't re-show it
-		const timer = setTimeout(() => setJustSaved(false), 2400);
-		return () => clearTimeout(timer);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
 
 	function toggleSort(key: SortKey) {
 		// Click a new column → sensible default (text asc, date/number desc); same column → flip.
@@ -95,53 +84,44 @@ export function GroupListTransactions() {
 	);
 
 	return (
-		<>
-			{justSaved && (
-				<div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center">
-					<span className="save-pill inline-flex items-center gap-1.5 rounded-full bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-lg">
-						<Check className="size-4" /> {t('Saved')}
-					</span>
-				</div>
-			)}
-			<Card>
-				<CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
-					<CardTitle>{t('Transactions')}</CardTitle>
-					{hasTransactions && (
-						<Button asChild size="sm">
+		<Card>
+			<CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
+				<CardTitle>{t('Transactions')}</CardTitle>
+				{hasTransactions && (
+					<Button asChild size="sm">
+						<Link to={`/group/${groupId}/transactions/new`}>
+							<Plus /> {t('Add Transaction')}
+						</Link>
+					</Button>
+				)}
+			</CardHeader>
+			<CardContent>
+				{hasTransactions ? (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<SortHead col="date" label={t('Date')} />
+								<SortHead col="description" label={t('Description')} />
+								<SortHead col="total" label={t('Total')} align="right" />
+								<TableHead className="text-right">{t('Edit')}</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>{sorted.map(renderTransaction)}</TableBody>
+					</Table>
+				) : (
+					<div className="flex flex-col items-center gap-4 py-12 text-center">
+						<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
+							<ReceiptText className="size-7" />
+						</span>
+						<p className="text-muted-foreground">{t('No transactions found')}</p>
+						<Button asChild>
 							<Link to={`/group/${groupId}/transactions/new`}>
 								<Plus /> {t('Add Transaction')}
 							</Link>
 						</Button>
-					)}
-				</CardHeader>
-				<CardContent>
-					{hasTransactions ? (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<SortHead col="date" label={t('Date')} />
-									<SortHead col="description" label={t('Description')} />
-									<SortHead col="total" label={t('Total')} align="right" />
-									<TableHead className="text-right">{t('Edit')}</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>{sorted.map(renderTransaction)}</TableBody>
-						</Table>
-					) : (
-						<div className="flex flex-col items-center gap-4 py-12 text-center">
-							<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
-								<ReceiptText className="size-7" />
-							</span>
-							<p className="text-muted-foreground">{t('No transactions found')}</p>
-							<Button asChild>
-								<Link to={`/group/${groupId}/transactions/new`}>
-									<Plus /> {t('Add Transaction')}
-								</Link>
-							</Button>
-						</div>
-					)}
-				</CardContent>
-			</Card>
-		</>
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, UserPlus, Save, Check } from 'lucide-react';
+import { Trash2, UserPlus, Save } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
+import { useToast } from '../../components/Toast';
 import { Avatar } from '../../components/Avatar';
 import { generateId } from '../../utils/id';
 import { EVENT_ICONS } from '../../utils/event-icons';
@@ -22,12 +23,12 @@ export function GroupConfig() {
 	const [members, setMembers] = useState<Member[]>([{ ...memberBase }]);
 	const [holderId, setHolderId] = useState<string>('');
 	const [icon, setIcon] = useState<string>('');
-	const [saved, setSaved] = useState(false);
 	const [transactions, setTransactions] = useState<Transaction[]>([]);
 	// The member pending deletion that still has transactions to reassign, and the target.
 	const [reassignFrom, setReassignFrom] = useState<Member | null>(null);
 	const [reassignTo, setReassignTo] = useState<string>('');
 	const { t } = useTranslation();
+	const toast = useToast();
 
 	useEffect(() => {
 		setFormFields({ name: group.config?.name || '---' });
@@ -82,8 +83,7 @@ export function GroupConfig() {
 		};
 
 		updateGroup(updatedGroup);
-		setSaved(true);
-		setTimeout(() => setSaved(false), 2000);
+		toast(t('Saved'));
 	}
 
 	return (
@@ -183,14 +183,6 @@ export function GroupConfig() {
 			</div>
 
 			<div className="flex items-center justify-end gap-3">
-				{saved && (
-					<span
-						key={Date.now()}
-						className="save-flash inline-flex items-center gap-1.5 text-sm font-medium text-green-600"
-					>
-						<Check className="size-4" /> {t('Saved')}
-					</span>
-				)}
 				<Button type="submit" size="lg">
 					<Save /> {t('Save')}
 				</Button>

@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Wallet, HandCoins, Save, Check, Trash2 } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
+import { useToast } from '../../components/Toast';
 import { getTransactionError, autoSplit, round } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
@@ -23,6 +24,7 @@ type ListType = typeof PAID_BY | typeof PAID_FOR;
 export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const { t, i18n } = useTranslation();
 	const navigate = useNavigate();
+	const toast = useToast();
 	const { groupId } = useParams();
 	const { data: group, updateGroup, loadDemo } = useGroupContext();
 
@@ -126,8 +128,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				updatedGroup.transactions = newTransactions;
 			}
 			updateGroup(updatedGroup);
-			// Saving returns to the list; the list shows the "Saved" pill.
-			navigate(`/group/${groupId}/transactions`, { state: { saved: true } });
+			toast(t('Saved'));
+			navigate(`/group/${groupId}/transactions`);
 		} catch (err) {
 			console.error('Error submitting transaction:', err);
 			setError('Something went wrong saving this transaction.');
@@ -141,6 +143,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			transactions: (group.transactions ?? []).filter((tx) => tx.id !== existingTransaction.id),
 		};
 		updateGroup(updatedGroup);
+		toast(t('Deleted'));
 		navigate(`/group/${groupId}/transactions`);
 	}
 

@@ -85,6 +85,7 @@
   "Add Transaction": "Add Transaction",
   "Edit": "Edit",
   "Delete": "Delete",
+  "Deleted": "Deleted",
   "Delete this transaction?": "Delete this transaction?",
   "DeleteTransactionHint": "You can restore it later from the event history.",
   "Want to see some example transactions?": "Want to see some example transactions?",
