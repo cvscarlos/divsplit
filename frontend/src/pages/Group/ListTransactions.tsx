@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import type { MouseEvent } from 'react';
-import { Trash2, Plus, ReceiptText, ArrowUp, ArrowDown } from 'lucide-react';
+import { Pencil, Plus, ReceiptText, ArrowUp, ArrowDown } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
-import { trackTransactionDeleted } from '../../utils/activity-tracker';
 import { formatMoney } from '../../utils/money';
 import type { Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +16,7 @@ export function GroupListTransactions() {
 	const { t, i18n } = useTranslation();
 	const { groupId } = useParams();
 	const navigate = useNavigate();
-	const { data: group, updateGroup } = useGroupContext();
+	const { data: group } = useGroupContext();
 	const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'date', dir: 'desc' });
 
 	function toggleSort(key: SortKey) {
@@ -28,23 +26,6 @@ export function GroupListTransactions() {
 				? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' }
 				: { key, dir: key === 'description' ? 'asc' : 'desc' },
 		);
-	}
-
-	function handleDeleteTransaction(transaction: Transaction, event: MouseEvent<HTMLButtonElement>) {
-		event.preventDefault();
-		event.stopPropagation();
-
-		if (window.confirm(`Are you sure you want to delete the transaction "${transaction.description}"?`)) {
-			let updatedGroup = { ...group };
-
-			// Track transaction deletion
-			updatedGroup = trackTransactionDeleted(updatedGroup, transaction);
-
-			// Remove transaction from the list
-			updatedGroup.transactions = (updatedGroup.transactions || []).filter((tx) => tx.id !== transaction.id);
-
-			updateGroup(updatedGroup);
-		}
 	}
 
 	const locale = i18n.language.startsWith('pt') ? 'pt-BR' : 'en-US';
@@ -63,11 +44,11 @@ export function GroupListTransactions() {
 						type="button"
 						variant="ghost"
 						size="icon"
-						className="text-muted-foreground hover:text-destructive size-8"
-						onClick={(e) => handleDeleteTransaction(transaction, e)}
-						aria-label={`Delete ${description}`}
+						className="text-muted-foreground hover:text-primary size-8"
+						onClick={() => navigate(`/group/${groupId}/transactions/${id}`)}
+						aria-label={`Edit ${description}`}
 					>
-						<Trash2 className="size-4" />
+						<Pencil className="size-4" />
 					</Button>
 				</TableCell>
 			</TableRow>
@@ -122,7 +103,7 @@ export function GroupListTransactions() {
 								<SortHead col="date" label={t('Date')} />
 								<SortHead col="description" label={t('Description')} />
 								<SortHead col="total" label={t('Total')} align="right" />
-								<TableHead className="text-right">{t('Actions')}</TableHead>
+								<TableHead className="text-right">{t('Edit')}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>{sorted.map(renderTransaction)}</TableBody>

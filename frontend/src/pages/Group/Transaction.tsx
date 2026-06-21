@@ -2,10 +2,14 @@ import { useRef, useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Wallet, HandCoins, Save, Check } from 'lucide-react';
+import { Wallet, HandCoins, Save, Check, Trash2 } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
-import { trackTransactionCreated, trackTransactionUpdated } from '../../utils/activity-tracker';
+import {
+	trackTransactionCreated,
+	trackTransactionUpdated,
+	trackTransactionDeleted,
+} from '../../utils/activity-tracker';
 import { getTransactionError, autoSplit, round } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
@@ -144,6 +148,14 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			console.error('Error submitting transaction:', err);
 			setError('Something went wrong saving this transaction.');
 		}
+	}
+
+	function handleDelete() {
+		if (!existingTransaction || !window.confirm(t('Delete this transaction?'))) return;
+		const updatedGroup = trackTransactionDeleted({ ...group }, existingTransaction);
+		updatedGroup.transactions = (updatedGroup.transactions ?? []).filter((tx) => tx.id !== existingTransaction.id);
+		updateGroup(updatedGroup);
+		navigate(`/group/${groupId}/transactions`);
 	}
 
 	function membersList(listType: ListType) {
@@ -305,23 +317,37 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				</Card>
 			</div>
 
-			<div className="flex items-center justify-end gap-4">
-				{error && (
-					<p role="alert" className="text-destructive text-sm font-medium">
-						{error}
-					</p>
-				)}
-				{saved && (
-					<span
-						key={Date.now()}
-						className="save-flash inline-flex items-center gap-1.5 text-sm font-medium text-green-600"
+			<div className="flex items-center justify-between gap-4">
+				{existingTransaction ? (
+					<Button
+						type="button"
+						variant="ghost"
+						className="text-muted-foreground hover:text-destructive"
+						onClick={handleDelete}
 					>
-						<Check className="size-4" /> {t('Saved')}
-					</span>
+						<Trash2 /> {t('Delete')}
+					</Button>
+				) : (
+					<span />
 				)}
-				<Button type="submit" size="lg">
-					<Save /> {t('Save')}
-				</Button>
+				<div className="flex items-center gap-4">
+					{error && (
+						<p role="alert" className="text-destructive text-sm font-medium">
+							{error}
+						</p>
+					)}
+					{saved && (
+						<span
+							key={Date.now()}
+							className="save-flash inline-flex items-center gap-1.5 text-sm font-medium text-green-600"
+						>
+							<Check className="size-4" /> {t('Saved')}
+						</span>
+					)}
+					<Button type="submit" size="lg">
+						<Save /> {t('Save')}
+					</Button>
+				</div>
 			</div>
 		</form>
 	);
