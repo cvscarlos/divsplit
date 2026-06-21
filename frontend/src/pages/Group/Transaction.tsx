@@ -45,7 +45,6 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const [date, setDate] = useState<string>(formatDateForInput(existingTransaction?.date ?? new Date()));
 	const manuallyChanged = useRef<Record<string, boolean>>(existingTransaction?.manuallyChanged || {});
 	const [error, setError] = useState<string | null>(null);
-	const [saved, setSaved] = useState(false);
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
 	// Update state when transaction changes (e.g., navigating between transactions)
@@ -127,11 +126,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				updatedGroup.transactions = newTransactions;
 			}
 			updateGroup(updatedGroup);
-			setSaved(true);
-			setTimeout(() => setSaved(false), 2000);
-			if (isNew) {
-				navigate(`/group/${groupId}/transactions/${id}`);
-			}
+			// Saving returns to the list; the list shows the "Saved" pill.
+			navigate(`/group/${groupId}/transactions`, { state: { saved: true } });
 		} catch (err) {
 			console.error('Error submitting transaction:', err);
 			setError('Something went wrong saving this transaction.');
@@ -325,14 +321,6 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						<p role="alert" className="text-destructive text-sm font-medium">
 							{error}
 						</p>
-					)}
-					{saved && (
-						<span
-							key={Date.now()}
-							className="save-flash inline-flex items-center gap-1.5 text-sm font-medium text-green-600"
-						>
-							<Check className="size-4" /> {t('Saved')}
-						</span>
 					)}
 					<Button type="submit" size="lg">
 						<Save /> {t('Save')}

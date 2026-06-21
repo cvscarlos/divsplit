@@ -164,6 +164,11 @@
 	.save-flash {
 		animation: save-flash 2s ease forwards;
 	}
+
+	/* Toast pill — fades in, holds, then fades out. */
+	.save-pill {
+		animation: save-pill 2.4s ease forwards;
+	}
 }
 
 @keyframes save-flash {
@@ -175,5 +180,21 @@
 	100% {
 		opacity: 0;
 		transform: translateY(-4px);
+	}
+}
+
+@keyframes save-pill {
+	0% {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	12%,
+	78% {
+		opacity: 1;
+		transform: none;
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(-6px);
 	}
 }
