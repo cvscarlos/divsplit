@@ -19,5 +19,7 @@ tmp/
 *.sw?
 .DS_Store
 .env
+.env*.local
+.vercel/
 eslint_report.json
 eslint_report.md
