@@ -29,11 +29,15 @@ export function GroupHistory() {
 	}, [groupId, group]);
 
 	const head = versions[versions.length - 1]?.v ?? 0;
+	const genesis = versions[0]?.v ?? 0; // the "Event created" version — nothing precedes it
 
-	async function restore(v: number) {
+	// Revert an action: roll the event back to the snapshot taken right BEFORE that
+	// version's change (v-1), saved as a new forward version. Works on any action,
+	// including the latest one, so a just-made delete can be undone directly.
+	async function revert(v: number) {
 		if (!groupId) return;
-		const restored = await buildRestore(groupId, group, v);
-		updateGroup(restored, { change: { key: 'RESTORED', params: { v } } });
+		const restored = await buildRestore(groupId, group, v - 1);
+		updateGroup(restored, { change: { key: 'REVERTED', params: { v } } });
 	}
 
 	return (
@@ -70,13 +74,14 @@ export function GroupHistory() {
 											{version.author ? ` · ${version.author}` : ''} · {relativeTime(version.ts, i18n.language)}
 											{isHead ? ` · ${t('Current')}` : ''}
 										</p>
-										{!isHead && (
+										{version.v !== genesis && (
 											<button
 												type="button"
 												className="text-primary mt-1.5 inline-flex items-center gap-1 text-xs hover:underline"
-												onClick={() => restore(version.v)}
+												onClick={() => revert(version.v)}
+												aria-label={t('Revert this change')}
 											>
-												<RotateCcw className="size-3.5" /> {t('Restore')}
+												<RotateCcw className="size-3.5" /> {t('Revert')}
 											</button>
 										)}
 									</div>
