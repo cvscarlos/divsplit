@@ -8,7 +8,8 @@ import { Avatar } from '../../components/Avatar';
 import { trackGroupNameChange, trackMemberChanges } from '../../utils/activity-tracker';
 import { generateId } from '../../utils/id';
 import { EVENT_ICONS } from '../../utils/event-icons';
-import type { Member } from '../../types';
+import { memberInTransactions, reassignMember } from '../../utils/members';
+import type { Member, Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,10 @@ export function GroupConfig() {
 	const [holderId, setHolderId] = useState<string>('');
 	const [icon, setIcon] = useState<string>('');
 	const [saved, setSaved] = useState(false);
+	const [transactions, setTransactions] = useState<Transaction[]>([]);
+	// The member pending deletion that still has transactions to reassign, and the target.
+	const [reassignFrom, setReassignFrom] = useState<Member | null>(null);
+	const [reassignTo, setReassignTo] = useState<string>('');
 	const { t } = useTranslation();
 
 	useEffect(() => {
@@ -32,13 +37,26 @@ export function GroupConfig() {
 		if (group.members) setMembers(group.members.map((m) => ({ ...m })));
 		setHolderId(group.config?.holderId || group.members?.[0]?.id || '');
 		setIcon(group.config?.icon || '');
+		setTransactions(group.transactions ?? []);
 	}, [group]);
 
 	function addMember() {
 		setMembers([...members, { ...memberBase, id: generateId() }]);
 	}
 	function removeMember(member: Member) {
+		// If the member has transactions, ask where to move them before removing.
+		if (memberInTransactions(transactions, member.id)) {
+			setReassignTo(members.find((m) => m.id !== member.id)?.id ?? '');
+			setReassignFrom(member);
+			return;
+		}
 		setMembers(members.filter((m) => m.id !== member.id));
+	}
+	function confirmReassign() {
+		if (!reassignFrom || !reassignTo) return;
+		setTransactions(reassignMember(transactions, reassignFrom.id, reassignTo));
+		setMembers(members.filter((m) => m.id !== reassignFrom.id));
+		setReassignFrom(null);
 	}
 	function handleMemberName(member: Member, event: ChangeEvent<HTMLInputElement>) {
 		const name = event.target.value;
@@ -61,6 +79,7 @@ export function GroupConfig() {
 		const validHolder = members.some((m) => m.id === holderId) ? holderId : members[0]?.id;
 		updatedGroup.config = { ...updatedGroup.config, name: formFields.name, holderId: validHolder, icon };
 		updatedGroup.members = members;
+		updatedGroup.transactions = transactions;
 
 		updateGroup(updatedGroup);
 		setSaved(true);
@@ -176,6 +195,44 @@ export function GroupConfig() {
 					<Save /> {t('Save')}
 				</Button>
 			</div>
+
+			{reassignFrom && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+					role="dialog"
+					aria-modal="true"
+				>
+					<Card className="w-full max-w-sm">
+						<CardHeader>
+							<CardTitle>{t('Move transactions')}</CardTitle>
+							<CardDescription>{t('MoveTransactionsHint', { name: reassignFrom.name || t('Name') })}</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<select
+								value={reassignTo}
+								onChange={(e) => setReassignTo(e.target.value)}
+								className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 flex h-10 w-full rounded-md border px-3 py-2 text-base shadow-xs outline-none focus-visible:ring-[3px]"
+							>
+								{members
+									.filter((m) => m.id !== reassignFrom.id)
+									.map((m) => (
+										<option key={m.id} value={m.id}>
+											{m.name || t('Name')}
+										</option>
+									))}
+							</select>
+							<div className="flex justify-end gap-2">
+								<Button type="button" variant="outline" onClick={() => setReassignFrom(null)}>
+									{t('Cancel')}
+								</Button>
+								<Button type="button" onClick={confirmReassign} disabled={!reassignTo}>
+									{t('Move and remove')}
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			)}
 		</form>
 	);
 }
