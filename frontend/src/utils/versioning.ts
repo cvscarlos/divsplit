@@ -33,7 +33,10 @@ export interface VersionedCore {
 export interface EventVersion {
 	v: number;
 	ts: string;
+	/** Coarse fallback label (used when there are no per-action `changes`). */
 	message: string;
+	/** Human, per-action descriptions from the activity tracker for this save. */
+	changes: string[];
 	author: string;
 	delta: Delta;
 }
@@ -59,17 +62,53 @@ export async function recordVersion(
 	next: Group,
 	opts: { message?: string; author?: string } = {},
 ): Promise<EventVersion | null> {
+	const nextCore = coreOf(next);
 	const prevCore = prev ? coreOf(prev) : EMPTY_CORE;
-	const delta = differ.diff(prevCore, coreOf(next));
+	const delta = differ.diff(prevCore, nextCore);
 	if (!delta) return null;
 
+	const author = opts.author || '';
+	// The rich per-action descriptions are whatever activities this save added.
+	const prevActivityIds = new Set((prev?.activities ?? []).map((a) => a.id));
+	const changes = (next.activities ?? []).filter((a) => !prevActivityIds.has(a.id)).map((a) => a.description);
+
 	const versions = await listVersions(eventId);
-	const v = (versions[versions.length - 1]?.v ?? 0) + 1;
+	const last = versions[versions.length - 1];
+
+	// Google-Docs style: fold a burst of normal edits by the same author (within a
+	// short window) into the last version instead of creating a new entry — fewer
+	// entries, less storage, cleaner timeline. Restores stay separate (they pass a
+	// `message` and carry no `changes`).
+	const WINDOW_MS = 5 * 60 * 1000;
+	const canConsolidate =
+		!opts.message &&
+		last &&
+		(last.changes?.length ?? 0) > 0 &&
+		last.author === author &&
+		Date.now() - new Date(last.ts).getTime() < WINDOW_MS;
+
+	if (canConsolidate) {
+		const base = reconstructCore(prevCore, versions, last.v - 1); // state before `last`
+		const mergedDelta = differ.diff(base, nextCore);
+		if (!mergedDelta) {
+			// the burst cancelled out vs its base → drop the version entirely
+			versions.pop();
+			await historyStore.setItem(eventId, versions);
+			return null;
+		}
+		last.delta = mergedDelta;
+		last.changes = [...changes, ...(last.changes ?? [])];
+		last.ts = new Date().toISOString();
+		await historyStore.setItem(eventId, versions);
+		return last;
+	}
+
 	const version: EventVersion = {
-		v,
+		v: (last?.v ?? 0) + 1,
 		ts: new Date().toISOString(),
 		message: opts.message || summarizeDelta(delta),
-		author: opts.author || '',
+		changes,
+		author,
 		delta,
 	};
 	versions.push(version);
@@ -102,63 +141,4 @@ function summarizeDelta(delta: Delta): string {
 	if (d.members) parts.push('members');
 	if (d.transactions) parts.push('transactions');
 	return parts.length ? `Updated ${parts.join(', ')}` : 'Updated event';
-}
-
-/** Human-readable diff between two reconstructed cores (for the History detail view). */
-export function describeChange(before: VersionedCore, after: VersionedCore): string[] {
-	const lines: string[] = [];
-
-	if (before.config?.name !== after.config?.name) {
-		lines.push(`Name: "${before.config?.name ?? ''}" → "${after.config?.name ?? ''}"`);
-	}
-	if (before.config?.holderId !== after.config?.holderId) {
-		const name = after.members.find((m) => m.id === after.config?.holderId)?.name ?? '—';
-		lines.push(`Holder → ${name}`);
-	}
-
-	diffById(
-		before.members,
-		after.members,
-		(m) => `Added member "${m.name}"`,
-		(m) => `Removed member "${m.name}"`,
-		(a, b) => (a.name !== b.name ? `Renamed "${a.name}" → "${b.name}"` : null),
-		lines,
-	);
-
-	diffById(
-		before.transactions,
-		after.transactions,
-		(t) => `Added "${t.description}" ($${t.total})`,
-		(t) => `Removed "${t.description}" ($${t.total})`,
-		(a, b) => {
-			const c: string[] = [];
-			if (a.description !== b.description) c.push(`renamed to "${b.description}"`);
-			if (a.total !== b.total) c.push(`$${a.total} → $${b.total}`);
-			return c.length ? `"${a.description}": ${c.join(', ')}` : null;
-		},
-		lines,
-	);
-
-	return lines.length ? lines : ['No visible changes'];
-}
-
-function diffById<T extends { id: string }>(
-	before: T[],
-	after: T[],
-	onAdd: (item: T) => string,
-	onRemove: (item: T) => string,
-	onChange: (a: T, b: T) => string | null,
-	out: string[],
-): void {
-	const beforeMap = new Map(before.map((x) => [x.id, x]));
-	const afterMap = new Map(after.map((x) => [x.id, x]));
-	for (const b of before) if (!afterMap.has(b.id)) out.push(onRemove(b));
-	for (const a of after) {
-		const b = beforeMap.get(a.id);
-		if (!b) out.push(onAdd(a));
-		else {
-			const line = onChange(b, a);
-			if (line) out.push(line);
-		}
-	}
 }

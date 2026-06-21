@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
-import { Settings2, Receipt, History, ArrowLeftRight, GitCommitVertical } from 'lucide-react';
+import { Settings2, Receipt, History, ArrowLeftRight } from 'lucide-react';
 
 import { useGroupContext } from '../context/GroupContext';
 import { cn } from '@/lib/utils';
@@ -14,8 +14,7 @@ export function GroupHeader() {
 		{ key: 'transactions', label: t('Transactions'), icon: Receipt },
 		{ key: 'settlement', label: t('Settle up'), icon: ArrowLeftRight },
 		{ key: 'config', label: t('Config'), icon: Settings2 },
-		{ key: 'activity', label: t('Activity'), icon: History },
-		{ key: 'versions', label: t('Versions'), icon: GitCommitVertical },
+		{ key: 'history', label: t('History'), icon: History },
 	];
 
 	return (
