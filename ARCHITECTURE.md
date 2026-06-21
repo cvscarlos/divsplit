@@ -43,9 +43,10 @@ The app nets everyone's balances and emits the **minimum** set of transfers, so 
 
 ### 1.4 Version history & restore (the trust safety net)
 
-Because anyone with the link can edit, safety comes from an **auditable, restorable history** (git / Google-Docs style) rather than permissions:
+Because there are no accounts and anyone with the link can edit, data integrity can't come from permissions — it comes from an **auditable, restorable history** (git / Google-Docs style). This is the product's core trust guarantee: if someone (by mistake or on purpose) inserts an unfair transaction or deletes an old one that favored them, the change is **logged and attributed** in History, and **any other member can restore** the fair version. Tamper-evident, not tamper-proof — and advertised on the home page as a deliberate advantage.
 - every save records **one reversible delta** of the event "core" (`config` / `members` / `transactions`) via **jsondiffpatch** — **no full snapshots**, so storage stays tiny (`utils/versioning.ts`).
-- the **Versions** tab shows the timeline, a human-readable diff, and lets anyone **restore** an earlier state. A restore is a **new forward version** (history is never destroyed), like reverting a git commit.
+- the **History** tab shows the timeline of changes (consolidated Google-Docs style), attributed to the actor, and lets anyone **restore** an earlier state. A restore is a **new forward version** (history is never destroyed), like reverting a git commit.
+- change lines are stored as translatable **named keys + params** (not baked text), so the log reads in the active language and stays human-readable in raw storage.
 - past states are reconstructed by reverse-applying ("unpatch") deltas from the current state; history lives in a separate store (`localforage "history"`, key = eventId) so the event document stays small.
 
 ---

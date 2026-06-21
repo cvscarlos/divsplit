@@ -6,7 +6,7 @@ import { Wallet, HandCoins, Save, Check } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { trackTransactionCreated, trackTransactionUpdated } from '../../utils/activity-tracker';
-import { getTransactionError } from '../../utils/transaction';
+import { getTransactionError, autoSplit, round } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
 import type { AmountMap, Transaction } from '../../types';
@@ -20,10 +20,6 @@ const PAID_BY = 'paid-by';
 const PAID_FOR = 'paid-for';
 
 type ListType = typeof PAID_BY | typeof PAID_FOR;
-
-function round(value: number): number {
-	return Math.round(value * 100) / 100;
-}
 
 export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const { t, i18n } = useTranslation();
@@ -65,47 +61,25 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	function handleMemberChange(listType: ListType, id: string, inputValue: string | number, isChecked: boolean) {
 		const data = PAID_BY === listType ? paidBy : paidFor;
 		const handler = PAID_BY === listType ? setPaidBy : setPaidFor;
-		const numericValue = Number.parseFloat(String(inputValue));
+		const next: AmountMap = { ...data };
 
 		if (!isChecked) {
-			delete data[id];
-		}
-		if (isChecked && !data[id]) {
-			data[id] = 0; // força o item a existir
-		}
-
-		const tempData: AmountMap = { ...data };
-
-		let manualChangedSum = 0;
-		const manuallyChangedKeys = Object.keys(manuallyChanged.current);
-		manuallyChangedKeys.forEach((key) => {
-			manualChangedSum += key === id ? numericValue : data[key];
-			delete tempData[key]; // Ignoro os que o usuário mudou manualmente
-		});
-
-		const tempDataKeys = Object.keys(tempData);
-		const divideBy = Math.max(1, tempDataKeys.length || 1);
-		const subtotal = Math.max(0, round((total - manualChangedSum) / divideBy));
-		tempDataKeys.forEach((k) => {
-			data[k] = subtotal;
-		});
-
-		// Caso a divisão não seja exata, ajusta a diferença na pessoa atual
-		const currentTotal = Object.values(data).reduce((acc, val) => acc + val, 0);
-		const currentTotalDiff = total - currentTotal;
-		if (currentTotalDiff !== 0) {
-			const personId = isChecked ? id : tempDataKeys[0];
-			if (personId !== undefined) {
-				const personTotal = round(data[personId] + currentTotalDiff);
-				data[personId] = personTotal;
+			// Unchecked (or the amount field cleared) → drop the member and its manual flag.
+			delete next[id];
+			delete manuallyChanged.current[id];
+		} else {
+			const numericValue = Number.parseFloat(String(inputValue));
+			if (Number.isFinite(numericValue) && numericValue > 0) {
+				// The user typed an amount → pin it; the rest auto-split around it.
+				manuallyChanged.current[id] = true;
+				next[id] = numericValue;
+			} else if (!(id in next)) {
+				// Just checked, no amount yet → joins the auto-split pool.
+				next[id] = 0;
 			}
 		}
 
-		if (isChecked) {
-			if (numericValue) data[id] = numericValue;
-		}
-
-		handler({ ...data });
+		handler(autoSplit(next, manuallyChanged.current, total));
 	}
 
 	function getRemainingValue(fieldset: ListType): number {
@@ -175,7 +149,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	function membersList(listType: ListType) {
 		return group?.members?.map(({ id, name }) => {
 			const data = PAID_BY === listType ? paidBy : paidFor;
-			const checked = Boolean(data[id]);
+			const checked = id in data;
 			return (
 				<label
 					key={listType + id}
@@ -205,9 +179,6 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 							onChange={(e: ChangeEvent<HTMLInputElement>) =>
 								handleMemberChange(listType, id, e.target.value, Boolean(e.target.value))
 							}
-							onKeyDown={() => {
-								manuallyChanged.current[id] = true;
-							}}
 						/>
 					</div>
 				</label>
