@@ -1,6 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Loader2, Users, ArrowUpRight, ShieldCheck, Gauge, Sparkles, FileSpreadsheet } from 'lucide-react';
+import {
+	Plus,
+	Loader2,
+	Users,
+	ArrowUpRight,
+	ShieldCheck,
+	Gauge,
+	Sparkles,
+	FileSpreadsheet,
+	History,
+} from 'lucide-react';
 
 import CardContainer from '../components/CardContainer';
 import CardGroup from '../components/CardGroup';
@@ -82,7 +92,7 @@ function HomePage() {
 				</div>
 			</section>
 
-			{/* messaging: privacy + enjoy-the-moment (no feature cards) */}
+			{/* messaging: privacy + enjoy-the-moment + trust/reversible-history (no feature cards) */}
 			<section className="mx-auto max-w-3xl space-y-20 px-6 py-24 text-center">
 				<div>
 					<ShieldCheck className="text-secondary mx-auto size-8" />
@@ -93,6 +103,11 @@ function HomePage() {
 					<Sparkles className="text-primary mx-auto size-8" />
 					<h2 className="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{t('MomentHeadline')}</h2>
 					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg text-pretty">{t('MomentBody')}</p>
+				</div>
+				<div>
+					<History className="text-secondary mx-auto size-8" />
+					<h2 className="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{t('TrustHeadline')}</h2>
+					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg text-pretty">{t('TrustBody')}</p>
 				</div>
 			</section>
 
