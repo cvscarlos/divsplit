@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plane, UtensilsCrossed, Car, Home } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+import { EVENT_ICONS } from '../../utils/event-icons';
 import type { GroupListItem } from '../../types';
 
 // Vibrant solid-card palette; color + icon are paired and chosen deterministically
@@ -22,7 +23,10 @@ function variantFor(id: string) {
 function CardGroup({ group }: { group: GroupListItem }) {
 	const navigate = useNavigate();
 	const open = () => navigate(`/group/${group.id}/transactions`);
-	const { bg, icon: Icon } = variantFor(group.id);
+	const variant = variantFor(group.id);
+	const bg = variant.bg;
+	// User-chosen icon if set, else the deterministic one from the id.
+	const Icon = (group.icon && EVENT_ICONS[group.icon]) || variant.icon;
 
 	return (
 		<button

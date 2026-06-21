@@ -49,6 +49,8 @@ export interface Activity {
 
 export interface GroupConfig {
 	name?: string;
+	/** Chosen emoji icon for the event (shown on its card). */
+	icon?: string;
 	/** Member who holds the pooled top-up cash (a holder, not an owner). Defaults to the first member. */
 	holderId?: string;
 	/** @deprecated Renamed to `holderId`; migrated on load. */
@@ -67,4 +69,5 @@ export interface Group {
 export interface GroupListItem {
 	id: string;
 	name: string;
+	icon?: string;
 }

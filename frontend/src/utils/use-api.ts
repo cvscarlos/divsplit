@@ -33,16 +33,17 @@ export function useApiListGroups(): { loading: boolean; groupList: GroupListItem
 	return { loading, groupList };
 }
 
-async function updateGroupName(newName: string | undefined, groupId: string): Promise<void> {
+async function updateGroupIndex(group: Group, groupId: string): Promise<void> {
 	const groups = (await groupListStore.getItem<GroupListItem[]>('groups')) || [];
-	const groupIndex = groups.findIndex((group) => group.id === groupId);
-	const name = newName ?? '';
+	const name = group.config?.name ?? '';
+	const icon = group.config?.icon;
+	const groupIndex = groups.findIndex((g) => g.id === groupId);
 	// Upsert: a freshly created group won't be in the index yet, so add it
 	// instead of silently dropping it (otherwise it never shows on the home list).
 	if (groupIndex === -1) {
-		groups.push({ id: groupId, name });
+		groups.push({ id: groupId, name, icon });
 	} else {
-		groups[groupIndex].name = name;
+		groups[groupIndex] = { ...groups[groupIndex], name, icon };
 	}
 	await groupListStore.setItem('groups', groups);
 }
@@ -133,7 +134,7 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 				const author = dataToSave.meta?.author ?? toSave.members?.find((m) => m.id === memberId)?.name ?? '';
 				await recordVersion(groupId, prev, toSave, { message: dataToSave.meta?.message, author });
 				if (!abort) setDataToSave(null);
-				if (!abort) await updateGroupName(toSave.config.name, groupId);
+				if (!abort) await updateGroupIndex(toSave, groupId);
 			}
 
 			const group = groupStandardize(await groupStore.getItem<Group>(groupId));

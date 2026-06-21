@@ -7,6 +7,7 @@ import { useGroupContext } from '../../context/GroupContext';
 import { Avatar } from '../../components/Avatar';
 import { trackGroupNameChange, trackMemberChanges } from '../../utils/activity-tracker';
 import { generateId } from '../../utils/id';
+import { EVENT_ICONS } from '../../utils/event-icons';
 import type { Member } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,12 +21,16 @@ export function GroupConfig() {
 	const [formFields, setFormFields] = useState<{ name: string }>({ name: '' });
 	const [members, setMembers] = useState<Member[]>([{ ...memberBase }]);
 	const [holderId, setHolderId] = useState<string>('');
+	const [icon, setIcon] = useState<string>('');
 	const { t } = useTranslation();
 
 	useEffect(() => {
 		setFormFields({ name: group.config?.name || '---' });
-		if (group.members) setMembers(group.members);
+		// Clone so edits don't mutate the context's member objects (which would make
+		// trackMemberChanges see "no change" when comparing old vs new).
+		if (group.members) setMembers(group.members.map((m) => ({ ...m })));
 		setHolderId(group.config?.holderId || group.members?.[0]?.id || '');
+		setIcon(group.config?.icon || '');
 	}, [group]);
 
 	function addMember() {
@@ -35,8 +40,8 @@ export function GroupConfig() {
 		setMembers(members.filter((m) => m.id !== member.id));
 	}
 	function handleMemberName(member: Member, event: ChangeEvent<HTMLInputElement>) {
-		member.name = event.target.value;
-		setMembers([...members]);
+		const name = event.target.value;
+		setMembers(members.map((m) => (m.id === member.id ? { ...m, name } : m)));
 	}
 
 	function handleFieldChange(event: ChangeEvent<HTMLInputElement>) {
@@ -53,7 +58,7 @@ export function GroupConfig() {
 		updatedGroup = trackMemberChanges(updatedGroup, group.members || [], members);
 
 		const validHolder = members.some((m) => m.id === holderId) ? holderId : members[0]?.id;
-		updatedGroup.config = { ...updatedGroup.config, name: formFields.name, holderId: validHolder };
+		updatedGroup.config = { ...updatedGroup.config, name: formFields.name, holderId: validHolder, icon };
 		updatedGroup.members = members;
 
 		updateGroup(updatedGroup);
@@ -96,6 +101,25 @@ export function GroupConfig() {
 							))}
 						</select>
 						<p className="text-muted-foreground mt-1.5 text-xs">{t('HolderHint')}</p>
+
+						<Label className="mt-4 mb-2">{t('Icon')}</Label>
+						<div className="flex flex-wrap gap-1.5">
+							{Object.entries(EVENT_ICONS).map(([name, Ico]) => (
+								<button
+									key={name}
+									type="button"
+									onClick={() => setIcon(icon === name ? '' : name)}
+									aria-pressed={icon === name}
+									className={`flex size-9 items-center justify-center rounded-lg border transition-colors ${
+										icon === name
+											? 'border-primary bg-primary/10 text-primary'
+											: 'border-border text-muted-foreground hover:bg-accent'
+									}`}
+								>
+									<Ico className="size-5" />
+								</button>
+							))}
+						</div>
 					</CardContent>
 				</Card>
 
