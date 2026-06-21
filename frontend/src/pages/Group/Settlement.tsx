@@ -6,6 +6,7 @@ import { ArrowRight, ArrowLeftRight, Check, Undo2, PiggyBank } from 'lucide-reac
 import { useGroupContext } from '../../context/GroupContext';
 import { generateId } from '../../utils/id';
 import { computeSettlement, type Transfer } from '../../utils/settlement';
+import { formatMoney } from '../../utils/money';
 import { trackTransferRecorded, trackTransferRemoved, trackTopupRemoved } from '../../utils/activity-tracker';
 import { Avatar } from '../../components/Avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,11 +19,11 @@ const SETTLED_EPS = 0.005;
 
 // Shared row for the Top-ups / Recorded-payments lists: left content + amount + Undo.
 function UndoRow({ children, amount, onUndo }: { children: ReactNode; amount: number; onUndo: () => void }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	return (
 		<li className="border-border/60 flex items-center gap-2 rounded-lg border px-3 py-2">
 			{children}
-			<span className="tnum ml-auto font-semibold">${amount}</span>
+			<span className="tnum ml-auto font-semibold">{formatMoney(amount, i18n.language)}</span>
 			<Button
 				type="button"
 				size="sm"
@@ -37,7 +38,7 @@ function UndoRow({ children, amount, onUndo }: { children: ReactNode; amount: nu
 }
 
 export function GroupSettlement() {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const { groupId } = useParams();
 	const { data: group, updateGroup } = useGroupContext();
 	const { balances, transfers, holderId } = computeSettlement(group);
@@ -118,7 +119,7 @@ export function GroupSettlement() {
 										</span>
 										{deposited[b.memberId] ? (
 											<span className="text-muted-foreground tnum block text-xs">
-												{t('Deposited')} ${deposited[b.memberId]}
+												{t('Deposited')} {formatMoney(deposited[b.memberId], i18n.language)}
 											</span>
 										) : null}
 									</span>
@@ -128,7 +129,7 @@ export function GroupSettlement() {
 											settled ? 'text-muted-foreground' : positive ? 'text-primary' : 'text-foreground',
 										)}
 									>
-										{settled ? t('settled') : `$${Math.abs(b.balance)}`}
+										{settled ? t('settled') : formatMoney(Math.abs(b.balance), i18n.language)}
 									</span>
 									{!settled && (
 										<Badge variant={positive ? 'default' : 'secondary'}>{positive ? t('gets back') : t('owes')}</Badge>
@@ -161,7 +162,9 @@ export function GroupSettlement() {
 										<span className="truncate text-sm font-semibold">{tr.fromName}</span>
 										<ArrowRight className="text-muted-foreground size-4 shrink-0" />
 										<span className="truncate text-sm font-semibold">{tr.toName}</span>
-										<span className="tnum text-primary ml-auto font-semibold">${tr.amount}</span>
+										<span className="tnum text-primary ml-auto font-semibold">
+											{formatMoney(tr.amount, i18n.language)}
+										</span>
 										<Button
 											type="button"
 											size="sm"

@@ -30,13 +30,20 @@ export interface VersionedCore {
 	transactions: Transaction[];
 }
 
+/**
+ * One change line, stored as a translatable named key + params (NOT baked text),
+ * so history renders in the user's language. See activity-tracker for the keys.
+ */
+export interface ChangeEntry {
+	key: string;
+	params?: Record<string, unknown>;
+}
+
 export interface EventVersion {
 	v: number;
 	ts: string;
-	/** Coarse fallback label (used when there are no per-action `changes`). */
-	message: string;
-	/** Human, per-action descriptions from the activity tracker for this save. */
-	changes: string[];
+	/** Per-action changes for this save, as translatable key+params. */
+	changes: ChangeEntry[];
 	author: string;
 	delta: Delta;
 }
@@ -60,7 +67,7 @@ export async function recordVersion(
 	eventId: string,
 	prev: Group | null,
 	next: Group,
-	opts: { message?: string; author?: string } = {},
+	opts: { change?: ChangeEntry; author?: string } = {},
 ): Promise<EventVersion | null> {
 	const nextCore = coreOf(next);
 	const prevCore = prev ? coreOf(prev) : EMPTY_CORE;
@@ -68,9 +75,12 @@ export async function recordVersion(
 	if (!delta) return null;
 
 	const author = opts.author || '';
-	// The rich per-action descriptions are whatever activities this save added.
+	// The per-action changes are whatever activities this save added — each carries
+	// a named key + params, translated at render time.
 	const prevActivityIds = new Set((prev?.activities ?? []).map((a) => a.id));
-	const changes = (next.activities ?? []).filter((a) => !prevActivityIds.has(a.id)).map((a) => a.description);
+	const changes: ChangeEntry[] = (next.activities ?? [])
+		.filter((a) => !prevActivityIds.has(a.id))
+		.map((a) => ({ key: a.description, params: a.details }));
 
 	const versions = await listVersions(eventId);
 	const last = versions[versions.length - 1];
@@ -78,10 +88,10 @@ export async function recordVersion(
 	// Google-Docs style: fold a burst of normal edits by the same author (within a
 	// short window) into the last version instead of creating a new entry — fewer
 	// entries, less storage, cleaner timeline. Restores stay separate (they pass a
-	// `message` and carry no `changes`).
+	// `change` and carry no tracked activities).
 	const WINDOW_MS = 5 * 60 * 1000;
 	const canConsolidate =
-		!opts.message &&
+		!opts.change &&
 		last &&
 		(last.changes?.length ?? 0) > 0 &&
 		last.author === author &&
@@ -103,11 +113,11 @@ export async function recordVersion(
 		return last;
 	}
 
+	const entries: ChangeEntry[] = opts.change ? [opts.change] : changes.length ? changes : [{ key: 'EVENT_UPDATED' }];
 	const version: EventVersion = {
 		v: (last?.v ?? 0) + 1,
 		ts: new Date().toISOString(),
-		message: opts.message || summarizeDelta(delta),
-		changes,
+		changes: entries,
 		author,
 		delta,
 	};
@@ -131,14 +141,4 @@ export async function buildRestore(eventId: string, currentGroup: Group, targetV
 	const versions = await listVersions(eventId);
 	const core = reconstructCore(coreOf(currentGroup), versions, targetV);
 	return { ...currentGroup, config: core.config, members: core.members, transactions: core.transactions };
-}
-
-/** Coarse, storage-cheap message for a save (the detailed diff is computed on demand). */
-function summarizeDelta(delta: Delta): string {
-	const d = delta as Record<string, unknown>;
-	const parts: string[] = [];
-	if (d.config) parts.push('event details');
-	if (d.members) parts.push('members');
-	if (d.transactions) parts.push('transactions');
-	return parts.length ? `Updated ${parts.join(', ')}` : 'Updated event';
 }

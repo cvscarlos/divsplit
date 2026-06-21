@@ -32,7 +32,7 @@ export function GroupHistory() {
 	async function restore(v: number) {
 		if (!groupId) return;
 		const restored = await buildRestore(groupId, group, v);
-		updateGroup(restored, { message: `Restored to version ${v}` });
+		updateGroup(restored, { change: { key: 'RESTORED', params: { v } } });
 	}
 
 	return (
@@ -53,7 +53,6 @@ export function GroupHistory() {
 					<ul className="divide-border divide-y">
 						{[...versions].reverse().map((version) => {
 							const isHead = version.v === head;
-							const lines = version.changes?.length ? version.changes : [version.message];
 							return (
 								<li key={version.v} className="flex items-start gap-4 py-4">
 									<span className="bg-primary/15 text-primary mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full">
@@ -61,8 +60,8 @@ export function GroupHistory() {
 									</span>
 									<div className="min-w-0 flex-1">
 										<ul className="space-y-0.5 text-sm leading-snug">
-											{lines.map((line, i) => (
-												<li key={i}>{line}</li>
+											{version.changes.map((change, i) => (
+												<li key={i}>{t(change.key, change.params)}</li>
 											))}
 										</ul>
 										<p className="text-muted-foreground mt-1 text-xs">

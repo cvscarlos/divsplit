@@ -5,6 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import en from './locales/en.json';
 import pt from './locales/pt.json';
+import { formatMoney } from './utils/money';
 
 const options: InitOptions = {
 	fallbackLng: 'en',
@@ -23,5 +24,8 @@ const options: InitOptions = {
 };
 
 i18n.use(LanguageDetector).use(initReactI18next).init(options);
+
+// `{{amount, money}}` → currency with the active language's separators.
+i18n.services.formatter?.add('money', (value, lng) => formatMoney(Number(value), lng ?? 'en'));
 
 export default i18n;

@@ -4,11 +4,12 @@ import localforage from 'localforage';
 import type { Group, GroupListItem } from '../types';
 import { trackEventCreated } from './activity-tracker';
 import { recordVersion } from './versioning';
+import type { ChangeEntry } from './versioning';
 import { getEventMemberId } from './identity';
 
 export interface SaveMeta {
-	/** Human label for the version entry (e.g. "Restored to version 3"). */
-	message?: string;
+	/** A standalone change entry for the version (e.g. a restore), key+params. */
+	change?: ChangeEntry;
 	/** Member name to attribute the version to. */
 	author?: string;
 }
@@ -132,7 +133,7 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 				await groupStore.setItem(groupId, toSave);
 				const memberId = getEventMemberId(groupId);
 				const author = dataToSave.meta?.author ?? toSave.members?.find((m) => m.id === memberId)?.name ?? '';
-				await recordVersion(groupId, prev, toSave, { message: dataToSave.meta?.message, author });
+				await recordVersion(groupId, prev, toSave, { change: dataToSave.meta?.change, author });
 				if (!abort) setDataToSave(null);
 				if (!abort) await updateGroupIndex(toSave, groupId);
 			}

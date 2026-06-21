@@ -29,6 +29,12 @@ export const ACTIVITY_TYPES = {
 export type ActivityType = (typeof ACTIVITY_TYPES)[keyof typeof ACTIVITY_TYPES];
 
 interface ActivityInput {
+	/**
+	 * A stable, named message key (e.g. 'EVENT_RENAMED', 'TRANSFER_PAID') — NOT a
+	 * baked sentence. It's translated at render time via i18n, so history reads in
+	 * the user's language and stays human-readable in raw storage. Matching keys
+	 * live in the locale files. `details` carries the interpolation params.
+	 */
 	description: string;
 	details?: Record<string, unknown>;
 	userId?: string | null;
@@ -77,7 +83,7 @@ function addActivityToGroup(group: Group, activity: Activity): Group {
  * Track event creation. Appended at the end so it stays the oldest entry.
  */
 export function trackEventCreated(group: Group): Group {
-	const activity = createActivity(ACTIVITY_TYPES.GROUP_CREATED, { description: 'Event created' });
+	const activity = createActivity(ACTIVITY_TYPES.GROUP_CREATED, { description: 'EVENT_CREATED' });
 	const updatedGroup: Group = { ...group };
 	updatedGroup.activities = [...(updatedGroup.activities || []), activity];
 	return updatedGroup;
@@ -90,8 +96,8 @@ export function trackGroupNameChange(group: Group, oldName: string, newName: str
 	if (oldName === newName) return group;
 
 	const activity = createActivity(ACTIVITY_TYPES.GROUP_UPDATED, {
-		description: `Event name changed from "${oldName}" to "${newName}"`,
-		details: { oldName, newName },
+		description: 'EVENT_RENAMED',
+		details: { old: oldName, new: newName },
 	});
 
 	return addActivityToGroup(group, activity);
@@ -102,8 +108,8 @@ export function trackGroupNameChange(group: Group, oldName: string, newName: str
  */
 export function trackMemberAdded(group: Group, member: Member): Group {
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_CREATED, {
-		description: `Member "${member.name}" was added to the event`,
-		details: { memberId: member.id, memberName: member.name, prepaid: member.prepaid },
+		description: 'MEMBER_ADDED',
+		details: { name: member.name },
 	});
 
 	return addActivityToGroup(group, activity);
@@ -114,8 +120,8 @@ export function trackMemberAdded(group: Group, member: Member): Group {
  */
 function trackMemberRemoved(group: Group, member: Member): Group {
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_DELETED, {
-		description: `Member "${member.name}" was removed from the event`,
-		details: { memberId: member.id, memberName: member.name },
+		description: 'MEMBER_REMOVED',
+		details: { name: member.name },
 	});
 
 	return addActivityToGroup(group, activity);
@@ -124,12 +130,12 @@ function trackMemberRemoved(group: Group, member: Member): Group {
 /**
  * Track member name change
  */
-function trackMemberNameChange(group: Group, memberId: string, oldName: string, newName: string): Group {
+function trackMemberNameChange(group: Group, oldName: string, newName: string): Group {
 	if (oldName === newName) return group;
 
 	const activity = createActivity(ACTIVITY_TYPES.MEMBER_UPDATED, {
-		description: `Member name changed from "${oldName}" to "${newName}"`,
-		details: { memberId, oldName, newName, changeType: 'name' },
+		description: 'MEMBER_RENAMED',
+		details: { old: oldName, new: newName },
 	});
 
 	return addActivityToGroup(group, activity);
@@ -140,13 +146,8 @@ function trackMemberNameChange(group: Group, memberId: string, oldName: string, 
  */
 export function trackTransactionCreated(group: Group, transaction: Transaction): Group {
 	const activity = createActivity(ACTIVITY_TYPES.TRANSACTION_CREATED, {
-		description: `Transaction "${transaction.description}" was created for $${transaction.total}`,
-		details: {
-			transactionId: transaction.id,
-			description: transaction.description,
-			total: transaction.total,
-			date: transaction.date,
-		},
+		description: 'TX_ADDED',
+		details: { description: transaction.description, total: transaction.total },
 	});
 
 	return addActivityToGroup(group, activity);
@@ -156,40 +157,16 @@ export function trackTransactionCreated(group: Group, transaction: Transaction):
  * Track transaction update
  */
 export function trackTransactionUpdated(group: Group, oldTransaction: Transaction, newTransaction: Transaction): Group {
-	const changes: string[] = [];
+	const changed =
+		oldTransaction.description !== newTransaction.description ||
+		oldTransaction.total !== newTransaction.total ||
+		new Date(oldTransaction.date).getTime() !== new Date(newTransaction.date).getTime();
 
-	if (oldTransaction.description !== newTransaction.description) {
-		changes.push(`description from "${oldTransaction.description}" to "${newTransaction.description}"`);
-	}
-
-	if (oldTransaction.total !== newTransaction.total) {
-		changes.push(`total from $${oldTransaction.total} to $${newTransaction.total}`);
-	}
-
-	if (new Date(oldTransaction.date).getTime() !== new Date(newTransaction.date).getTime()) {
-		changes.push(
-			`date from ${new Date(oldTransaction.date).toLocaleDateString()} to ${new Date(newTransaction.date).toLocaleDateString()}`,
-		);
-	}
-
-	if (changes.length === 0) return group;
+	if (!changed) return group;
 
 	const activity = createActivity(ACTIVITY_TYPES.TRANSACTION_UPDATED, {
-		description: `Transaction "${newTransaction.description}" was updated: ${changes.join(', ')}`,
-		details: {
-			transactionId: newTransaction.id,
-			changes: changes,
-			oldTransaction: {
-				description: oldTransaction.description,
-				total: oldTransaction.total,
-				date: oldTransaction.date,
-			},
-			newTransaction: {
-				description: newTransaction.description,
-				total: newTransaction.total,
-				date: newTransaction.date,
-			},
-		},
+		description: 'TX_UPDATED',
+		details: { description: newTransaction.description },
 	});
 
 	return addActivityToGroup(group, activity);
@@ -200,13 +177,8 @@ export function trackTransactionUpdated(group: Group, oldTransaction: Transactio
  */
 export function trackTransactionDeleted(group: Group, transaction: Transaction): Group {
 	const activity = createActivity(ACTIVITY_TYPES.TRANSACTION_DELETED, {
-		description: `Transaction "${transaction.description}" was deleted (was $${transaction.total})`,
-		details: {
-			transactionId: transaction.id,
-			description: transaction.description,
-			total: transaction.total,
-			date: transaction.date,
-		},
+		description: 'TX_REMOVED',
+		details: { description: transaction.description, total: transaction.total },
 	});
 
 	return addActivityToGroup(group, activity);
@@ -238,7 +210,7 @@ export function trackMemberChanges(group: Group, oldMembers: Member[] = [], newM
 			updatedGroup = trackMemberAdded(updatedGroup, newMember);
 		} else {
 			// Check for changes in existing member
-			updatedGroup = trackMemberNameChange(updatedGroup, newMember.id, oldMember.name, newMember.name);
+			updatedGroup = trackMemberNameChange(updatedGroup, oldMember.name, newMember.name);
 		}
 	}
 
@@ -250,8 +222,8 @@ export function trackMemberChanges(group: Group, oldMembers: Member[] = [], newM
  */
 export function trackTransferRecorded(group: Group, fromName: string, toName: string, amount: number): Group {
 	const activity = createActivity(ACTIVITY_TYPES.TRANSFER_RECORDED, {
-		description: `${fromName} paid ${toName} $${amount}`,
-		details: { fromName, toName, amount },
+		description: 'TRANSFER_PAID',
+		details: { from: fromName, to: toName, amount },
 	});
 	return addActivityToGroup(group, activity);
 }
@@ -261,8 +233,8 @@ export function trackTransferRecorded(group: Group, fromName: string, toName: st
  */
 export function trackTransferRemoved(group: Group, fromName: string, toName: string, amount: number): Group {
 	const activity = createActivity(ACTIVITY_TYPES.TRANSFER_REMOVED, {
-		description: `Removed payment: ${fromName} → ${toName} $${amount}`,
-		details: { fromName, toName, amount },
+		description: 'TRANSFER_UNDONE',
+		details: { from: fromName, to: toName, amount },
 	});
 	return addActivityToGroup(group, activity);
 }
@@ -272,8 +244,8 @@ export function trackTransferRemoved(group: Group, fromName: string, toName: str
  */
 export function trackTopupRecorded(group: Group, memberName: string, amount: number): Group {
 	const activity = createActivity(ACTIVITY_TYPES.TOPUP_RECORDED, {
-		description: `${memberName} topped up $${amount}`,
-		details: { memberName, amount },
+		description: 'TOPUP_ADDED',
+		details: { name: memberName, amount },
 	});
 	return addActivityToGroup(group, activity);
 }
@@ -283,8 +255,8 @@ export function trackTopupRecorded(group: Group, memberName: string, amount: num
  */
 export function trackTopupRemoved(group: Group, memberName: string, amount: number): Group {
 	const activity = createActivity(ACTIVITY_TYPES.TOPUP_REMOVED, {
-		description: `Removed top-up: ${memberName} $${amount}`,
-		details: { memberName, amount },
+		description: 'TOPUP_UNDONE',
+		details: { name: memberName, amount },
 	});
 	return addActivityToGroup(group, activity);
 }

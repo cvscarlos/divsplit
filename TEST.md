@@ -367,8 +367,9 @@ member you are (stored locally per event).
   **top-holder**; minimization is greedy (near-optimal), not provably minimal.
 - **Expenses always have a payer:** pot-funding is implicit via top-ups + the holder
   refund, not a no-payer transaction.
-- **History messages are English-only:** they're stored at write time, so they don't
-  translate when you switch language (UI chrome does).
+- **History messages are localized:** each change is stored as a named key + params
+  (e.g. `TRANSFER_PAID` with `{from, to, amount}`), not baked text, so it renders in the
+  active language. Amounts use the `{{x, money}}` formatter (2 decimals, locale separators).
 - **No version keyframes:** restoring replays all deltas from the head; fine for small
   events.
 - **Native date input:** automated tools may need to set the date field

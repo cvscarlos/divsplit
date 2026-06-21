@@ -11,7 +11,7 @@ function core(partial: Partial<VersionedCore>): VersionedCore {
 }
 
 function version(v: number, before: VersionedCore, after: VersionedCore): EventVersion {
-	return { v, ts: '', message: '', changes: [], author: '', delta: differ.diff(before, after)! };
+	return { v, ts: '', changes: [], author: '', delta: differ.diff(before, after)! };
 }
 
 describe('reconstructCore', () => {

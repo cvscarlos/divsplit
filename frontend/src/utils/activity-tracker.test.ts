@@ -6,13 +6,12 @@ import type { Group } from '../types';
 const group: Group = { config: {} };
 
 describe('transfer activity helpers', () => {
-	it('records a transfer with payer, payee and amount in the description', () => {
+	it('records a transfer as a named key with payer, payee and amount as params', () => {
 		const updated = trackTransferRecorded(group, 'Bob', 'Carol', 40);
 		const entry = updated.activities?.[0];
 		expect(entry?.type).toBe(ACTIVITY_TYPES.TRANSFER_RECORDED);
-		expect(entry?.description).toContain('Bob');
-		expect(entry?.description).toContain('Carol');
-		expect(entry?.description).toContain('40');
+		expect(entry?.description).toBe('TRANSFER_PAID');
+		expect(entry?.details).toMatchObject({ from: 'Bob', to: 'Carol', amount: 40 });
 	});
 
 	it('records a transfer removal', () => {

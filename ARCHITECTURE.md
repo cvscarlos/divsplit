@@ -115,12 +115,13 @@ Root scripts: `npm run dev`, `npm run format`, `npm run lint`. Frontend scripts 
 
 **Domain & data layer (`utils/`)**
 - `use-api.ts` — the persistence boundary. localforage stores `groupList`, `group`, and `history`; hooks `useApiListGroups`, `useApiGetGroup`. On each save it records a version (author from the local identity) and logs "Event created" on first persist. *Single place that touches event storage.*
-- `versioning.ts` — version history engine (jsondiffpatch): `recordVersion`, `listVersions`, `reconstructCore` (reverse-apply), `buildRestore`, `describeChange` (human diff). Stores one reversible delta per save in `localforage "history"`.
+- `versioning.ts` — version history engine (jsondiffpatch): `recordVersion`, `listVersions`, `reconstructCore` (reverse-apply), `buildRestore`. Stores one reversible delta per save in `localforage "history"`. Each save's `changes` are `ChangeEntry[]` — a **named key + params** (e.g. `TRANSFER_PAID` / `{from,to,amount}`), translated at render so history reads in the active language.
 - `identity.ts` — trust-based identity: `getDeviceUid`, `get/setEventMemberId`, `getPreferredName` (all `localStorage`).
 - `id.ts` — `generateId()`: the **single** id generator (ObjectId hex) for every entity, so id formats never diverge.
 - `settlement.ts` — **pure** settlement engine: `computeBalances` (ΣpaidBy − ΣpaidFor), `topupTotal`, and `computeSettlement` (offset the holder by Σtop-ups → greedy min-cash-flow → fewest `transfers`). Unit-tested.
 - `transaction.ts` — `getTransactionError` (form validation), unit-tested.
-- `activity-tracker.ts` — `ACTIVITY_TYPES` + pure functions appending audit entries (capped 100, newest first); `setCurrentActor` so each entry records `userId` + `actorName`.
+- `activity-tracker.ts` — `ACTIVITY_TYPES` + pure functions appending audit entries (capped 100, newest first); `setCurrentActor` so each entry records `userId` + `actorName`. Each entry's `description` is a **named message key** (e.g. `MEMBER_ADDED`), with the render params in `details` — translated at display, not baked English.
+- `money.ts` — `formatMoney(value, lng)`: currency with 2 decimals and the language's separators (pt-BR → `1.234,50`). Wired as the i18next `money` formatter, so locale templates can write `{{amount, money}}`.
 - `tools.ts` — `jsonParseSafe` / `jsonStringifySafe`.
 - `types.ts` — shared domain types (`Group`, `Member`, `Transaction` incl. `TransactionType`, `Activity`, settlement types).
 
@@ -167,7 +168,7 @@ Group = {
 }
 ```
 
-**Version history is stored separately** (not in the `Group`, to keep the document and its diffs small): `localforage "history"`, key = eventId → `EventVersion[]`, where `EventVersion = { v, ts, message, author, delta }` and `delta` is a reversible jsondiffpatch delta of the event core (`config`/`members`/`transactions`). See §1.4 and `utils/versioning.ts`.
+**Version history is stored separately** (not in the `Group`, to keep the document and its diffs small): `localforage "history"`, key = eventId → `EventVersion[]`, where `EventVersion = { v, ts, changes, author, delta }` (`changes` = translatable `ChangeEntry[]` of key+params) and `delta` is a reversible jsondiffpatch delta of the event core (`config`/`members`/`transactions`). See §1.4 and `utils/versioning.ts`.
 
 **Everything is a `Transaction`** (§1.1). An expense (`type` absent / `'expense'`) is consumption via the split form. A **transfer** (`type: 'transfer'`, a settle-up) moves money between two members — *sender* on `paidBy` (credit), *recipient* on `paidFor` (debit). A **top-up** (`type: 'topup'`) is a self-credit — `paidBy = {member: amount}`, empty `paidFor`. All fold into balances for free; transfers and top-ups are entered on/near the Settle up page and filtered out of the expenses list.
 
