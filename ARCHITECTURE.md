@@ -56,18 +56,23 @@ The local model is **event-sourced** (append-only reversible deltas + a state fo
 
 **Two MongoDB collections (write/read gated by the API, not by Mongo):**
 
-- **`changes`** — the **append-only source of truth**, unifying history *and* the activity log (the log lines are derived from each delta — there is no separate log collection). Insert-only: the API rejects updates/deletes. Each document is **hash-chained** — `hash = H(parentHash + payload)` — so altering any past entry breaks every hash after it and anyone can verify the chain end-to-end. A unique index on the change id (`generateId()`) makes sync retries idempotent. Shape: `{ _id: changeId, eventId, seq, parentHash, hash, author, ts, delta, summary: ChangeEntry[] }`.
+- **`changes`** — the **append-only source of truth**, unifying history *and* the activity log (the log lines are derived from each delta — there is no separate log collection). Insert-only: the API rejects updates/deletes. Each document references its parent(s) by hash and carries `hash = H(parentHash + payload)`, forming a **Merkle DAG (git-style), not a single linear chain** — see ordering below. Altering any past entry changes its hash and breaks every descendant that references it, so the structure is verifiable end-to-end. A unique index on the change id (`generateId()`) makes sync retries idempotent. Shape: `{ _id: changeId, eventId, parents: hash[], hash, author, ts, receivedAt, delta, summary: ChangeEntry[] }`.
 - **`events`** — a **projection / cache** (read+write) folded from `changes`, for fast reads. Rebuildable at any time, so if it's ever wrong or tampered it's regenerated from the log — it is **never** the source of truth. Derived values (balances) live here as a recomputed cache only; the API never accepts a client-supplied balance.
 
 (A `snapshots`/keyframe collection is an optional later optimisation so long histories don't replay every delta.)
 
-**Trust boundaries (be honest about them):** the hash chain proves the log **was not altered after the fact** (inviolable history). It does **not** prove **who** wrote an entry — identity is self-asserted (no login), so this is tamper-evidence, not authentication. Real non-repudiation later means a per-device keypair signing each change.
+**Ordering & late sync (this is why it's a DAG, not a chain).** Members are offline for *different* durations, so a change describing a *past* action can be appended *after* newer ones — order of arrival ≠ order of events. So:
+- **arrival vs. event time are separate fields:** `receivedAt` (append order, server clock) vs. `ts` (when the action happened on the author's device). The activity log is **displayed sorted by `ts`**, so a late-synced past event slots into its correct chronological place even though it was inserted last. Append-only is preserved; only the view re-sorts.
+- **causality comes from `parents` (the hashes the author had seen), not from timestamps** (clocks drift, can't be trusted).
+- a late/offline change whose parent is **not** the current head is a **fork** (concurrent edit) — handled by the conflict policy below, not by reordering or rewriting history.
 
-**Conflicts (offline-first):** two devices editing the same event offline can both append a change with the same `parentHash`. Rather than auto-merge, both are kept and the affected transactions are **flagged `conflict`** for the user to review (keep both, edit, or delete). Conflicted transactions are **excluded from balances until resolved** so a duplicate can't double-count. This sidesteps distributed locking entirely.
+**Trust boundaries (be honest about them):** the hash DAG proves the log **was not altered after the fact** (inviolable history). It does **not** prove **who** wrote an entry — identity is self-asserted (no login), so this is tamper-evidence, not authentication. Real non-repudiation later means a per-device keypair signing each change.
+
+**Conflicts (offline-first):** two devices editing the same event offline append changes that share a parent (a DAG fork). Rather than auto-merge, both are kept and the affected transactions are **flagged `conflict`** for the user to review (keep both, edit, or delete). Conflicted transactions are **excluded from balances until resolved** so a duplicate can't double-count. This sidesteps distributed locking entirely.
 
 **Offline calculations:** balances/settlement are computed on the backend (source of truth) **and** locally (for offline use). Locally-computed values that aren't yet confirmed by the backend should be shown as **provisional** in the UI (a subtle "not synced yet" affordance — *not* italics, which read as de-emphasis).
 
-**Hosting:** **Vercel Functions** (serverless) — the frontend already deploys to Vercel and the API surface is small (append a change, fetch changes since `seq`, fetch/rebuild the projection). Use a **module-scoped cached Mongo client** (avoid a connection per invocation) with **MongoDB Atlas**.
+**Hosting:** **Vercel Functions** (serverless) — the frontend already deploys to Vercel and the API surface is small (append a change, fetch changes the device hasn't seen, fetch/rebuild the projection). Reuse one **module-scoped `MongoClient`** across warm invocations (a *connection* cache — not a data cache — to avoid opening a pool per request) with **MongoDB Atlas**.
 
 ---
 
