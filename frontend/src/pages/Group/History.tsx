@@ -60,7 +60,7 @@ export function GroupHistory() {
 									</span>
 									<div className="min-w-0 flex-1">
 										<ul className="space-y-0.5 text-sm leading-snug">
-											{version.changes.map((change, i) => (
+											{(version.changes ?? []).map((change, i) => (
 												<li key={i}>{t(change.key, change.params)}</li>
 											))}
 										</ul>
