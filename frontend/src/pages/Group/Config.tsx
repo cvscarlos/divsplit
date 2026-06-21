@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, UserPlus, Save } from 'lucide-react';
+import { Trash2, UserPlus, Save, Check } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { Avatar } from '../../components/Avatar';
@@ -22,6 +22,7 @@ export function GroupConfig() {
 	const [members, setMembers] = useState<Member[]>([{ ...memberBase }]);
 	const [holderId, setHolderId] = useState<string>('');
 	const [icon, setIcon] = useState<string>('');
+	const [saved, setSaved] = useState(false);
 	const { t } = useTranslation();
 
 	useEffect(() => {
@@ -62,6 +63,8 @@ export function GroupConfig() {
 		updatedGroup.members = members;
 
 		updateGroup(updatedGroup);
+		setSaved(true);
+		setTimeout(() => setSaved(false), 2000);
 	}
 
 	return (
@@ -160,7 +163,15 @@ export function GroupConfig() {
 				</Card>
 			</div>
 
-			<div className="flex justify-end">
+			<div className="flex items-center justify-end gap-3">
+				{saved && (
+					<span
+						key={Date.now()}
+						className="save-flash inline-flex items-center gap-1.5 text-sm font-medium text-green-600"
+					>
+						<Check className="size-4" /> {t('Saved')}
+					</span>
+				)}
 				<Button type="submit" size="lg">
 					<Save /> {t('Save')}
 				</Button>

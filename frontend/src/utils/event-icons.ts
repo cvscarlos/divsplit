@@ -19,6 +19,14 @@ import {
 	Briefcase,
 	Music,
 	PiggyBank,
+	Wine,
+	Ship,
+	Bus,
+	Fuel,
+	Ticket,
+	Dumbbell,
+	Heart,
+	GraduationCap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -44,4 +52,12 @@ export const EVENT_ICONS: Record<string, LucideIcon> = {
 	work: Briefcase,
 	music: Music,
 	piggy: PiggyBank,
+	wine: Wine,
+	ship: Ship,
+	bus: Bus,
+	fuel: Fuel,
+	ticket: Ticket,
+	gym: Dumbbell,
+	date: Heart,
+	school: GraduationCap,
 };

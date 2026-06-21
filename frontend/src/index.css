@@ -159,4 +159,21 @@
 			radial-gradient(var(--notch) at calc(100% - var(--notch)) 50%, transparent 98%, #000 100%);
 		mask-composite: intersect;
 	}
+
+	/* Transient "saved" confirmation — visible, then fades out. */
+	.save-flash {
+		animation: save-flash 2s ease forwards;
+	}
+}
+
+@keyframes save-flash {
+	0%,
+	60% {
+		opacity: 1;
+		transform: none;
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
 }
