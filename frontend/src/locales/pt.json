@@ -81,6 +81,7 @@
   "Edit": "Editar",
   "Delete": "Excluir",
   "Delete this transaction?": "Excluir esta transação?",
+  "DeleteTransactionHint": "Você pode restaurá-la depois pelo histórico do evento.",
   "Want to see some example transactions?": "Quer ver algumas transações de exemplo?",
   "Paid by": "Pago por",
   "Paid for": "Gasto por",

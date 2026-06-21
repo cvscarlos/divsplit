@@ -14,7 +14,7 @@ import { getTransactionError, autoSplit, round } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
 import type { AmountMap, Transaction } from '../../types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,6 +51,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const manuallyChanged = useRef<Record<string, boolean>>(existingTransaction?.manuallyChanged || {});
 	const [error, setError] = useState<string | null>(null);
 	const [saved, setSaved] = useState(false);
+	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
 	// Update state when transaction changes (e.g., navigating between transactions)
 	useEffect(() => {
@@ -150,8 +151,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		}
 	}
 
-	function handleDelete() {
-		if (!existingTransaction || !window.confirm(t('Delete this transaction?'))) return;
+	function confirmDelete() {
+		if (!existingTransaction) return;
 		const updatedGroup = trackTransactionDeleted({ ...group }, existingTransaction);
 		updatedGroup.transactions = (updatedGroup.transactions ?? []).filter((tx) => tx.id !== existingTransaction.id);
 		updateGroup(updatedGroup);
@@ -323,7 +324,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						type="button"
 						variant="ghost"
 						className="text-muted-foreground hover:text-destructive"
-						onClick={handleDelete}
+						onClick={() => setConfirmingDelete(true)}
 					>
 						<Trash2 /> {t('Delete')}
 					</Button>
@@ -349,6 +350,29 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					</Button>
 				</div>
 			</div>
+
+			{confirmingDelete && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+					role="dialog"
+					aria-modal="true"
+				>
+					<Card className="w-full max-w-sm">
+						<CardHeader>
+							<CardTitle>{t('Delete this transaction?')}</CardTitle>
+							<CardDescription>{t('DeleteTransactionHint')}</CardDescription>
+						</CardHeader>
+						<CardContent className="flex justify-end gap-2">
+							<Button type="button" variant="outline" onClick={() => setConfirmingDelete(false)}>
+								{t('Cancel')}
+							</Button>
+							<Button type="button" variant="destructive" onClick={confirmDelete}>
+								<Trash2 /> {t('Delete')}
+							</Button>
+						</CardContent>
+					</Card>
+				</div>
+			)}
 		</form>
 	);
 }
