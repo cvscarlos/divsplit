@@ -24,6 +24,32 @@ const differ = create({
 	arrays: { detectMove: true, includeValueOnMove: false },
 });
 
+/** Change keys that remove data — these always start a fresh, restorable version. */
+const DESTRUCTIVE_CHANGES = new Set(['TX_REMOVED', 'MEMBER_REMOVED', 'TRANSFER_UNDONE', 'TOPUP_UNDONE']);
+
+/** Burst window for folding consecutive same-author edits into one version. */
+const CONSOLIDATE_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * Whether a save should be folded (Google-Docs style) into the previous version
+ * rather than creating a new one. A save is kept separate when it's a standalone
+ * change (e.g. a restore), when it removes data (so the pre-removal state stays
+ * restorable), when the author differs, or when it's outside the burst window.
+ */
+export function shouldConsolidate(
+	last: EventVersion | undefined,
+	changes: ChangeEntry[],
+	author: string,
+	hasStandaloneChange: boolean,
+	now: number = Date.now(),
+): boolean {
+	if (hasStandaloneChange) return false;
+	if (changes.some((c) => DESTRUCTIVE_CHANGES.has(c.key))) return false;
+	if (!last || (last.changes?.length ?? 0) === 0) return false;
+	if (last.author !== author) return false;
+	return now - new Date(last.ts).getTime() < CONSOLIDATE_WINDOW_MS;
+}
+
 export interface VersionedCore {
 	config: GroupConfig;
 	members: Member[];
@@ -85,19 +111,9 @@ export async function recordVersion(
 	const versions = await listVersions(eventId);
 	const last = versions[versions.length - 1];
 
-	// Google-Docs style: fold a burst of normal edits by the same author (within a
-	// short window) into the last version instead of creating a new entry — fewer
-	// entries, less storage, cleaner timeline. Restores stay separate (they pass a
-	// `change` and carry no tracked activities).
-	const WINDOW_MS = 5 * 60 * 1000;
-	const canConsolidate =
-		!opts.change &&
-		last &&
-		(last.changes?.length ?? 0) > 0 &&
-		last.author === author &&
-		Date.now() - new Date(last.ts).getTime() < WINDOW_MS;
-
-	if (canConsolidate) {
+	// Google-Docs style: fold a burst of normal edits by the same author into the last
+	// version. Restores and destructive saves stay separate (see shouldConsolidate).
+	if (shouldConsolidate(last, changes, author, !!opts.change)) {
 		const base = reconstructCore(prevCore, versions, last.v - 1); // state before `last`
 		const mergedDelta = differ.diff(base, nextCore);
 		if (!mergedDelta) {
