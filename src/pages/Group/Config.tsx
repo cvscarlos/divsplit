@@ -36,7 +36,7 @@ export function GroupConfig() {
 		if (group.members) setMembers(group.members.map((m) => ({ ...m })));
 		setHolderId(group.config?.holderId || group.members?.[0]?.id || '');
 		setIcon(group.config?.icon || '');
-		setTransactions(group.transactions ?? []);
+		setTransactions(group.transactions || []);
 	}, [group]);
 
 	function addMember() {
@@ -45,14 +45,14 @@ export function GroupConfig() {
 	function removeMember(member: Member) {
 		// If the member has transactions, ask where to move them before removing.
 		if (memberInTransactions(transactions, member.id)) {
-			setReassignTo(members.find((m) => m.id !== member.id)?.id ?? '');
+			setReassignTo(members.find((m) => m.id !== member.id)?.id || '');
 			setReassignFrom(member);
 			return;
 		}
 		const remaining = members.filter((m) => m.id !== member.id);
 		setMembers(remaining);
 		// If we removed the cash holder, hand the role to the first remaining member.
-		if (member.id === holderId) setHolderId(remaining[0]?.id ?? '');
+		if (member.id === holderId) setHolderId(remaining[0]?.id || '');
 	}
 	function confirmReassign() {
 		if (!reassignFrom || !reassignTo) return;

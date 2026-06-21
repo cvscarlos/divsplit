@@ -42,14 +42,14 @@ export function GroupSettlement() {
 	const { data: group, updateGroup } = useGroupContext();
 	const { balances, transfers, holderId } = computeSettlement(group);
 
-	const nameOf = (id: string) => group.members?.find((m) => m.id === id)?.name ?? id;
-	const txns = group.transactions ?? [];
+	const nameOf = (id: string) => group.members?.find((m) => m.id === id)?.name || id;
+	const txns = group.transactions || [];
 	const recordedTransfers = txns.filter((tx) => tx.type === 'transfer');
 	const recordedTopups = txns.filter((tx) => tx.type === 'topup');
 
 	const deposited: Record<string, number> = {};
 	for (const tx of recordedTopups) {
-		for (const [id, amount] of Object.entries(tx.paidBy)) deposited[id] = (deposited[id] ?? 0) + amount;
+		for (const [id, amount] of Object.entries(tx.paidBy)) deposited[id] = (deposited[id] || 0) + amount;
 	}
 
 	function markPaid(transfer: Transfer) {
@@ -63,11 +63,11 @@ export function GroupSettlement() {
 			paidBy: { [transfer.fromId]: transfer.amount },
 			paidFor: { [transfer.toId]: transfer.amount },
 		};
-		updateGroup({ ...group, transactions: [...(group.transactions ?? []), txn] });
+		updateGroup({ ...group, transactions: [...(group.transactions || []), txn] });
 	}
 
 	function removeTransaction(txn: Transaction) {
-		updateGroup({ ...group, transactions: (group.transactions ?? []).filter((tx) => tx.id !== txn.id) });
+		updateGroup({ ...group, transactions: (group.transactions || []).filter((tx) => tx.id !== txn.id) });
 	}
 
 	if (!group.members || group.members.length === 0) {
@@ -181,7 +181,7 @@ export function GroupSettlement() {
 					<CardContent>
 						<ul className="space-y-2">
 							{recordedTopups.map((txn) => {
-								const memberId = Object.keys(txn.paidBy)[0] ?? '';
+								const memberId = Object.keys(txn.paidBy)[0] || '';
 								return (
 									<UndoRow key={txn.id} amount={txn.total} onUndo={() => removeTransaction(txn)}>
 										<PiggyBank className="text-primary size-4 shrink-0" />
@@ -202,8 +202,8 @@ export function GroupSettlement() {
 					<CardContent>
 						<ul className="space-y-2">
 							{recordedTransfers.map((txn) => {
-								const fromId = Object.keys(txn.paidBy)[0] ?? '';
-								const toId = Object.keys(txn.paidFor)[0] ?? '';
+								const fromId = Object.keys(txn.paidBy)[0] || '';
+								const toId = Object.keys(txn.paidFor)[0] || '';
 								return (
 									<UndoRow key={txn.id} amount={txn.total} onUndo={() => removeTransaction(txn)}>
 										<span className="truncate text-sm font-medium">{nameOf(fromId)}</span>

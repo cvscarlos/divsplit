@@ -22,7 +22,7 @@ export function IdentityGate() {
 	const { data: group, updateGroup, identify } = useGroupContext();
 	const [name, setName] = useState(getPreferredName());
 
-	const members = (group.members ?? []).filter((m) => m.name.trim());
+	const members = (group.members || []).filter((m) => m.name.trim());
 	const isNewEvent = members.length === 0;
 
 	function pick(member: Member) {
@@ -39,7 +39,7 @@ export function IdentityGate() {
 
 		const updated: Group = {
 			...group,
-			members: [...(group.members ?? []), member],
+			members: [...(group.members || []), member],
 			// The creator of a brand-new event also becomes the default cash holder.
 			...(isNewEvent ? { config: { ...group.config, holderId: group.config?.holderId || member.id } } : {}),
 		};

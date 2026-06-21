@@ -26,6 +26,6 @@ const options: InitOptions = {
 i18n.use(LanguageDetector).use(initReactI18next).init(options);
 
 // `{{amount, money}}` → currency with the active language's separators.
-i18n.services.formatter?.add('money', (value, lng) => formatMoney(Number(value), lng ?? 'en'));
+i18n.services.formatter?.add('money', (value, lng) => formatMoney(Number(value), lng || 'en'));
 
 export default i18n;

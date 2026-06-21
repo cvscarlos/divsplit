@@ -56,9 +56,9 @@ export default async function handler(req: Request): Promise<Response> {
 				change.eventId,
 				{
 					$set: {
-						config: core.config ?? {},
-						members: core.members ?? [],
-						transactions: core.transactions ?? [],
+						config: core.config || {},
+						members: core.members || [],
+						transactions: core.transactions || [],
 						headHash: change.hash,
 					},
 				},

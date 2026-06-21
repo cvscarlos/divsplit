@@ -17,9 +17,9 @@ export function GroupTopUp() {
 	const { groupId } = useParams();
 	const navigate = useNavigate();
 	const { data: group, updateGroup } = useGroupContext();
-	const members = group.members ?? [];
+	const members = group.members || [];
 
-	const [memberId, setMemberId] = useState<string>(members[0]?.id ?? '');
+	const [memberId, setMemberId] = useState<string>(members[0]?.id || '');
 	const [amount, setAmount] = useState<number>(0);
 	const [note, setNote] = useState<string>('');
 	const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export function GroupTopUp() {
 			paidBy: { [memberId]: amount },
 			paidFor: {},
 		};
-		updateGroup({ ...group, transactions: [...(group.transactions ?? []), txn] });
+		updateGroup({ ...group, transactions: [...(group.transactions || []), txn] });
 		navigate(`/group/${groupId}/settlement`);
 	}
 

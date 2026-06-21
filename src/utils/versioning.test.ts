@@ -4,7 +4,7 @@ import { create } from 'jsondiffpatch';
 import { reconstructCore, shouldConsolidate, describeChanges } from './versioning';
 import type { EventVersion, VersionedCore } from './versioning';
 
-const differ = create({ objectHash: (o: unknown) => (o as { id?: string })?.id ?? JSON.stringify(o) });
+const differ = create({ objectHash: (o: unknown) => (o as { id?: string })?.id || JSON.stringify(o) });
 
 function core(partial: Partial<VersionedCore>): VersionedCore {
 	return { config: {}, members: [], transactions: [], ...partial };

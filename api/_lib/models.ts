@@ -63,7 +63,7 @@ const eventSchema = new Schema(
 	{ versionKey: false, timestamps: { createdAt: false, updatedAt: true } },
 );
 
-// `models.X ?? model(...)` avoids re-registering the model when the module is
+// `models.X || model(...)` avoids re-registering the model when the module is
 // re-evaluated on a warm serverless invocation (OverwriteModelError).
-export const Change = mongoose.models.Change ?? mongoose.model('Change', changeSchema);
-export const EventDoc = mongoose.models.Event ?? mongoose.model('Event', eventSchema);
+export const Change = mongoose.models.Change || mongoose.model('Change', changeSchema);
+export const EventDoc = mongoose.models.Event || mongoose.model('Event', eventSchema);

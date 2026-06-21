@@ -21,7 +21,7 @@ const historyStore = localforage.createInstance({ name: 'history' });
 // No `textDiff` option → strings are stored whole as [old, new] (no diff_match_patch
 // dependency). Keeps deltas reversible and the bundle lean.
 const differ = create({
-	objectHash: (obj: unknown) => (obj as { id?: string })?.id ?? JSON.stringify(obj),
+	objectHash: (obj: unknown) => (obj as { id?: string })?.id || JSON.stringify(obj),
 	arrays: { detectMove: true, includeValueOnMove: false },
 });
 
@@ -46,7 +46,7 @@ export function shouldConsolidate(
 ): boolean {
 	if (hasStandaloneChange) return false;
 	if (changes.some((c) => DESTRUCTIVE_CHANGES.has(c.key))) return false;
-	if (!last || (last.changes?.length ?? 0) === 0) return false;
+	if (!last || (last.changes?.length || 0) === 0) return false;
 	if (last.author !== author) return false;
 	return now - new Date(last.ts).getTime() < CONSOLIDATE_WINDOW_MS;
 }
@@ -79,28 +79,28 @@ const EMPTY_CORE: VersionedCore = { config: {}, members: [], transactions: [] };
 
 export function coreOf(group: Group): VersionedCore {
 	return {
-		config: group.config ?? {},
-		members: group.members ?? [],
-		transactions: group.transactions ?? [],
+		config: group.config || {},
+		members: group.members || [],
+		transactions: group.transactions || [],
 	};
 }
 
 export async function listVersions(eventId: string): Promise<EventVersion[]> {
-	return (await historyStore.getItem<EventVersion[]>(eventId)) ?? [];
+	return (await historyStore.getItem<EventVersion[]>(eventId)) || [];
 }
 
-const memberName = (id: string, members: Member[]): string => members.find((m) => m.id === id)?.name ?? id;
+const memberName = (id: string, members: Member[]): string => members.find((m) => m.id === id)?.name || id;
 
 /** A named change line for a transaction, picking the key by its type. */
 function describeTransaction(tx: Transaction, members: Member[], removed: boolean): ChangeEntry {
-	const type = tx.type ?? 'expense';
+	const type = tx.type || 'expense';
 	if (type === 'transfer') {
-		const from = memberName(Object.keys(tx.paidBy)[0] ?? '', members);
-		const to = memberName(Object.keys(tx.paidFor)[0] ?? '', members);
+		const from = memberName(Object.keys(tx.paidBy)[0] || '', members);
+		const to = memberName(Object.keys(tx.paidFor)[0] || '', members);
 		return { key: removed ? 'TRANSFER_UNDONE' : 'TRANSFER_PAID', params: { from, to, amount: tx.total } };
 	}
 	if (type === 'topup') {
-		const name = memberName(Object.keys(tx.paidBy)[0] ?? '', members);
+		const name = memberName(Object.keys(tx.paidBy)[0] || '', members);
 		return { key: removed ? 'TOPUP_UNDONE' : 'TOPUP_ADDED', params: { name, amount: tx.total } };
 	}
 	return { key: removed ? 'TX_REMOVED' : 'TX_ADDED', params: { description: tx.description, total: tx.total } };
@@ -123,14 +123,14 @@ const txModified = (a: Transaction, b: Transaction): boolean =>
 export function describeChanges(prev: VersionedCore, next: VersionedCore): ChangeEntry[] {
 	const changes: ChangeEntry[] = [];
 	const members = [...next.members, ...prev.members]; // union for name lookups (covers removed members)
-	const pc = prev.config ?? {};
-	const nc = next.config ?? {};
+	const pc = prev.config || {};
+	const nc = next.config || {};
 
 	// config
 	if (pc.name && nc.name && pc.name !== nc.name)
 		changes.push({ key: 'EVENT_RENAMED', params: { old: pc.name, new: nc.name } });
 	if (pc.holderId && pc.holderId !== nc.holderId)
-		changes.push({ key: 'HOLDER_CHANGED', params: { name: memberName(nc.holderId ?? '', members) } });
+		changes.push({ key: 'HOLDER_CHANGED', params: { name: memberName(nc.holderId || '', members) } });
 	if (pc.icon !== undefined && pc.icon !== nc.icon) changes.push({ key: 'ICON_CHANGED' });
 
 	// members
@@ -190,7 +190,7 @@ export async function recordVersion(
 			return null;
 		}
 		last.delta = mergedDelta;
-		last.changes = [...changes, ...(last.changes ?? [])];
+		last.changes = [...changes, ...(last.changes || [])];
 		last.ts = new Date().toISOString();
 		await historyStore.setItem(eventId, versions);
 		return last;
@@ -198,7 +198,7 @@ export async function recordVersion(
 
 	const entries: ChangeEntry[] = changes.length ? changes : [{ key: 'EVENT_UPDATED' }];
 	const version: EventVersion = {
-		v: (last?.v ?? 0) + 1,
+		v: (last?.v || 0) + 1,
 		ts: new Date().toISOString(),
 		changes: entries,
 		author,

@@ -44,7 +44,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const [paidFor, setPaidFor] = useState<AmountMap>(existingTransaction?.paidFor || {});
 	const [total, setTotal] = useState<number>(existingTransaction?.total || 0);
 	const [description, setDescription] = useState<string>(existingTransaction?.description || '');
-	const [date, setDate] = useState<string>(formatDateForInput(existingTransaction?.date ?? new Date()));
+	const [date, setDate] = useState<string>(formatDateForInput(existingTransaction?.date || new Date()));
 	const manuallyChanged = useRef<Record<string, boolean>>(existingTransaction?.manuallyChanged || {});
 	const [error, setError] = useState<string | null>(null);
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -55,7 +55,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		setPaidFor(existingTransaction?.paidFor || {});
 		setTotal(existingTransaction?.total || 0);
 		setDescription(existingTransaction?.description || '');
-		setDate(formatDateForInput(existingTransaction?.date ?? new Date()));
+		setDate(formatDateForInput(existingTransaction?.date || new Date()));
 		manuallyChanged.current = existingTransaction?.manuallyChanged || {};
 	}, [existingTransaction]);
 
@@ -117,7 +117,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				...(isNew ? { createdAt: new Date() } : { updatedAt: new Date() }),
 			};
 
-			const transactions = updatedGroup.transactions ?? [];
+			const transactions = updatedGroup.transactions || [];
 			if (isNew) {
 				updatedGroup.transactions = [...transactions, transactionData];
 			} else {
@@ -140,7 +140,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		if (!existingTransaction) return;
 		const updatedGroup: Group = {
 			...group,
-			transactions: (group.transactions ?? []).filter((tx) => tx.id !== existingTransaction.id),
+			transactions: (group.transactions || []).filter((tx) => tx.id !== existingTransaction.id),
 		};
 		updateGroup(updatedGroup);
 		toast(t('Deleted'));

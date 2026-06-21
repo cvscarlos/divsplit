@@ -35,15 +35,15 @@ function round(value: number): number {
  * that only credits its member; a settle-up transfer credits sender / debits recipient.
  */
 export function computeBalances(group: Group): MemberBalance[] {
-	const members = group.members ?? [];
-	const transactions = group.transactions ?? [];
+	const members = group.members || [];
+	const transactions = group.transactions || [];
 
 	return members.map((member) => {
 		let paidBy = 0;
 		let paidFor = 0;
 		for (const tx of transactions) {
-			paidBy += tx.paidBy?.[member.id] ?? 0;
-			paidFor += tx.paidFor?.[member.id] ?? 0;
+			paidBy += tx.paidBy?.[member.id] || 0;
+			paidFor += tx.paidFor?.[member.id] || 0;
 		}
 		return { memberId: member.id, name: member.name, balance: round(paidBy - paidFor) };
 	});
@@ -51,7 +51,7 @@ export function computeBalances(group: Group): MemberBalance[] {
 
 /** Total money currently held in the pot (sum of all top-up transactions). */
 export function topupTotal(group: Group): number {
-	return round((group.transactions ?? []).filter((tx) => tx.type === 'topup').reduce((sum, tx) => sum + tx.total, 0));
+	return round((group.transactions || []).filter((tx) => tx.type === 'topup').reduce((sum, tx) => sum + tx.total, 0));
 }
 
 interface EffectiveEntry {
@@ -102,7 +102,7 @@ function minimizeTransfers(entries: EffectiveEntry[]): Transfer[] {
  * fewest-transfers.
  */
 export function computeSettlement(group: Group): SettlementResult {
-	const members = group.members ?? [];
+	const members = group.members || [];
 	const balances = computeBalances(group);
 
 	if (members.length === 0) {

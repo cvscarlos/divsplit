@@ -35,7 +35,7 @@ export function useApiListGroups(): { loading: boolean; groupList: GroupListItem
 
 async function updateGroupIndex(group: Group, groupId: string): Promise<void> {
 	const groups = (await groupListStore.getItem<GroupListItem[]>('groups')) || [];
-	const name = group.config?.name ?? '';
+	const name = group.config?.name || '';
 	const icon = group.config?.icon;
 	const groupIndex = groups.findIndex((g) => g.id === groupId);
 	// Upsert: a freshly created group won't be in the index yet, so add it
@@ -49,7 +49,7 @@ async function updateGroupIndex(group: Group, groupId: string): Promise<void> {
 }
 
 function groupStandardize(group?: Group | null): Group {
-	const standardized: Group = group ?? ({} as Group);
+	const standardized: Group = group || ({} as Group);
 	standardized.config ||= {}; // Initialize config if not present
 
 	// Legacy migration: "banker" → "holder".
@@ -60,8 +60,8 @@ function groupStandardize(group?: Group | null): Group {
 
 	// Legacy migration: a member's prepaid number → a top-up transaction (held by
 	// the holder). Deterministic id keeps it idempotent across reloads.
-	const members = standardized.members ?? [];
-	const legacy = members.filter((m) => (m.prepaid ?? 0) > 0);
+	const members = standardized.members || [];
+	const legacy = members.filter((m) => (m.prepaid || 0) > 0);
 	if (legacy.length) {
 		standardized.transactions ||= [];
 		for (const m of legacy) {
@@ -130,7 +130,7 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 				const toSave = dataToSave.group;
 				await groupStore.setItem(groupId, toSave);
 				const memberId = getEventMemberId(groupId);
-				const author = dataToSave.meta?.author ?? toSave.members?.find((m) => m.id === memberId)?.name ?? '';
+				const author = dataToSave.meta?.author || toSave.members?.find((m) => m.id === memberId)?.name || '';
 				// recordVersion derives change lines from the state diff (and logs creation on the first save).
 				await recordVersion(groupId, prev, toSave, { change: dataToSave.meta?.change, author });
 				if (!abort) setDataToSave(null);

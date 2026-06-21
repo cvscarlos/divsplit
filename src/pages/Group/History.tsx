@@ -28,8 +28,8 @@ export function GroupHistory() {
 		if (groupId) listVersions(groupId).then(setVersions);
 	}, [groupId, group]);
 
-	const head = versions[versions.length - 1]?.v ?? 0;
-	const genesis = versions[0]?.v ?? 0; // the "Event created" version — nothing precedes it
+	const head = versions[versions.length - 1]?.v || 0;
+	const genesis = versions[0]?.v || 0; // the "Event created" version — nothing precedes it
 
 	// Revert an action: roll the event back to the snapshot taken right BEFORE that
 	// version's change (v-1), saved as a new forward version. Works on any action,
@@ -65,7 +65,7 @@ export function GroupHistory() {
 									</span>
 									<div className="min-w-0 flex-1">
 										<ul className="space-y-0.5 text-sm leading-snug">
-											{(version.changes ?? []).map((change, i) => (
+											{(version.changes || []).map((change, i) => (
 												<li key={i}>{t(change.key, change.params)}</li>
 											))}
 										</ul>
