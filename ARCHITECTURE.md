@@ -50,6 +50,25 @@ Because there are no accounts and anyone with the link can edit, data integrity 
 - change lines are stored as translatable **named keys + params** (not baked text), so the log reads in the active language and stays human-readable in raw storage.
 - past states are reconstructed by reverse-applying ("unpatch") deltas from the current state; history lives in a separate store (`localforage "history"`, key = eventId) so the event document stays small.
 
+### 1.5 Backend sync model (planned — not built yet)
+
+The local model is **event-sourced** (append-only reversible deltas + a state folded from them), which makes it sync-ready. The future backend keeps that shape so the server's data is **trustable and tamper-evident**, not just a mutable mirror.
+
+**Two MongoDB collections (write/read gated by the API, not by Mongo):**
+
+- **`changes`** — the **append-only source of truth**, unifying history *and* the activity log (the log lines are derived from each delta — there is no separate log collection). Insert-only: the API rejects updates/deletes. Each document is **hash-chained** — `hash = H(parentHash + payload)` — so altering any past entry breaks every hash after it and anyone can verify the chain end-to-end. A unique index on the change id (`generateId()`) makes sync retries idempotent. Shape: `{ _id: changeId, eventId, seq, parentHash, hash, author, ts, delta, summary: ChangeEntry[] }`.
+- **`events`** — a **projection / cache** (read+write) folded from `changes`, for fast reads. Rebuildable at any time, so if it's ever wrong or tampered it's regenerated from the log — it is **never** the source of truth. Derived values (balances) live here as a recomputed cache only; the API never accepts a client-supplied balance.
+
+(A `snapshots`/keyframe collection is an optional later optimisation so long histories don't replay every delta.)
+
+**Trust boundaries (be honest about them):** the hash chain proves the log **was not altered after the fact** (inviolable history). It does **not** prove **who** wrote an entry — identity is self-asserted (no login), so this is tamper-evidence, not authentication. Real non-repudiation later means a per-device keypair signing each change.
+
+**Conflicts (offline-first):** two devices editing the same event offline can both append a change with the same `parentHash`. Rather than auto-merge, both are kept and the affected transactions are **flagged `conflict`** for the user to review (keep both, edit, or delete). Conflicted transactions are **excluded from balances until resolved** so a duplicate can't double-count. This sidesteps distributed locking entirely.
+
+**Offline calculations:** balances/settlement are computed on the backend (source of truth) **and** locally (for offline use). Locally-computed values that aren't yet confirmed by the backend should be shown as **provisional** in the UI (a subtle "not synced yet" affordance — *not* italics, which read as de-emphasis).
+
+**Hosting:** **Vercel Functions** (serverless) — the frontend already deploys to Vercel and the API surface is small (append a change, fetch changes since `seq`, fetch/rebuild the projection). Use a **module-scoped cached Mongo client** (avoid a connection per invocation) with **MongoDB Atlas**.
+
 ---
 
 ## 2. Stack & Dependencies
@@ -75,7 +94,7 @@ Because there are no accounts and anyone with the link can edit, data integrity 
 | Unit tests | **Vitest** |
 
 ### Backend (`backend/`)
-Placeholder workspace (`package.json` is `{}`). Reserved for the future sync layer.
+Placeholder workspace (`package.json` is `{}`). Reserved for the future sync layer — see **§1.5** for the planned event-sourced model (append-only hash-chained `changes` + an `events` projection on MongoDB Atlas, served by Vercel Functions).
 
 ### Tooling
 **ESLint 10** (flat config) + **typescript-eslint** + **Prettier**. CI (`.github/workflows/frontend.yml`) runs **lint**, **unit tests**, and **type-check + build** on the Node version from `.nvmrc`. Deployed on **Vercel** (`vercel.json`).
