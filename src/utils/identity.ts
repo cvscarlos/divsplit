@@ -7,6 +7,7 @@
  */
 
 import { generateId } from './id';
+import type { Member } from '../types';
 
 const UID_KEY = 'divsplit_uid';
 const NAME_KEY = 'divsplit_name';
@@ -40,4 +41,20 @@ export function getPreferredName(): string {
 
 export function setPreferredName(name: string): void {
 	if (name.trim()) localStorage.setItem(NAME_KEY, name.trim());
+}
+
+/**
+ * Whether to show the "who are you?" gate: either no identity was chosen yet, or the
+ * saved identity no longer matches a member (e.g. members changed or sample data was
+ * loaded). Re-prompting restores attribution — without this the header "You: …" line
+ * silently disappears.
+ */
+export function needsIdentityGate(
+	currentMemberId: string | null,
+	currentMember: Member | undefined,
+	memberCount: number,
+): boolean {
+	if (!currentMemberId) return true;
+	if (memberCount > 0 && !currentMember) return true; // stored id is stale
+	return false;
 }

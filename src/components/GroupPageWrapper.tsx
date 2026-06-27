@@ -5,6 +5,7 @@ import { Sparkles } from 'lucide-react';
 import { GroupConfig } from '../pages/Group/Config';
 import { NotFound } from '../pages/NotFound';
 import { GroupProvider, useGroupContext } from '../context/GroupContext';
+import { needsIdentityGate } from '../utils/identity';
 import { GroupHeader } from './GroupHeader';
 import { IdentityGate } from './IdentityGate';
 import { Debug } from './Debug';
@@ -17,11 +18,12 @@ import { Button } from '@/components/ui/button';
 
 function GroupContent() {
 	const { section, sectionItem } = useParams();
-	const { data: group, loadDemo, currentMemberId } = useGroupContext();
+	const { data: group, loadDemo, currentMemberId, currentMember } = useGroupContext();
 	const { t } = useTranslation();
 
-	// Trust-based identity: pick who you are before viewing/editing the event.
-	if (!currentMemberId) return <IdentityGate />;
+	// Trust-based identity: pick who you are before viewing/editing the event (and
+	// re-ask if a saved identity no longer matches a member).
+	if (needsIdentityGate(currentMemberId, currentMember, group.members?.length ?? 0)) return <IdentityGate />;
 
 	const pages: Record<string, boolean> = {
 		config: section === 'config',
