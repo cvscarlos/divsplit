@@ -1,6 +1,27 @@
 import { describe, it, expect } from 'vitest';
 
-import { getTransactionError, autoSplit, isTransactionBalanced } from './transaction';
+import { getTransactionError, autoSplit, isTransactionBalanced, splitCents } from './transaction';
+
+describe('splitCents', () => {
+	it('splits an evenly divisible amount equally', () => {
+		expect(splitCents(100, 2)).toEqual([50, 50]);
+	});
+
+	it('drops indivisible leftover cents on the first slots, summing back to the input', () => {
+		expect(splitCents(2, 3)).toEqual([1, 1, 0]); // 2 cents across 3 people
+		expect(splitCents(100, 3)).toEqual([34, 33, 33]);
+		expect(splitCents(100, 3).reduce((a, b) => a + b, 0)).toBe(100);
+	});
+
+	it('spreads a negative (over-allocated) remainder the same way', () => {
+		expect(splitCents(-2, 3)).toEqual([-1, -1, 0]);
+		expect(splitCents(-100, 2)).toEqual([-50, -50]);
+	});
+
+	it('returns nothing for zero slots', () => {
+		expect(splitCents(5, 0)).toEqual([]);
+	});
+});
 
 describe('getTransactionError', () => {
 	it('returns null when date, total and description are all present and valid', () => {

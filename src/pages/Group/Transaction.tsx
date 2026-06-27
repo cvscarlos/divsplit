@@ -6,7 +6,7 @@ import { Wallet, HandCoins, Save, Check, Trash2, Wand2 } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { useToast } from '../../components/Toast';
-import { getTransactionError, autoSplit, round, isTransactionBalanced } from '../../utils/transaction';
+import { getTransactionError, autoSplit, round, isTransactionBalanced, splitCents } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
 import type { AmountMap, Group, Transaction } from '../../types';
@@ -123,6 +123,23 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		if (step === 0) return;
 		manuallyChanged.current[id] = true;
 		handler({ ...data, [id]: round((data[id] || 0) + step) });
+	}
+
+	// Bottom action: spread the whole leftover across everyone as evenly as possible (the
+	// indivisible cents land on the first members), balancing the column in one click.
+	function distributeRemaining(listType: ListType) {
+		const data = PAID_BY === listType ? paidBy : paidFor;
+		const handler = PAID_BY === listType ? setPaidBy : setPaidFor;
+		const ids = Object.keys(data);
+		const remCents = Math.round(getRemainingValue(listType) * 100);
+		if (!ids.length || remCents === 0) return;
+		const adds = splitCents(remCents, ids.length);
+		const next: AmountMap = { ...data };
+		ids.forEach((id, i) => {
+			next[id] = round((next[id] || 0) + adds[i] / 100);
+			manuallyChanged.current[id] = true;
+		});
+		handler(next);
 	}
 
 	function handleGroupSubmit(event: FormEvent<HTMLFormElement>) {
@@ -261,7 +278,19 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					invalid ? 'bg-destructive/10 rounded-md px-3 py-2' : 'border-t border-dashed pt-3',
 				)}
 			>
-				<span className={invalid ? 'text-destructive' : 'text-muted-foreground'}>{t('REMAINING')}</span>
+				<span className="flex items-center gap-3">
+					<span className={invalid ? 'text-destructive' : 'text-muted-foreground'}>{t('REMAINING')}</span>
+					{!balanced && (
+						<button
+							type="button"
+							onClick={() => distributeRemaining(listType)}
+							className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1 text-[10px] font-medium underline-offset-2 hover:underline"
+						>
+							<Wand2 className="size-3" />
+							{t('SPLIT_EQUALLY')}
+						</button>
+					)}
+				</span>
 				<span
 					className={cn(
 						'tnum inline-flex items-center gap-1 font-semibold',
