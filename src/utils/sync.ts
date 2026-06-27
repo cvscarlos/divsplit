@@ -1,6 +1,6 @@
 import localforage from 'localforage';
 import type { EventVersion, VersionedCore } from './versioning';
-import type { Group } from '../types';
+import type { Group, GroupListItem } from '../types';
 
 /**
  * Offline-first background sync (Google-Docs style), bidirectional.
@@ -24,6 +24,17 @@ const outbox = localforage.createInstance({ name: 'outbox' });
 // so pull can rebuild local state without a circular import back into those modules.
 const groupStore = localforage.createInstance({ name: 'group' });
 const historyStore = localforage.createInstance({ name: 'history' });
+const groupListStore = localforage.createInstance({ name: 'groupList' });
+
+/** Upsert the group into the home/events index so a pulled (e.g. friend-shared) event lists locally. */
+async function upsertGroupIndex(eventId: string, config: { name?: string; icon?: string }): Promise<void> {
+	const groups = (await groupListStore.getItem<GroupListItem[]>('groups')) || [];
+	const entry: GroupListItem = { id: eventId, name: config.name || '', icon: config.icon };
+	const i = groups.findIndex((g) => g.id === eventId);
+	if (i === -1) groups.push(entry);
+	else groups[i] = { ...groups[i], ...entry };
+	await groupListStore.setItem('groups', groups);
+}
 
 type Outbound = {
 	queuedAt: number;
@@ -188,6 +199,7 @@ export async function pull(eventId: string): Promise<boolean> {
 
 	await groupStore.setItem(eventId, core);
 	await historyStore.setItem(eventId, versions);
+	await upsertGroupIndex(eventId, (core.config || {}) as { name?: string; icon?: string });
 	return true;
 }
 
