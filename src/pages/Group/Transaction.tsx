@@ -205,7 +205,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 								e.preventDefault();
 								fillRemaining(listType, id);
 							}}
-							className={cn('tnum shrink-0 text-xs font-semibold underline-offset-2 hover:underline', style.tint)}
+							className="tnum text-muted-foreground hover:text-foreground shrink-0 text-[10px] font-medium underline-offset-2 hover:underline"
 							title={t('ADD_REMAINING_TO_MEMBER')}
 							aria-label={t('ADD_REMAINING_TO_MEMBER')}
 						>
