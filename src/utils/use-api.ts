@@ -168,6 +168,10 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 				if (await pull(groupId)) group = groupStandardize(await groupStore.getItem<Group>(groupId));
 			}
 
+			// Opening any event (even one that arrived via a pull, not a local save) lists it on
+			// home/events — works offline too, since it indexes whatever is already local.
+			if (!abort && !isEmptyGroup(group)) await updateGroupIndex(group, groupId);
+
 			if (!abort) setData(group);
 			if (!abort) setLoading(false);
 		};
