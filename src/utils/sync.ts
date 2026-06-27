@@ -50,6 +50,22 @@ function setStatus(next: SyncStatus): void {
 	listeners.forEach((l) => l());
 }
 
+// --- data-revision store: bumped whenever a pull writes new local data, so any open view
+// re-reads it. Shared (not per-hook) so a manual sync from the header refreshes the page too.
+let dataRevision = 0;
+const dataListeners = new Set<() => void>();
+export function subscribeData(cb: () => void): () => void {
+	dataListeners.add(cb);
+	return () => dataListeners.delete(cb);
+}
+export function getDataRevision(): number {
+	return dataRevision;
+}
+function bumpData(): void {
+	dataRevision++;
+	dataListeners.forEach((l) => l());
+}
+
 const online = (): boolean => typeof navigator === 'undefined' || navigator.onLine;
 
 async function refreshStatus(): Promise<void> {
@@ -217,7 +233,15 @@ export async function pull(eventId: string): Promise<boolean> {
 
 	await groupStore.setItem(eventId, core);
 	await historyStore.setItem(eventId, versions);
+	bumpData(); // signal open views to re-read
 	return true;
+}
+
+/** Manual sync (header cloud): push the outbox, then pull the open event if there is one. */
+export async function syncNow(eventId?: string): Promise<void> {
+	await flush();
+	if (eventId) await pull(eventId);
+	else await refreshStatus();
 }
 
 // Background triggers (browser only).

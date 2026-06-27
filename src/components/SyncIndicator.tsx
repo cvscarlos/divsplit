@@ -1,17 +1,20 @@
 import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useMatch } from 'react-router-dom';
 import { Cloud, CloudCheck, CloudOff, RefreshCw } from 'lucide-react';
 
-import { subscribeSync, getSyncStatus } from '../utils/sync';
+import { subscribeSync, getSyncStatus, syncNow } from '../utils/sync';
 
 /**
  * Google-Docs-style sync status in the header: a cloud that's "saved" when everything is
  * pushed, a spinner while syncing, a plain cloud when changes are waiting, and a struck
- * cloud when offline (everything still saved locally).
+ * cloud when offline (everything still saved locally). Clicking it forces a manual sync
+ * (push the outbox, then pull the open event).
  */
 export function SyncIndicator() {
 	const { t } = useTranslation();
 	const status = useSyncExternalStore(subscribeSync, getSyncStatus, getSyncStatus);
+	const groupId = useMatch('/group/:groupId/*')?.params.groupId;
 
 	const map = {
 		synced: { Icon: CloudCheck, label: t('ALL_CHANGES_SAVED'), spin: false },
@@ -22,8 +25,15 @@ export function SyncIndicator() {
 	const { Icon, label, spin } = map[status];
 
 	return (
-		<span className="text-muted-foreground inline-flex items-center" title={label} aria-label={label} role="status">
+		<button
+			type="button"
+			onClick={() => void syncNow(groupId)}
+			disabled={status === 'syncing'}
+			className="text-muted-foreground hover:text-foreground inline-flex items-center transition-colors disabled:opacity-100"
+			title={`${label} · ${t('SYNC_NOW')}`}
+			aria-label={t('SYNC_NOW')}
+		>
 			<Icon className={`size-4 ${spin ? 'animate-spin' : ''}`} />
-		</span>
+		</button>
 	);
 }

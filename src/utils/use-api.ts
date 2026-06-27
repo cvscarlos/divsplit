@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import localforage from 'localforage';
 
 import type { Group, GroupListItem } from '../types';
 import { recordVersion, coreOf } from './versioning';
 import type { ChangeEntry } from './versioning';
-import { enqueue, pull } from './sync';
+import { enqueue, pull, subscribeData, getDataRevision } from './sync';
 import { getEventMemberId } from './identity';
 
 export interface SaveMeta {
@@ -116,24 +116,19 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 	const [loading, setLoading] = useState(false);
 	const [data, setData] = useState<Group>(groupStandardize());
 	const [dataToSave, setDataToSave] = useState<{ group: Group; meta?: SaveMeta } | null>(null);
-	// Bumped by the pull loop when the server has newer data, to re-read local storage.
-	const [syncTick, setSyncTick] = useState(0);
+	// A pull writing new data bumps this shared revision; re-reading local storage on change
+	// covers both the background loop and a manual sync triggered from the header.
+	const dataRevision = useSyncExternalStore(subscribeData, getDataRevision, getDataRevision);
 
 	// Background pull: mirror the server's full state (projection + history) into local storage when online.
 	useEffect(() => {
 		if (!groupId) return;
-		let cancelled = false;
-		const run = async () => {
-			const changed = await pull(groupId);
-			if (changed && !cancelled) setSyncTick((t) => t + 1);
-		};
-		void run();
-		const onOnline = () => void run();
-		window.addEventListener('online', onOnline);
-		const iv = setInterval(() => void run(), 20000);
+		const run = () => void pull(groupId);
+		run();
+		window.addEventListener('online', run);
+		const iv = setInterval(run, 20000);
 		return () => {
-			cancelled = true;
-			window.removeEventListener('online', onOnline);
+			window.removeEventListener('online', run);
 			clearInterval(iv);
 		};
 	}, [groupId]);
@@ -180,7 +175,7 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 		return () => {
 			abort = true;
 		};
-	}, [dataToSave, groupId, syncTick]);
+	}, [dataToSave, groupId, dataRevision]);
 
 	const loadDemo = async () => {
 		if (!groupId) return;
