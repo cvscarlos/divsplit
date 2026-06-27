@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
-import { connectDb } from './_lib/db';
-import { Change, EventDoc } from './_lib/models';
-import { queryParam } from './_lib/http';
-import type { ApiRequest, ApiResponse } from './_lib/http';
+import { connectDb } from './_lib/db.js';
+import { Change, EventDoc } from './_lib/models.js';
+import { queryParam } from './_lib/http.js';
+import type { ApiRequest, ApiResponse } from './_lib/http.js';
 
 /**
  * /api/changes

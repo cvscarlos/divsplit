@@ -1,5 +1,5 @@
-import { connectDb } from './_lib/db';
-import type { ApiResponse } from './_lib/http';
+import { connectDb } from './_lib/db.js';
+import type { ApiResponse } from './_lib/http.js';
 
 // GET /api/health — quick check that the function runtime + MONGO_URI + Atlas all work.
 export default async function handler(_req: unknown, res: ApiResponse): Promise<void> {
