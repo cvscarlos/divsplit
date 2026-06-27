@@ -1,14 +1,19 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
-import { Settings2, Receipt, History, ArrowLeftRight } from 'lucide-react';
+import { Settings2, Receipt, History, ArrowLeftRight, Share2 } from 'lucide-react';
 
 import { useGroupContext } from '../context/GroupContext';
+import { ShareDialog } from './ShareDialog';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function GroupHeader() {
 	const { data: group, currentMember, clearIdentity } = useGroupContext();
 	const { t } = useTranslation();
 	const { groupId, section } = useParams();
+	const [sharing, setSharing] = useState(false);
+	const shareUrl = `${window.location.origin}/group/${groupId}/transactions`;
 
 	const tabs = [
 		{ key: 'transactions', label: t('TRANSACTIONS'), icon: Receipt },
@@ -32,6 +37,14 @@ export function GroupHeader() {
 					</button>
 				</p>
 			)}
+
+			<div className="mt-3 flex justify-center">
+				<Button variant="outline" size="sm" onClick={() => setSharing(true)}>
+					<Share2 className="size-4" /> {t('SHARE')}
+				</Button>
+			</div>
+
+			{sharing && <ShareDialog url={shareUrl} onClose={() => setSharing(false)} />}
 
 			<nav className="mt-6 flex justify-center">
 				<div className="bg-muted inline-flex gap-1 rounded-full p-1">
