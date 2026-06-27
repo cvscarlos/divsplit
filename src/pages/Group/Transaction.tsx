@@ -210,7 +210,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 							aria-label={t('ADD_REMAINING_TO_MEMBER')}
 						>
 							<Wand2 className="size-3" />
-							{t('ADJUST')}{' '}
+							{t('ADD')}{' '}
 							<span className="tnum">
 								{remaining > 0 ? '+' : ''}
 								{formatMoney(remaining, i18n.language)}
