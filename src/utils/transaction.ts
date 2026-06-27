@@ -21,6 +21,23 @@ export function isTransactionBalanced(total: number, paidBy: AmountMap, paidFor:
 }
 
 /**
+ * Split `cents` across `n` slots as evenly as possible; the sum of the result always equals
+ * `cents`. An even amount lands the same on each slot; an indivisible one drops the leftover
+ * cents on the first slots (sign-aware, so negatives spread the same way).
+ */
+export function splitCents(cents: number, n: number): number[] {
+	if (n <= 0) return [];
+	const step = Math.sign(cents);
+	const base = Math.trunc(cents / n);
+	let extra = cents - base * n;
+	return Array.from({ length: n }, () => {
+		const add = base + (extra !== 0 ? step : 0);
+		if (extra !== 0) extra -= step;
+		return add;
+	});
+}
+
+/**
  * Distribute `total` across the members present in `amounts`: members the user
  * typed an amount for (flagged in `manual`) keep their value; everyone else
  * splits the leftover equally, with any rounding remainder landing on the last
