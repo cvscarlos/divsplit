@@ -1,14 +1,21 @@
 import { connectDb } from './_lib/db';
 import { EventDoc } from './_lib/models';
+import { queryParam } from './_lib/http';
+import type { ApiRequest, ApiResponse } from './_lib/http';
 
 // GET /api/event?id=<eventId> — the projection (cache) for one event.
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
 	await connectDb();
-	// req.url can be relative under some runtimes; a base keeps URL parsing valid either way.
-	const id = new URL(req.url, `http://${req.headers.get('host') || 'localhost'}`).searchParams.get('id');
-	if (!id) return Response.json({ error: 'id is required' }, { status: 400 });
+	const id = queryParam(req.query.id);
+	if (!id) {
+		res.status(400).json({ error: 'id is required' });
+		return;
+	}
 
 	const event = await EventDoc.findById(id).lean();
-	if (!event) return Response.json({ error: 'not found' }, { status: 404 });
-	return Response.json({ event });
+	if (!event) {
+		res.status(404).json({ error: 'not found' });
+		return;
+	}
+	res.status(200).json({ event });
 }

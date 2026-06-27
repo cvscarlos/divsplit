@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { connectDb } from './_lib/db';
 import { Change, EventDoc } from './_lib/models';
+import { queryParam } from './_lib/http';
+import type { ApiRequest, ApiResponse } from './_lib/http';
 
 /**
  * /api/changes
@@ -30,28 +32,30 @@ type PostBody = {
 	core?: { config?: unknown; members?: unknown[]; transactions?: unknown[] };
 };
 
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
 	await connectDb();
-	// req.url is relative (`/api/changes`) under some runtimes; a base makes URL parsing
-	// work in both cases (it's ignored when req.url is already absolute).
-	const url = new URL(req.url, `http://${req.headers.get('host') || 'localhost'}`);
 
 	if (req.method === 'GET') {
-		const eventId = url.searchParams.get('eventId');
-		if (!eventId) return Response.json({ error: 'eventId is required' }, { status: 400 });
+		const eventId = queryParam(req.query.eventId);
+		if (!eventId) {
+			res.status(400).json({ error: 'eventId is required' });
+			return;
+		}
 
-		const since = url.searchParams.get('since');
+		const since = queryParam(req.query.since);
 		const query: Record<string, unknown> = { eventId };
 		if (since) query.receivedAt = { $gt: new Date(since) };
 
 		const changes = await Change.find(query).sort({ receivedAt: 1 }).lean();
-		return Response.json({ changes });
+		res.status(200).json({ changes });
+		return;
 	}
 
 	if (req.method === 'POST') {
-		const { change, core } = (await req.json()) as PostBody;
+		const { change, core } = (req.body || {}) as PostBody;
 		if (!change?.id || !change.eventId) {
-			return Response.json({ error: 'change { id, eventId } is required' }, { status: 400 });
+			res.status(400).json({ error: 'change { id, eventId } is required' });
+			return;
 		}
 
 		// Chain onto the event's current head; the server computes the hash.
@@ -74,7 +78,8 @@ export default async function handler(req: Request): Promise<Response> {
 			await Change.create({ _id: change.id, ...payload, hash });
 		} catch (err) {
 			if ((err as { code?: number }).code === 11000) {
-				return Response.json({ ok: true, duplicate: true });
+				res.status(200).json({ ok: true, duplicate: true });
+				return;
 			}
 			throw err;
 		}
@@ -96,8 +101,9 @@ export default async function handler(req: Request): Promise<Response> {
 			);
 		}
 
-		return Response.json({ ok: true, hash });
+		res.status(200).json({ ok: true, hash });
+		return;
 	}
 
-	return Response.json({ error: 'method not allowed' }, { status: 405 });
+	res.status(405).json({ error: 'method not allowed' });
 }
