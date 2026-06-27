@@ -21,6 +21,20 @@ const PAID_FOR = 'paid-for';
 
 type ListType = typeof PAID_BY | typeof PAID_FOR;
 
+// Credit vs debit at a glance: who put money in (green) vs who used it (amber).
+const COLUMN_STYLE: Record<ListType, { row: string; accent: string; tint: string }> = {
+	[PAID_BY]: {
+		row: 'border-emerald-500/60 bg-emerald-500/10',
+		accent: 'accent-emerald-500',
+		tint: 'text-emerald-600 dark:text-emerald-400',
+	},
+	[PAID_FOR]: {
+		row: 'border-amber-500/60 bg-amber-500/10',
+		accent: 'accent-amber-500',
+		tint: 'text-amber-600 dark:text-amber-400',
+	},
+};
+
 export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const { t, i18n } = useTranslation();
 	const navigate = useNavigate();
@@ -148,6 +162,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	}
 
 	function membersList(listType: ListType) {
+		const style = COLUMN_STYLE[listType];
 		return group?.members?.map(({ id, name }) => {
 			const data = PAID_BY === listType ? paidBy : paidFor;
 			const checked = id in data;
@@ -156,11 +171,11 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					key={listType + id}
 					className={cn(
 						'flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-colors',
-						checked ? 'border-primary/60 bg-primary/5' : 'border-border/60 hover:bg-muted/40',
+						checked ? style.row : 'border-border/60 hover:bg-muted/40',
 					)}
 				>
 					<input
-						className="accent-primary size-4"
+						className={cn('size-4', style.accent)}
 						type="checkbox"
 						value={id}
 						checked={checked}
@@ -196,7 +211,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				<span
 					className={cn(
 						'tnum inline-flex items-center gap-1 font-semibold',
-						balanced ? 'text-muted-foreground' : 'text-primary',
+						balanced ? 'text-muted-foreground' : COLUMN_STYLE[listType].tint,
 					)}
 				>
 					{balanced && <Check className="size-4" />}
@@ -284,7 +299,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-lg">
-							<Wallet className="text-primary size-5" /> {t('PAID_BY')}
+							<Wallet className={cn('size-5', COLUMN_STYLE[PAID_BY].tint)} /> {t('PAID_BY')}
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
@@ -296,7 +311,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-lg">
-							<HandCoins className="text-primary size-5" /> {t('PAID_FOR')}
+							<HandCoins className={cn('size-5', COLUMN_STYLE[PAID_FOR].tint)} /> {t('PAID_FOR')}
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
