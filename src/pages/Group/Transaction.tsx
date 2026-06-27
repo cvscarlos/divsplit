@@ -105,6 +105,13 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		return round(total - sum);
 	}
 
+	// One-click "absorb the leftover": pin this member to their current amount + the remainder,
+	// so the column balances exactly (handy for the cent the equal split can't divide).
+	function fillRemaining(listType: ListType, id: string) {
+		const data = PAID_BY === listType ? paidBy : paidFor;
+		handleMemberChange(listType, id, round((data[id] || 0) + getRemainingValue(listType)), true);
+	}
+
 	function handleGroupSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
@@ -171,6 +178,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 
 	function membersList(listType: ListType) {
 		const style = COLUMN_STYLE[listType];
+		const remaining = getRemainingValue(listType);
 		return group?.members?.map(({ id, name }) => {
 			const data = PAID_BY === listType ? paidBy : paidFor;
 			const checked = id in data;
@@ -190,6 +198,21 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						onChange={(e) => handleMemberChange(listType, id, 0, e.target.checked)}
 					/>
 					<span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
+					{checked && remaining !== 0 && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.preventDefault();
+								fillRemaining(listType, id);
+							}}
+							className={cn('tnum shrink-0 text-xs font-semibold underline-offset-2 hover:underline', style.tint)}
+							title={t('ADD_REMAINING_TO_MEMBER')}
+							aria-label={t('ADD_REMAINING_TO_MEMBER')}
+						>
+							{remaining > 0 ? '+' : ''}
+							{formatMoney(remaining, i18n.language)}
+						</button>
+					)}
 					<div className="relative w-36 shrink-0">
 						<span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
 							$
