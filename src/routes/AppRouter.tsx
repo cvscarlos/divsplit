@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
 import HomePage from '../pages/HomePage';
+import EventsPage from '../pages/EventsPage';
 import Header from '../components/Header';
 import { GroupPageWrapper } from '../components/GroupPageWrapper';
 import { NotFound } from '../pages/NotFound';
@@ -17,6 +18,7 @@ const AppRouter = () => {
 			<Header />
 			<Routes>
 				<Route path="/" element={<HomePage />} />
+				<Route path="/events" element={<EventsPage />} />
 				<Route
 					path="/group/:groupId/:section/:sectionItem?"
 					element={

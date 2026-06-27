@@ -23,3 +23,5 @@ tmp/
 .vercel/
 eslint_report.json
 eslint_report.md
+.vercel
+.env*

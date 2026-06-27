@@ -28,7 +28,7 @@ function Header() {
 
 				<nav className="hidden items-center gap-9 md:flex">
 					<Link
-						to="/"
+						to="/events"
 						className="text-muted-foreground hover:text-foreground text-sm tracking-[0.2em] uppercase transition-colors"
 					>
 						{t('EVENTS')}
