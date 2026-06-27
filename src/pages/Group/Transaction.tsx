@@ -273,7 +273,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			>
 				<span className="flex items-center gap-3">
 					<span className={invalid ? 'text-destructive' : 'text-muted-foreground'}>{t('REMAINING')}</span>
-					{!balanced && (
+					{!balanced && perEach !== 0 && (
 						<button
 							type="button"
 							onClick={() => distributeRemaining(listType)}
