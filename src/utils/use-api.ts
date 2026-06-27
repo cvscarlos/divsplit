@@ -4,7 +4,7 @@ import localforage from 'localforage';
 import type { Group, GroupListItem } from '../types';
 import { recordVersion, coreOf } from './versioning';
 import type { ChangeEntry } from './versioning';
-import { enqueue } from './sync';
+import { enqueue, pull } from './sync';
 import { getEventMemberId } from './identity';
 
 export interface SaveMeta {
@@ -85,6 +85,8 @@ function groupStandardize(group?: Group | null): Group {
 	return standardized;
 }
 
+const isEmptyGroup = (group?: Group | null): boolean => !group || (!group.members?.length && !group.config?.name);
+
 /**
  * Load demo data for a group
  */
@@ -117,6 +119,28 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 	const [loading, setLoading] = useState(false);
 	const [data, setData] = useState<Group>(groupStandardize());
 	const [dataToSave, setDataToSave] = useState<{ group: Group; meta?: SaveMeta } | null>(null);
+	// Bumped by the pull loop when the server has newer data, to re-read local storage.
+	const [syncTick, setSyncTick] = useState(0);
+
+	// Background pull: mirror the server's full state (projection + history) into local
+	// storage whenever online — on open, on reconnect, and on a periodic backstop.
+	useEffect(() => {
+		if (!groupId) return;
+		let cancelled = false;
+		const run = async () => {
+			const changed = await pull(groupId);
+			if (changed && !cancelled) setSyncTick((t) => t + 1);
+		};
+		void run();
+		const onOnline = () => void run();
+		window.addEventListener('online', onOnline);
+		const iv = setInterval(() => void run(), 20000);
+		return () => {
+			cancelled = true;
+			window.removeEventListener('online', onOnline);
+			clearInterval(iv);
+		};
+	}, [groupId]);
 
 	useEffect(() => {
 		let abort = false;
@@ -140,7 +164,13 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 				if (!abort) await updateGroupIndex(toSave, groupId);
 			}
 
-			const group = groupStandardize(await groupStore.getItem<Group>(groupId));
+			let group = groupStandardize(await groupStore.getItem<Group>(groupId));
+
+			// Fresh visitor opening a shared link: nothing local yet, so pull the
+			// server state first so the identity gate can show the existing members.
+			if (isEmptyGroup(group)) {
+				if (await pull(groupId)) group = groupStandardize(await groupStore.getItem<Group>(groupId));
+			}
 
 			if (!abort) setData(group);
 			if (!abort) setLoading(false);
@@ -150,7 +180,7 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 		return () => {
 			abort = true;
 		};
-	}, [dataToSave, groupId]);
+	}, [dataToSave, groupId, syncTick]);
 
 	const loadDemo = async () => {
 		if (!groupId) return;

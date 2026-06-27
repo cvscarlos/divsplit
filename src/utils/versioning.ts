@@ -213,7 +213,15 @@ export async function recordVersion(
 	return version;
 }
 
-/** Reconstruct the core state as it was at version `targetV` (0 = before any change). */
+/**
+ * Reconstruct the core state as it was at version `targetV` (0 = before any change).
+ *
+ * Exact for a single device's linear history. After a sync pull rebuilds history from the
+ * server (`sync.ts`), the deltas were authored against each device's own base, so reverse-
+ * applying them from the last-writer-wins projection reconstructs an *approximate* past
+ * state once two devices have edited concurrently — the current state is always correct, but
+ * a restored intermediate may not match any single device's real history (see ARCHITECTURE §1.4).
+ */
 export function reconstructCore(currentCore: VersionedCore, versions: EventVersion[], targetV: number): VersionedCore {
 	let state: VersionedCore = structuredClone(currentCore);
 	for (let i = versions.length - 1; i >= 0; i--) {

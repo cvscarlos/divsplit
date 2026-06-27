@@ -1,21 +1,29 @@
 import localforage from 'localforage';
 import type { EventVersion, VersionedCore } from './versioning';
+import type { Group } from '../types';
 
 /**
- * Offline-first background sync (Google-Docs style).
+ * Offline-first background sync (Google-Docs style), bidirectional.
  *
- * Every saved version is appended to a durable **outbox** in IndexedDB and the app keeps
- * working offline. A background flusher drains the outbox to the backend whenever possible
- * — on save, when the connection returns (`online` event), on load, and on a periodic
- * backstop. A small status (`synced | syncing | pending | offline`) drives the header icon.
+ * **Push:** every saved version is appended to a durable **outbox** in IndexedDB and the app
+ * keeps working offline. A flusher drains the outbox to the backend whenever possible — on
+ * save, when the connection returns (`online`), on load, and on a periodic backstop.
  *
- * The outbox is the local source of truth for "not yet sent"; nothing is lost if the user
- * is offline for a long time. (Pulling remote changes + fork/conflict handling are a later
- * pass — this is push only.)
+ * **Pull:** `pull(eventId)` mirrors the server's full state back down — the projection
+ * (config/members/transactions) and the change log (history) — so a second browser sees the
+ * same data and history. Pull is skipped while local edits are still queued, then runs once
+ * they've flushed, so it never clobbers unsynced work.
+ *
+ * ponytail: conflict resolution is last-writer-wins on the projection (the server folds each
+ * POST's full core). Real DAG merge would go here if concurrent offline editing matters.
  */
 export type SyncStatus = 'synced' | 'syncing' | 'pending' | 'offline';
 
 const outbox = localforage.createInstance({ name: 'outbox' });
+// Same named stores as use-api.ts / versioning.ts — localforage shares them by name,
+// so pull can rebuild local state without a circular import back into those modules.
+const groupStore = localforage.createInstance({ name: 'group' });
+const historyStore = localforage.createInstance({ name: 'history' });
 
 type Outbound = {
 	queuedAt: number;
@@ -106,6 +114,81 @@ export async function enqueue(eventId: string, version: EventVersion, core: Vers
 	await outbox.setItem(version.id, item);
 	setStatus(online() ? 'pending' : 'offline');
 	void flush();
+}
+
+// --- pull (server → local) ---
+
+type RemoteChange = { _id: string; ts: string; author?: string; delta?: unknown; summary?: EventVersion['changes'] };
+
+async function outboxHas(eventId: string): Promise<boolean> {
+	let found = false;
+	await outbox.iterate<Outbound, void>((v) => {
+		if (v.change.eventId === eventId) found = true;
+	});
+	return found;
+}
+
+/** Map the server change log to local version records (history is display + restore). */
+export function remoteChangesToVersions(changes: RemoteChange[]): EventVersion[] {
+	return changes.map((c, i) => ({
+		v: i + 1,
+		id: c._id,
+		ts: new Date(c.ts).toISOString(),
+		changes: c.summary || [],
+		author: c.author || '',
+		delta: c.delta as EventVersion['delta'],
+	}));
+}
+
+/**
+ * Pull the server's full state for one event into local storage. Returns true when local
+ * data actually changed (so the caller can re-render). No-op when offline, when the event
+ * is unknown server-side, or while local edits are still queued (avoids clobbering them).
+ */
+export async function pull(eventId: string): Promise<boolean> {
+	if (!eventId || !online()) return false;
+	await flush(); // push pending local edits first
+	if (await outboxHas(eventId)) return false; // still unsynced → retry on the next tick
+
+	let projection: { config?: unknown; members?: unknown[]; transactions?: unknown[] } | undefined;
+	let changes: RemoteChange[];
+	try {
+		const [pRes, cRes] = await Promise.all([
+			fetch(`/api/event?id=${encodeURIComponent(eventId)}`),
+			fetch(`/api/changes?eventId=${encodeURIComponent(eventId)}`),
+		]);
+		if (!pRes.ok || !cRes.ok) return false;
+		projection = ((await pRes.json()) as { event?: typeof projection }).event;
+		changes = ((await cRes.json()) as { changes?: RemoteChange[] }).changes || [];
+	} catch {
+		return false; // offline / backend down
+	}
+	if (!projection) return false; // event not on the server yet
+
+	const core = {
+		config: projection.config || {},
+		members: projection.members || [],
+		transactions: projection.transactions || [],
+	};
+	const versions = remoteChangesToVersions(changes);
+
+	// Skip the write (and the re-render) when nothing changed.
+	const prev = await groupStore.getItem<Group>(eventId);
+	const prevV = await historyStore.getItem<EventVersion[]>(eventId);
+	const sameCore =
+		!!prev &&
+		JSON.stringify({
+			config: prev.config || {},
+			members: prev.members || [],
+			transactions: prev.transactions || [],
+		}) === JSON.stringify(core);
+	const sameLog =
+		(prevV?.length || 0) === versions.length && prevV?.[prevV.length - 1]?.id === versions[versions.length - 1]?.id;
+	if (sameCore && sameLog) return false;
+
+	await groupStore.setItem(eventId, core);
+	await historyStore.setItem(eventId, versions);
+	return true;
 }
 
 // Background triggers (browser only).
