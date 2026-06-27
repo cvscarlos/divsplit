@@ -16,6 +16,12 @@ import type { Transaction } from '../../types';
 
 const SETTLED_EPS = 0.005;
 
+// Settle-up pills/amounts reuse the transaction split palette: receiving (credit, "a receber")
+// = emerald, owing (debit, "a pagar") = amber — the same green/orange as the Paid-by / Consumed-by columns.
+const settlePill = (positive: boolean) => (positive ? 'bg-emerald-500' : 'bg-amber-500');
+const settleAmount = (positive: boolean) =>
+	positive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400';
+
 // Shared row for the Top-ups / Recorded-payments lists: left content + amount + Undo.
 function UndoRow({ children, amount, onUndo }: { children: ReactNode; amount: number; onUndo: () => void }) {
 	const { t, i18n } = useTranslation();
@@ -136,13 +142,13 @@ export function GroupSettlement() {
 												<span
 													className={cn(
 														'tnum text-sm font-semibold',
-														finalSettled ? 'text-muted-foreground' : finalPositive ? 'text-primary' : 'text-foreground',
+														finalSettled ? 'text-muted-foreground' : settleAmount(finalPositive),
 													)}
 												>
 													{finalSettled ? t('SETTLED') : formatMoney(Math.abs(final), i18n.language)}
 												</span>
 												{!finalSettled && (
-													<Badge variant={finalPositive ? 'default' : 'secondary'}>
+													<Badge className={cn('text-white', settlePill(finalPositive))}>
 														{finalPositive ? t('GETS_BACK') : t('OWES')}
 													</Badge>
 												)}
@@ -153,13 +159,13 @@ export function GroupSettlement() {
 											<span
 												className={cn(
 													'tnum text-sm font-semibold',
-													settled ? 'text-muted-foreground' : positive ? 'text-primary' : 'text-foreground',
+													settled ? 'text-muted-foreground' : settleAmount(positive),
 												)}
 											>
 												{settled ? t('SETTLED') : formatMoney(Math.abs(b.balance), i18n.language)}
 											</span>
 											{!settled && (
-												<Badge variant={positive ? 'default' : 'secondary'}>
+												<Badge className={cn('text-white', settlePill(positive))}>
 													{positive ? t('GETS_BACK') : t('OWES')}
 												</Badge>
 											)}

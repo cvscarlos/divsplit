@@ -71,7 +71,7 @@ blue-violet near-black in dark.
   text, chosen deterministically from the event id.
 
 ### Settle-up semantics
-- "gets back" / positive → primary (pink). "owes" / negative → secondary or `destructive`.
+- "a receber" / gets back / positive → **emerald** pill + amount; "a pagar" / owes / negative → **amber** pill + amount. Same green/orange as the credit/debit split columns below, so receiving vs owing reads consistently across the app.
 - "settled" → muted-foreground, no pill.
 
 ### Credit vs debit (transaction split form)
