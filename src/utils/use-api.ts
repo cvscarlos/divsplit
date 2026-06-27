@@ -87,9 +87,6 @@ function groupStandardize(group?: Group | null): Group {
 
 const isEmptyGroup = (group?: Group | null): boolean => !group || (!group.members?.length && !group.config?.name);
 
-/**
- * Load demo data for a group
- */
 async function loadDemoData(groupId: string): Promise<void> {
 	try {
 		const response = await fetch('/demo_data.json');
@@ -122,8 +119,7 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 	// Bumped by the pull loop when the server has newer data, to re-read local storage.
 	const [syncTick, setSyncTick] = useState(0);
 
-	// Background pull: mirror the server's full state (projection + history) into local
-	// storage whenever online — on open, on reconnect, and on a periodic backstop.
+	// Background pull: mirror the server's full state (projection + history) into local storage when online.
 	useEffect(() => {
 		if (!groupId) return;
 		let cancelled = false;
