@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
+		"vercel": "npx vercel dev",
 		"build": "tsc -b && tsc -p api/tsconfig.json && vite build",
 		"lint": "eslint . --fix",
 		"preview": "vite preview",
