@@ -46,7 +46,7 @@ Money is the hero, so amounts are always tabular mono. Motion is restrained.
 ## 3. Color tokens
 
 Named by **semantic role**, with the theme values (oklch) used in
-`frontend/src/index.css`. Hot-pink primary takes **white** foreground in both themes.
+`src/index.css`. Hot-pink primary takes **white** foreground in both themes.
 Neutrals are intentionally **cool** (no warm/brown cast): faint pink-white in light,
 blue-violet near-black in dark.
 
@@ -73,6 +73,10 @@ blue-violet near-black in dark.
 ### Settle-up semantics
 - "gets back" / positive → primary (pink). "owes" / negative → secondary or `destructive`.
 - "settled" → muted-foreground, no pill.
+
+### Credit vs debit (transaction split form)
+- **Paid by** (money in / credit) → **emerald/green**; **Gasto por / consumed by** (money out / debit) → **amber**. The two columns are tinted so credit vs debit reads at a glance.
+- An **unbalanced** split (cents unassigned) blocks save: the offending column's card gets a `destructive` border and the "Remaining" row becomes a light-red (`destructive/10`) pill. The transactions list flags an invalid row with an amber warning triangle.
 
 ---
 
@@ -127,7 +131,7 @@ transitions. No floating/orbital/scan-line/parallax loops (these were removed).
 
 - One type/shape/motion system; **color tokens swap** between light and dark.
 - Dark mode toggles `.dark` on `<html>` (wired in `context/ThemeContext.tsx`); tokens
-  are CSS variables in `frontend/src/index.css` (`:root` = light, `.dark` = dark).
+  are CSS variables in `src/index.css` (`:root` = light, `.dark` = dark).
 - Accessibility: pink primary takes **white** text (verify AA on pills); the pink→green
   gradient word stays readable on both themes; keep neon as accents, not large surfaces.
 
@@ -146,4 +150,4 @@ transitions. No floating/orbital/scan-line/parallax loops (these were removed).
 
 - Stitch project: `DivSplit — app screens` (`projects/15544037027988297275`).
 - Marketing copy drafts: `tmp/marketing-copy.md` (privacy + "enjoy the moment").
-- Implementation tokens live in `frontend/src/index.css`.
+- Implementation tokens live in `src/index.css`.

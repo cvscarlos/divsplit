@@ -6,7 +6,7 @@
 >
 > Keep this file current: update it in the same change that alters structure, the data model, routes, or a constraint. A stale architecture doc is worse than none.
 >
-> Project size: ~40 source files → documented at depth **L1**, with the **Monorepo** and **i18n** optional modules included because they apply.
+> Project size: ~40 source files → documented at depth **L1**, with the **i18n** optional module included because it applies.
 
 ---
 
@@ -30,9 +30,9 @@ There are exactly **two kinds of money movement**, and keeping them distinct is 
 
 The app nets everyone's balances and emits the **minimum** set of transfers, so a 10-person trip never ends with one person paying nine others. **Built** (`utils/settlement.ts`, §6).
 
-### 1.3 Local-first & privacy
+### 1.3 Offline-first & privacy
 
-- **Local-first by design.** The app must run with **no internet** (trips often have none). All data persists in the browser. A backend/database is intentionally deferred and will act as a **sync layer** *after* local save — letting multiple people record on their own devices offline and reconcile later. Fonts are self-hosted and avatars generated locally so nothing breaks offline.
+- **Offline-first (local-first) by design.** DivSplit is an **offline-first app**: it must run with **no internet** (trips often have none), and the browser is the primary store. Every change saves to the browser **first**; a backend then acts as a **sync layer** *after* local save (built — see §1.5), letting multiple people record on their own devices offline and reconcile when online. Fonts are self-hosted and avatars generated locally so nothing breaks offline.
 - **Installable PWA.** A Workbox **service worker** (`vite-plugin-pwa`) precaches the built **app shell** (HTML/JS/CSS + fonts), so the app launches and reloads with **no network** and can be **installed** to the home screen (web manifest + maskable icons). Generated only in the production build (`dist/sw.js`, `dist/manifest.webmanifest`); `registerType: 'autoUpdate'`.
 - **Privacy by default (project owner rule).** No email or personal data is required — it stays optional, to protect people's privacy. Identity is **trust-based** (opaque UUIDs, no accounts), not authenticated:
   - each **event** (group) has a secret UUID the creator shares; **anyone with the link can edit** (like a shared Google Doc).
@@ -49,10 +49,17 @@ Because there are no accounts and anyone with the link can edit, data integrity 
 - **Destructive saves (delete/undo) are never consolidated** into the previous burst, so the state before a removal always survives as its own restorable point (`shouldConsolidate` in `utils/versioning.ts`).
 - change lines are stored as translatable **named keys + params** (not baked text), so the log reads in the active language and stays human-readable in raw storage.
 - past states are reconstructed by reverse-applying ("unpatch") deltas from the current state; history lives in a separate store (`localforage "history"`, key = eventId) so the event document stays small.
+- **Restore fidelity under sync:** reconstruction is exact for a single device's linear history. After a pull rebuilds history from the server (§1.5), each delta was authored against its own device's base, so once two devices have edited concurrently a *restored intermediate* state is approximate (it may not match any single device's real history). The **current** state is always correct, and history is never destroyed — so this is a fidelity limit on time-travel, not a data-loss risk. Tightening it is part of the conflict-resolution work in §1.5.
 
-### 1.5 Backend sync model (planned — not built yet)
+### 1.5 Backend sync model (built — bidirectional)
 
-The local model is **event-sourced** (append-only reversible deltas + a state folded from them), which makes it sync-ready. The future backend keeps that shape so the server's data is **trustable and tamper-evident**, not just a mutable mirror.
+The local model is **event-sourced** (append-only reversible deltas + a state folded from them), which makes it sync-ready. The backend keeps that shape so the server's data is **trustable and tamper-evident**, not just a mutable mirror.
+
+**Offline-first ordering (the contract):** a save **always** lands in the browser first (IndexedDB), then propagates to Mongo. The app never blocks on the network. When online it syncs **both ways** continuously — push the local outbox up, pull the server's state down — so two browsers on the same event link converge.
+
+- **Push** — every recorded version is appended to a durable IndexedDB **outbox** (`utils/sync.ts`) and flushed to `POST /api/changes` on save, on reconnect (`online`), on load, and on a 20s backstop. Nothing is lost across long offline spells.
+- **Pull** — `pull(eventId)` mirrors the server's full state back down: the projection (`GET /api/event`) **and** the change log (`GET /api/changes`), rebuilding the local `group` + `history`. It runs on open, on reconnect, and on the 20s backstop. It **pushes first and skips while the outbox still holds unsynced edits for that event**, so a pull never clobbers local-first writes before they reach Mongo.
+- **First open of a shared link** (no local data) pulls from the server before rendering, so the identity gate shows the event's real members.
 
 **Two MongoDB collections (write/read gated by the API, not by Mongo):**
 
@@ -68,9 +75,9 @@ The local model is **event-sourced** (append-only reversible deltas + a state fo
 
 **Trust boundaries (be honest about them):** the hash DAG proves the log **was not altered after the fact** (inviolable history). It does **not** prove **who** wrote an entry — identity is self-asserted (no login), so this is tamper-evidence, not authentication. Real non-repudiation later means a per-device keypair signing each change.
 
-**Conflicts (offline-first):** two devices editing the same event offline append changes that share a parent (a DAG fork). Rather than auto-merge, both are kept and the affected transactions are **flagged `conflict`** for the user to review (keep both, edit, or delete). Conflicted transactions are **excluded from balances until resolved** so a duplicate can't double-count. This sidesteps distributed locking entirely.
+**Conflicts (current policy — last-writer-wins):** today the server projection is folded from each `POST`'s full `core`, so concurrent edits to the same event resolve **last-writer-wins** at the projection. The append-only `changes` log still records *every* fork (nothing is destroyed — both edits remain in history and are restorable), but the live state is the most recently synced one. The richer **flag-`conflict`-and-let-the-user-resolve** policy (keep both / edit / delete, excluded from balances until resolved) is the documented next step, not yet built.
 
-**Offline calculations:** balances/settlement are computed on the backend (source of truth) **and** locally (for offline use). Locally-computed values that aren't yet confirmed by the backend should be shown as **provisional** in the UI (a subtle "not synced yet" affordance — *not* italics, which read as de-emphasis).
+**Offline calculations:** balances/settlement are computed **locally** (`utils/settlement.ts`) for offline use; the server stores a `balanceCache` recomputed server-side, never trusted from the client. Surfacing locally-unconfirmed values as **provisional** in the UI is a future affordance; the header sync indicator (`SyncIndicator`) currently signals overall sync state instead.
 
 **Hosting:** **Vercel Functions** in `api/` (serverless) — the app already deploys to Vercel and the API surface is small (append a change, fetch changes the device hasn't seen, fetch/rebuild the projection). **Mongoose** on **MongoDB Atlas** (`MONGO_URI`), with one **connection cached across warm invocations** (`api/_lib/db.ts`) — a *connection* cache, not a data cache, to avoid opening a pool per request.
 
@@ -99,7 +106,7 @@ The local model is **event-sourced** (append-only reversible deltas + a state fo
 | Unit tests | **Vitest** |
 
 ### Backend (`api/`) — Vercel serverless functions
-The sync layer (see **§1.5**): **Mongoose** models on **MongoDB Atlas** (`MONGO_URI`). Helper code lives in `api/_lib/` (the `_` prefix keeps it off Vercel's route table): `db.ts` (one connection cached across warm invocations) and `models.ts` (the append-only `Change` Merkle DAG + the `Event` projection). Route functions (`api/*.ts`) are added per endpoint. Not part of the Vite build — `tsc -b` only includes `src/`; Vercel bundles `api/` separately.
+The sync layer (see **§1.5**): **Mongoose** models on **MongoDB Atlas** (`MONGO_URI`). Helper code lives in `api/_lib/` (the `_` prefix keeps it off Vercel's route table): `db.ts` (one connection cached across warm invocations) and `models.ts` (the append-only `Change` Merkle DAG + the `Event` projection). Route functions: `changes.ts` (GET changes-since / POST append + server-computed hash + projection upsert), `event.ts` (GET the projection), `health.ts`. Not part of the Vite build — `tsc -b` only includes `src/`; `api/` is typechecked via its own `api/tsconfig.json` (node types) and bundled separately by Vercel.
 
 ### Tooling
 **ESLint 10** (flat config) + **typescript-eslint** + **Prettier**. CI (`.github/workflows/frontend.yml`) runs **lint**, **unit tests**, and **type-check + build** on the Node version from `.nvmrc`. Deployed on **Vercel** (`vercel.json`, SPA rewrite to `/index.html`).
@@ -118,10 +125,9 @@ divsplit/
 ├─ vite.config.ts        # + tsconfig.*.json, vitest.config.ts, eslint.config.js, components.json
 ├─ src/                  # Vite + React 19 + TS SPA (all application code)
 ├─ public/               # static assets shipped as-is (logo, icons, demo_data.json)
-├─ api/                  # Vercel serverless functions (sync backend); _lib/ = shared helpers
+├─ api/                  # Vercel serverless functions (sync backend): changes/event/health; _lib/ = db + models
 ├─ ARCHITECTURE.md       # this file
 ├─ DESIGN.md             # visual design system (palette, type, layout, components)
-├─ TEST.md               # manual QA procedures per feature
 ├─ docs/superpowers/specs # design specs (settlement, mark-as-paid, …)
 └─ .github/              # CI (lint + test + build) + copilot-instructions.md
 ```
@@ -143,7 +149,9 @@ Scripts: `npm run dev`, `build` (`tsc -b && vite build`), `test` (`vitest run`),
 - `context/GroupContext.tsx` — loads/exposes the active group (`data`, `updateGroup(next, meta?)`, `loadDemo`) **and the trust-based identity** (`currentMemberId`, `currentMember`, `identify`, `clearIdentity`), used to attribute each save's `author`.
 
 **Domain & data layer (`utils/`)**
-- `use-api.ts` — the persistence boundary. localforage stores `groupList`, `group`, and `history`; hooks `useApiListGroups`, `useApiGetGroup`. On each save it records a version (author from the local identity) and logs "Event created" on first persist. *Single place that touches event storage.*
+- `use-api.ts` — the persistence boundary. localforage stores `groupList`, `group`, and `history`; hooks `useApiListGroups`, `useApiGetGroup`. On each save it records a version (author from the local identity), enqueues it for sync, and logs "Event created" on first persist. Also drives the background `pull` loop (open / reconnect / 20s) and seeds from the server on first open of an unseen link. *Single place that touches event storage.*
+- `sync.ts` — offline-first background sync (§1.5): the durable IndexedDB **outbox** + `flush` (push), `pull` (server→local rebuild of projection + history), and the `synced | syncing | pending | offline` status store consumed by `SyncIndicator`.
+- `export.ts` — `eventToTsv` (top-ups / balances / transactions sections) + `downloadTsv`; data portability so members can leave with their data.
 - `versioning.ts` — version history engine (jsondiffpatch): `recordVersion`, `listVersions`, `reconstructCore` (reverse-apply), `buildRestore`. Stores one reversible delta per save in `localforage "history"`. Each save's `changes` are `ChangeEntry[]` — a **named key + params** (e.g. `TRANSFER_PAID` / `{from,to,amount}`), translated at render so history reads in the active language.
 - `identity.ts` — trust-based identity: `getDeviceUid`, `get/setEventMemberId`, `getPreferredName` (all `localStorage`).
 - `id.ts` — `generateId()`: the **single** id generator (ObjectId hex) for every entity, so id formats never diverge.
@@ -155,20 +163,25 @@ Scripts: `npm run dev`, `build` (`tsc -b && vite build`), `test` (`vitest run`),
 
 **UI**
 - `components/ui/*` — shadcn primitives (`button`, `card`, `input`, `label`, `table`, `switch`, `badge`); `lib/utils.ts` exports `cn`.
-- Pages (`pages/`): `HomePage`, `Group/Config`, `Group/Transaction` (hosts auto-split), `Group/ListTransactions`, `Group/Settlement`, `Group/Activity`, `Group/History` (version timeline + restore), `NotFound`.
+- Pages (`pages/`): `HomePage` (landing + events grid), `EventsPage` (clean events list), `Group/Config`, `Group/Transaction` (hosts auto-split; color-codes paid-by vs consumed-by; blocks unbalanced saves), `Group/ListTransactions`, `Group/Settlement`, `Group/TopUp`, `Group/History` (version timeline + restore), `NotFound`.
 - `components/GroupPageWrapper.tsx` — wraps a group route in `GroupProvider`, **shows the `IdentityGate` until you've picked who you are**, then dispatches `:section`, shows the empty-group prompt, mounts `Debug`.
 - `components/IdentityGate.tsx` — the "Who are you?" step (pick a member / add yourself / name a new event).
-- `Header` (logo + EVENTS link + language selector + theme toggle), `GroupHeader` (tab nav + "You: <name>"), `Avatar` (DiceBear "thumbs", local), `Loading`, `Container`, `CardGroup`, `CardContainer`, `Debug`.
+- `components/ShareDialog.tsx` — copy/native-share the short private event link (`/group/:id`) with a "share only with paying members" warning.
+- `components/SyncIndicator.tsx` — header cloud icon reflecting the `sync.ts` status store.
+- `components/EventsGrid.tsx` — the vibrant event cards used by the landing and `EventsPage`.
+- `Header` (logo + EVENTS link + sync indicator + language selector + theme toggle), `GroupHeader` (tab nav + "You: <name>" + Share), `Avatar` (DiceBear "thumbs", local), `Loading`, `Container`, `CardGroup`, `CardContainer`, `Debug`.
 
 ---
 
 ## 5. Route Structure
 
-SPA, client-side routing only (Vercel rewrites all paths to `index.html`). The single dynamic route is `/group/:groupId/:section/:sectionItem?`; `GroupPageWrapper` switches on `section`.
+SPA, client-side routing only (Vercel rewrites non-asset, non-`api/` paths to `index.html`). The main dynamic route is `/group/:groupId/:section/:sectionItem?`; `GroupPageWrapper` switches on `section`.
 
 | Path | Renders |
 |---|---|
-| `/` | `HomePage` (group list) |
+| `/` | `HomePage` (landing + events grid) |
+| `/events` | `EventsPage` (clean events list) |
+| `/group/:groupId` | redirect → `/group/:groupId/transactions` (short share link) |
 | `/group/:groupId/config` | `GroupConfig` (name, members, top-holder) |
 | `/group/:groupId/topup` | `GroupTopUp` (record a top-up) |
 | `/group/:groupId/transactions[/:id\|new]` | transactions list / `GroupTransaction` |
@@ -219,10 +232,11 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
                                           localforage "groupList" (name index)
 ```
 
-- **Write path:** a page builds a new group object and calls `updateGroup(next, meta?)`; `useApiGetGroup` stages it, persists, **records a version** (`recordVersion` diffs prev vs next to derive the change lines, author from the local identity) and re-reads, then upserts the name into `groupList`.
+- **Write path (offline-first):** a page builds a new group object and calls `updateGroup(next, meta?)`; `useApiGetGroup` stages it, persists **to the browser first**, **records a version** (`recordVersion` diffs prev vs next to derive the change lines, author from the local identity), enqueues it to the sync **outbox**, re-reads, then upserts the name into `groupList`. The outbox flushes to Mongo in the background (§1.5).
+- **Read path:** local IndexedDB is the source for rendering. When online, a background `pull` mirrors the server's projection + history into local storage and the view re-reads; first open of an unseen link pulls before rendering.
 - **Identity:** read locally per event (`utils/identity.ts`); the `IdentityGate` writes it before any contribution, so each save is attributed to the acting member.
 - **Derived, not stored:** balances and the *suggested* settlement transfers are computed on read; recorded settle-ups are persisted as `type: 'transfer'` transactions. Past event states are reconstructed on demand from the delta history.
-- **No network.** Fully offline; demo data from `/demo_data.json`.
+- **Demo data** from `/demo_data.json` (in `public/`).
 
 ---
 
@@ -239,11 +253,11 @@ React UI ──updateGroup(next)──► GroupContext ──► useApiGetGroup
 
 ## 9. Constraints & Trade-offs
 
-- **Local-first, intentionally.** No backend persistence today; `backend/` is an empty placeholder.
-- **Single-device today.** Data lives in one browser's IndexedDB. Multi-device/multi-user **sync is a future goal** built on the UUID identity model (§1.3) + conflict resolution.
+- **Offline-first, intentionally.** The browser is the primary store and writes never block on the network; Mongo is a sync layer reached after local save (§1.5).
+- **Multi-device, last-writer-wins.** Devices on the same event link sync both ways (§1.5). Concurrent edits resolve last-writer-wins at the server projection; the full fork is preserved in the append-only log but richer conflict resolution isn't built yet.
 - **No PII.** Identity is opaque per-event UUIDs; member identification is deferred to v2.
 - **Greedy settlement** (near-optimal), not provably minimal.
-- **Tests cover pure logic** (settlement, validation) via Vitest; UI is covered by manual `TEST.md` + Chrome MCP QA, not component tests yet.
+- **Tests cover pure logic** (settlement, validation, sync mapping) via Vitest; UI is covered by ad-hoc Playwriter/Chrome MCP QA, not component tests yet.
 
 ---
 
@@ -267,10 +281,10 @@ Source: project owner. Order indicative.
 4. ✅ **Visual design via Stitch MCP** — neon pink/green system + minimal full-screen landing, recorded in `DESIGN.md`.
 5. ✅ **Trust-based identity** — device UUID + per-event "who are you?" gate attributing every change (§1.3); real cryptographic member auth still **v2**.
 6. ✅ **Version history & restore** — reversible jsondiffpatch deltas, diff view, restore-as-new-version (§1.4).
-7. **Backend sync layer** — local-first stays source of truth; reconcile multi-device offline edits (the version-delta model + identities are the foundation; needs conflict resolution / vector clocks).
+7. ✅ **Backend sync layer** — offline-first browser stays primary; Mongoose/Atlas backend with bidirectional push+pull sync (§1.5). Current conflict policy is last-writer-wins at the projection; richer fork resolution (flag-`conflict`, vector clocks, per-device signing) remains the next step.
 
 ---
 
 ## 12. Security & Privacy
 
-Client-only app: no auth, no secrets, no server; data confined to browser storage. **Privacy is a product principle** — no email/PII is collected; identity is opaque UUIDs (§1.3). The security/privacy surface becomes material with the sync layer (§11), which will introduce transport security, per-user authorization, and conflict handling, and must be re-assessed here when it lands.
+Offline-first app with a thin sync backend. **Privacy is a product principle** — no email/PII is collected; identity is opaque UUIDs (§1.3). The trust model is deliberate: an event's secret UUID is its only access control — **anyone with the link can read and edit** (like a shared Google Doc), which is why the Share dialog warns to share only with paying members. The server owns the tamper-evident hash chain (clients never send a hash), giving tamper-*evidence*, not authentication. Still **v2**: transport hardening beyond HTTPS, per-user authorization, per-device signing for non-repudiation, and real conflict resolution.
