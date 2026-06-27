@@ -13,7 +13,7 @@ export function GroupHeader() {
 	const { t } = useTranslation();
 	const { groupId, section } = useParams();
 	const [sharing, setSharing] = useState(false);
-	const shareUrl = `${window.location.origin}/group/${groupId}/transactions`;
+	const shareUrl = `${window.location.origin}/group/${groupId}`;
 
 	const tabs = [
 		{ key: 'transactions', label: t('TRANSACTIONS'), icon: Receipt },

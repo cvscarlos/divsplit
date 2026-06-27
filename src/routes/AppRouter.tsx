@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
 import HomePage from '../pages/HomePage';
@@ -19,6 +19,8 @@ const AppRouter = () => {
 			<Routes>
 				<Route path="/" element={<HomePage />} />
 				<Route path="/events" element={<EventsPage />} />
+				{/* Short share link → land on the transactions tab. */}
+				<Route path="/group/:groupId" element={<Navigate to="transactions" replace />} />
 				<Route
 					path="/group/:groupId/:section/:sectionItem?"
 					element={
