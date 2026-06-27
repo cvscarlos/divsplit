@@ -51,6 +51,8 @@ export function GroupSettlement() {
 	for (const tx of recordedTopups) {
 		for (const [id, amount] of Object.entries(tx.paidBy)) deposited[id] = (deposited[id] || 0) + amount;
 	}
+	// Total top-up cash the holder physically keeps on behalf of the whole group.
+	const heldPool = Object.values(deposited).reduce((sum, v) => sum + v, 0);
 
 	function markPaid(transfer: Transfer) {
 		const txn: Transaction = {
@@ -97,6 +99,13 @@ export function GroupSettlement() {
 						{balances.map((b) => {
 							const settled = Math.abs(b.balance) < SETTLED_EPS;
 							const positive = b.balance > 0;
+							// The holder physically keeps the whole top-up pool, so their real position is
+							// their balance minus what they hold for everyone — often flipping them to "owes".
+							const isHolder = b.memberId === holderId;
+							const showHeld = isHolder && heldPool > SETTLED_EPS;
+							const final = Math.round((b.balance - heldPool) * 100) / 100;
+							const finalSettled = Math.abs(final) < SETTLED_EPS;
+							const finalPositive = final > 0;
 							return (
 								<div
 									key={b.memberId}
@@ -106,7 +115,7 @@ export function GroupSettlement() {
 									<span className="min-w-0 flex-1">
 										<span className="flex items-center gap-2 text-sm font-medium">
 											<span className="truncate">{b.name}</span>
-											{b.memberId === holderId && <Badge variant="muted">{t('HOLDER')}</Badge>}
+											{isHolder && <Badge variant="muted">{t('HOLDER')}</Badge>}
 										</span>
 										{deposited[b.memberId] ? (
 											<span className="text-muted-foreground tnum block text-xs">
@@ -114,16 +123,47 @@ export function GroupSettlement() {
 											</span>
 										) : null}
 									</span>
-									<span
-										className={cn(
-											'tnum text-sm font-semibold',
-											settled ? 'text-muted-foreground' : positive ? 'text-primary' : 'text-foreground',
-										)}
-									>
-										{settled ? t('SETTLED') : formatMoney(Math.abs(b.balance), i18n.language)}
-									</span>
-									{!settled && (
-										<Badge variant={positive ? 'default' : 'secondary'}>{positive ? t('GETS_BACK') : t('OWES')}</Badge>
+
+									{showHeld ? (
+										<div className="text-right">
+											<span className="text-muted-foreground tnum block text-xs">
+												{t('GETS_BACK')} {formatMoney(b.balance, i18n.language)}
+											</span>
+											<span className="text-muted-foreground tnum block text-xs">
+												{t('CAIXA_HELD')} −{formatMoney(heldPool, i18n.language)}
+											</span>
+											<span className="mt-1 flex items-center justify-end gap-2">
+												<span
+													className={cn(
+														'tnum text-sm font-semibold',
+														finalSettled ? 'text-muted-foreground' : finalPositive ? 'text-primary' : 'text-foreground',
+													)}
+												>
+													{finalSettled ? t('SETTLED') : formatMoney(Math.abs(final), i18n.language)}
+												</span>
+												{!finalSettled && (
+													<Badge variant={finalPositive ? 'default' : 'secondary'}>
+														{finalPositive ? t('GETS_BACK') : t('OWES')}
+													</Badge>
+												)}
+											</span>
+										</div>
+									) : (
+										<>
+											<span
+												className={cn(
+													'tnum text-sm font-semibold',
+													settled ? 'text-muted-foreground' : positive ? 'text-primary' : 'text-foreground',
+												)}
+											>
+												{settled ? t('SETTLED') : formatMoney(Math.abs(b.balance), i18n.language)}
+											</span>
+											{!settled && (
+												<Badge variant={positive ? 'default' : 'secondary'}>
+													{positive ? t('GETS_BACK') : t('OWES')}
+												</Badge>
+											)}
+										</>
 									)}
 								</div>
 							);
