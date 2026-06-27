@@ -4,7 +4,8 @@ import { EventDoc } from './_lib/models';
 // GET /api/event?id=<eventId> — the projection (cache) for one event.
 export default async function handler(req: Request): Promise<Response> {
 	await connectDb();
-	const id = new URL(req.url).searchParams.get('id');
+	// req.url can be relative under some runtimes; a base keeps URL parsing valid either way.
+	const id = new URL(req.url, `http://${req.headers.get('host') || 'localhost'}`).searchParams.get('id');
 	if (!id) return Response.json({ error: 'id is required' }, { status: 400 });
 
 	const event = await EventDoc.findById(id).lean();

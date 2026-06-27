@@ -32,7 +32,9 @@ type PostBody = {
 
 export default async function handler(req: Request): Promise<Response> {
 	await connectDb();
-	const url = new URL(req.url);
+	// req.url is relative (`/api/changes`) under some runtimes; a base makes URL parsing
+	// work in both cases (it's ignored when req.url is already absolute).
+	const url = new URL(req.url, `http://${req.headers.get('host') || 'localhost'}`);
 
 	if (req.method === 'GET') {
 		const eventId = url.searchParams.get('eventId');
