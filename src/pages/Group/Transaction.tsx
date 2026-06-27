@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Wallet, HandCoins, Save, Check, Trash2 } from 'lucide-react';
+import { Wallet, HandCoins, Save, Check, Trash2, Wand2 } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { useToast } from '../../components/Toast';
@@ -205,12 +205,16 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 								e.preventDefault();
 								fillRemaining(listType, id);
 							}}
-							className="tnum text-muted-foreground hover:text-foreground shrink-0 text-[10px] font-medium underline-offset-2 hover:underline"
+							className="text-muted-foreground hover:text-foreground inline-flex shrink-0 items-center gap-1 text-[10px] font-medium underline-offset-2 hover:underline"
 							title={t('ADD_REMAINING_TO_MEMBER')}
 							aria-label={t('ADD_REMAINING_TO_MEMBER')}
 						>
-							{remaining > 0 ? '+' : ''}
-							{formatMoney(remaining, i18n.language)}
+							<Wand2 className="size-3" />
+							{t('ADJUST')}{' '}
+							<span className="tnum">
+								{remaining > 0 ? '+' : ''}
+								{formatMoney(remaining, i18n.language)}
+							</span>
 						</button>
 					)}
 					<div className="relative w-36 shrink-0">
