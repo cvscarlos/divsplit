@@ -1,5 +1,7 @@
 import localforage from 'localforage';
+import { coreOf } from './versioning';
 import type { EventVersion, VersionedCore } from './versioning';
+import { generateId } from './id';
 import type { Group } from '../types';
 
 /**
@@ -140,10 +142,34 @@ export function remoteChangesToVersions(changes: RemoteChange[]): EventVersion[]
 	}));
 }
 
+const hasLocalData = (g?: Group | null): boolean => !!g && (!!g.members?.length || !!g.config?.name);
+
+/**
+ * Push a locally-held event the server doesn't know about yet (created offline, or before
+ * sync worked) so other devices can load it. Enqueues the current state through the durable
+ * outbox; future edits sync normally. Idempotent — the server dedupes by change id.
+ */
+async function backfillToServer(eventId: string): Promise<void> {
+	const group = await groupStore.getItem<Group>(eventId);
+	if (!hasLocalData(group)) return;
+	const versions = (await historyStore.getItem<EventVersion[]>(eventId)) || [];
+	const last: EventVersion = versions[versions.length - 1] || {
+		v: 1,
+		id: generateId(),
+		ts: new Date().toISOString(),
+		changes: [{ key: 'EVENT_CREATED' }],
+		author: '',
+		delta: {},
+	};
+	await enqueue(eventId, last, coreOf(group as Group));
+	await flush();
+}
+
 /**
  * Pull the server's full state for one event into local storage. Returns true when local
- * data actually changed (so the caller can re-render). No-op when offline, when the event
- * is unknown server-side, or while local edits are still queued (avoids clobbering them).
+ * data actually changed (so the caller can re-render). No-op when offline or while local
+ * edits are still queued (avoids clobbering them). If the server doesn't know the event yet
+ * but we hold it locally, push it up first (backfill) so it can sync from then on.
  */
 export async function pull(eventId: string): Promise<boolean> {
 	if (!eventId || !online()) return false;
@@ -163,7 +189,10 @@ export async function pull(eventId: string): Promise<boolean> {
 	} catch {
 		return false; // offline / backend down
 	}
-	if (!projection) return false; // event not on the server yet
+	if (!projection) {
+		await backfillToServer(eventId); // server doesn't have it but we do → upload our copy
+		return false;
+	}
 
 	const core = {
 		config: projection.config || {},
