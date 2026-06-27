@@ -105,24 +105,15 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		return round(total - sum);
 	}
 
-	// How much one "Add" click gives a member: an evenly-divisible leftover offers each
-	// person their equal share; an indivisible one offers a single cent, so the user clicks
-	// around (same or different people) to place the stray cents. Recomputed after each click.
-	function stepFor(listType: ListType): number {
-		const n = Object.keys(PAID_BY === listType ? paidBy : paidFor).length;
-		const remaining = getRemainingValue(listType);
-		const remCents = Math.round(remaining * 100);
-		if (remCents === 0 || n === 0) return 0;
-		return remCents % n === 0 ? remCents / n / 100 : Math.sign(remCents) * 0.01;
-	}
-
-	function applyStep(listType: ListType, id: string) {
+	// Per-member "Add" link: dump the whole leftover onto this one person, balancing the
+	// column in one click. Fair distribution across everyone is the "split equally" action.
+	function fillRemaining(listType: ListType, id: string) {
 		const data = PAID_BY === listType ? paidBy : paidFor;
 		const handler = PAID_BY === listType ? setPaidBy : setPaidFor;
-		const step = stepFor(listType);
-		if (step === 0) return;
+		const remaining = getRemainingValue(listType);
+		if (remaining === 0) return;
 		manuallyChanged.current[id] = true;
-		handler({ ...data, [id]: round((data[id] || 0) + step) });
+		handler({ ...data, [id]: round((data[id] || 0) + remaining) });
 	}
 
 	// Bottom action: spread the whole leftover across everyone as evenly as possible (the
@@ -208,7 +199,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 
 	function membersList(listType: ListType) {
 		const style = COLUMN_STYLE[listType];
-		const step = stepFor(listType); // 0 when balanced
+		const remaining = getRemainingValue(listType); // 0 when balanced
 		return group?.members?.map(({ id, name }) => {
 			const data = PAID_BY === listType ? paidBy : paidFor;
 			const checked = id in data;
@@ -228,12 +219,12 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						onChange={(e) => handleMemberChange(listType, id, 0, e.target.checked)}
 					/>
 					<span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
-					{checked && step !== 0 && (
+					{checked && remaining !== 0 && (
 						<button
 							type="button"
 							onClick={(e) => {
 								e.preventDefault();
-								applyStep(listType, id);
+								fillRemaining(listType, id);
 							}}
 							className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 text-[10px] font-medium underline-offset-2 hover:underline"
 							title={t('ADD_REMAINING_TO_MEMBER')}
@@ -242,8 +233,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 							<Wand2 className="size-3" />
 							{t('ADD')}{' '}
 							<span className="tnum">
-								{step > 0 ? '+' : ''}
-								{formatMoney(step, i18n.language)}
+								{remaining > 0 ? '+' : ''}
+								{formatMoney(remaining, i18n.language)}
 							</span>
 						</button>
 					)}
