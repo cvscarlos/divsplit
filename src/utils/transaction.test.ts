@@ -1,6 +1,15 @@
 import { describe, it, expect } from 'vitest';
 
-import { getTransactionError, autoSplit, isTransactionBalanced, splitCents } from './transaction';
+import { getTransactionError, autoSplit, isTransactionBalanced, splitCents, round } from './transaction';
+
+describe('round', () => {
+	it('rounds to 2 decimals without binary-float drift', () => {
+		// The naive Math.round(1.005 * 100) / 100 lands on 1.00 here; number-precision gives 1.01.
+		expect(round(1.005)).toBe(1.01);
+		expect(round(0.1 + 0.2)).toBe(0.3);
+		expect(round(2.345)).toBe(2.35);
+	});
+});
 
 describe('splitCents', () => {
 	it('splits an evenly divisible amount equally', () => {

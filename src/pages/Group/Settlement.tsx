@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { round as npRound, plus, minus } from 'number-precision';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, ArrowLeftRight, Check, Undo2, PiggyBank } from 'lucide-react';
@@ -55,10 +56,10 @@ export function GroupSettlement() {
 
 	const deposited: Record<string, number> = {};
 	for (const tx of recordedTopups) {
-		for (const [id, amount] of Object.entries(tx.paidBy)) deposited[id] = (deposited[id] || 0) + amount;
+		for (const [id, amount] of Object.entries(tx.paidBy)) deposited[id] = plus(deposited[id] || 0, amount);
 	}
 	// Total top-up cash the holder physically keeps on behalf of the whole group.
-	const heldPool = Object.values(deposited).reduce((sum, v) => sum + v, 0);
+	const heldPool = Object.values(deposited).reduce((sum, v) => plus(sum, v), 0);
 
 	function markPaid(transfer: Transfer) {
 		const txn: Transaction = {
@@ -109,7 +110,7 @@ export function GroupSettlement() {
 							// their balance minus what they hold for everyone — often flipping them to "owes".
 							const isHolder = b.memberId === holderId;
 							const showHeld = isHolder && heldPool > SETTLED_EPS;
-							const final = Math.round((b.balance - heldPool) * 100) / 100;
+							const final = npRound(minus(b.balance, heldPool), 2);
 							const finalSettled = Math.abs(final) < SETTLED_EPS;
 							const finalPositive = final > 0;
 							return (

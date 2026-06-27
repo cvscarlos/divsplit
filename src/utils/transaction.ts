@@ -1,3 +1,5 @@
+import { round as npRound, plus, minus, times, divide } from 'number-precision';
+
 import type { AmountMap } from '../types';
 
 export interface TransactionInput {
@@ -6,18 +8,23 @@ export interface TransactionInput {
 	description: string;
 }
 
+// All money math rounds to 2 decimals via number-precision, which avoids binary-float
+// drift (e.g. 0.1 + 0.2 or Math.round(1.005 * 100) landing a cent off).
 export function round(value: number): number {
-	return Math.round(value * 100) / 100;
+	return npRound(value, 2);
 }
 
-const sumAmounts = (m: AmountMap = {}): number => Object.values(m).reduce((sum, v) => sum + v, 0);
+const sumAmounts = (m: AmountMap = {}): number => {
+	const values = Object.values(m);
+	return values.length ? plus(...values) : 0;
+};
 
 /**
  * A transaction is balanced when both sides add up to the total: the payers (`paidBy`)
  * cover it and the consumers (`paidFor`) account for all of it. Cent-rounding tolerated.
  */
 export function isTransactionBalanced(total: number, paidBy: AmountMap, paidFor: AmountMap): boolean {
-	return round(total - sumAmounts(paidBy)) === 0 && round(total - sumAmounts(paidFor)) === 0;
+	return round(minus(total, sumAmounts(paidBy))) === 0 && round(minus(total, sumAmounts(paidFor))) === 0;
 }
 
 /**
@@ -49,18 +56,19 @@ export function autoSplit(amounts: AmountMap, manual: Record<string, boolean>, t
 	const next: AmountMap = { ...amounts };
 	if (autoIds.length === 0) return next;
 
-	const manualSum = ids.filter((id) => manual[id]).reduce((sum, id) => sum + (amounts[id] || 0), 0);
+	const manualIds = ids.filter((id) => manual[id]);
+	const manualSum = manualIds.length ? plus(...manualIds.map((id) => amounts[id] || 0)) : 0;
 	// Only the non-negative leftover is split; if manual amounts already exceed the
 	// total the auto members get 0 (over-allocation surfaces as a negative "remaining").
-	const leftover = Math.max(0, total - manualSum);
-	const each = round(leftover / autoIds.length);
+	const leftover = Math.max(0, minus(total, manualSum));
+	const each = round(divide(leftover, autoIds.length));
 	autoIds.forEach((id) => (next[id] = each));
 
 	// Land the rounding remainder of the split on the last auto member (within the pool only).
-	const diff = round(leftover - each * autoIds.length);
+	const diff = round(minus(leftover, times(each, autoIds.length)));
 	if (leftover > 0 && diff !== 0) {
 		const last = autoIds[autoIds.length - 1];
-		next[last] = round(next[last] + diff);
+		next[last] = round(plus(next[last], diff));
 	}
 	return next;
 }

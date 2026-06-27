@@ -1,3 +1,5 @@
+import { round as npRound, plus, minus } from 'number-precision';
+
 import type { Group } from '../types';
 
 export interface MemberBalance {
@@ -25,8 +27,9 @@ export interface SettlementResult {
 /** Amounts below this (half a cent) are treated as settled. */
 const EPS = 0.005;
 
+// 2-decimal rounding via number-precision (float-drift safe); see utils/transaction.ts.
 function round(value: number): number {
-	return Math.round(value * 100) / 100;
+	return npRound(value, 2);
 }
 
 /**
@@ -42,16 +45,18 @@ export function computeBalances(group: Group): MemberBalance[] {
 		let paidBy = 0;
 		let paidFor = 0;
 		for (const tx of transactions) {
-			paidBy += tx.paidBy?.[member.id] || 0;
-			paidFor += tx.paidFor?.[member.id] || 0;
+			paidBy = plus(paidBy, tx.paidBy?.[member.id] || 0);
+			paidFor = plus(paidFor, tx.paidFor?.[member.id] || 0);
 		}
-		return { memberId: member.id, name: member.name, balance: round(paidBy - paidFor) };
+		return { memberId: member.id, name: member.name, balance: round(minus(paidBy, paidFor)) };
 	});
 }
 
 /** Total money currently held in the pot (sum of all top-up transactions). */
 export function topupTotal(group: Group): number {
-	return round((group.transactions || []).filter((tx) => tx.type === 'topup').reduce((sum, tx) => sum + tx.total, 0));
+	return round(
+		(group.transactions || []).filter((tx) => tx.type === 'topup').reduce((sum, tx) => plus(sum, tx.total), 0),
+	);
 }
 
 interface EffectiveEntry {
@@ -84,8 +89,8 @@ function minimizeTransfers(entries: EffectiveEntry[]): Transfer[] {
 		if (amount > EPS) {
 			transfers.push({ fromId: debtor.id, fromName: debtor.name, toId: creditor.id, toName: creditor.name, amount });
 		}
-		debtor.amount = round(debtor.amount - amount);
-		creditor.amount = round(creditor.amount - amount);
+		debtor.amount = round(minus(debtor.amount, amount));
+		creditor.amount = round(minus(creditor.amount, amount));
 		if (debtor.amount <= EPS) i++;
 		if (creditor.amount <= EPS) j++;
 	}
@@ -116,7 +121,7 @@ export function computeSettlement(group: Group): SettlementResult {
 	const effective: EffectiveEntry[] = balances.map((b) => ({
 		id: b.memberId,
 		name: b.name,
-		amount: round(b.balance - (b.memberId === holderId ? pot : 0)),
+		amount: round(minus(b.balance, b.memberId === holderId ? pot : 0)),
 	}));
 
 	return { balances, transfers: minimizeTransfers(effective), holderId };

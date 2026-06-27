@@ -6,6 +6,8 @@ import { Wallet, HandCoins, Save, Check, Trash2, Wand2 } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { useToast } from '../../components/Toast';
+import { plus, minus, divide } from 'number-precision';
+
 import { getTransactionError, autoSplit, round, isTransactionBalanced, splitCents } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
@@ -101,8 +103,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	function getRemainingValue(fieldset: ListType): number {
 		const data = PAID_BY === fieldset ? paidBy : paidFor;
 		const values = Object.values(data);
-		const sum = values.reduce((acc, value) => acc + value, 0);
-		return round(total - sum);
+		const sum = values.length ? plus(...values) : 0;
+		return round(minus(total, sum));
 	}
 
 	// Per-member "Add" link: dump the whole leftover onto this one person, balancing the
@@ -113,7 +115,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		const remaining = getRemainingValue(listType);
 		if (remaining === 0) return;
 		manuallyChanged.current[id] = true;
-		handler({ ...data, [id]: round((data[id] || 0) + remaining) });
+		handler({ ...data, [id]: round(plus(data[id] || 0, remaining)) });
 	}
 
 	// Bottom action: spread the whole leftover across everyone as evenly as possible (the
@@ -127,7 +129,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		const adds = splitCents(remCents, ids.length);
 		const next: AmountMap = { ...data };
 		ids.forEach((id, i) => {
-			next[id] = round((next[id] || 0) + adds[i] / 100);
+			next[id] = round(plus(next[id] || 0, divide(adds[i], 100)));
 			manuallyChanged.current[id] = true;
 		});
 		handler(next);
@@ -263,7 +265,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		const balanced = remaining === 0;
 		const invalid = attempted && !balanced; // flagged after a blocked save until balanced
 		const memberCount = Object.keys(PAID_BY === listType ? paidBy : paidFor).length;
-		const perEach = memberCount ? round(remaining / memberCount) : 0;
+		const perEach = memberCount ? round(divide(remaining, memberCount)) : 0;
 		return (
 			<div
 				className={cn(
