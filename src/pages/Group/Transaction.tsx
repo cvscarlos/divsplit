@@ -6,7 +6,7 @@ import { Wallet, HandCoins, Save, Check, Trash2, Wand2 } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { useToast } from '../../components/Toast';
-import { getTransactionError, autoSplit, round, isTransactionBalanced, splitCents } from '../../utils/transaction';
+import { getTransactionError, autoSplit, round, isTransactionBalanced } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
 import type { AmountMap, Group, Transaction } from '../../types';
@@ -105,42 +105,24 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		return round(total - sum);
 	}
 
-	function remainderInfo(listType: ListType) {
-		const data = PAID_BY === listType ? paidBy : paidFor;
-		const n = Object.keys(data).length;
+	// How much one "Add" click gives a member: an evenly-divisible leftover offers each
+	// person their equal share; an indivisible one offers a single cent, so the user clicks
+	// around (same or different people) to place the stray cents. Recomputed after each click.
+	function stepFor(listType: ListType): number {
+		const n = Object.keys(PAID_BY === listType ? paidBy : paidFor).length;
 		const remaining = getRemainingValue(listType);
 		const remCents = Math.round(remaining * 100);
-		const evenlyDivisible = remCents !== 0 && n > 0 && remCents % n === 0;
-		return { remaining, n, evenlyDivisible, shareCents: evenlyDivisible ? remCents / n : 0 };
+		if (remCents === 0 || n === 0) return 0;
+		return remCents % n === 0 ? remCents / n / 100 : Math.sign(remCents) * 0.01;
 	}
 
-	// Spread the leftover across the column's members as evenly as possible (in cents): an
-	// even amount lands the same on everyone; an indivisible one drops the extra cents on the
-	// first few. One click always balances the column.
-	function distributeRemaining(listType: ListType) {
+	function applyStep(listType: ListType, id: string) {
 		const data = PAID_BY === listType ? paidBy : paidFor;
 		const handler = PAID_BY === listType ? setPaidBy : setPaidFor;
-		const ids = Object.keys(data);
-		const remCents = Math.round(getRemainingValue(listType) * 100);
-		if (!ids.length || remCents === 0) return;
-		const adds = splitCents(remCents, ids.length);
-		const next: AmountMap = { ...data };
-		ids.forEach((id, i) => {
-			next[id] = round((next[id] || 0) + adds[i] / 100);
-			manuallyChanged.current[id] = true;
-		});
-		handler(next);
-	}
-
-	// Nudge a single member by one cent toward balance, so the user picks who absorbs an
-	// indivisible remainder; click repeatedly (same or different people) until it's zero.
-	function addCent(listType: ListType, id: string) {
-		const data = PAID_BY === listType ? paidBy : paidFor;
-		const handler = PAID_BY === listType ? setPaidBy : setPaidFor;
-		const remaining = getRemainingValue(listType);
-		if (remaining === 0) return;
+		const step = stepFor(listType);
+		if (step === 0) return;
 		manuallyChanged.current[id] = true;
-		handler({ ...data, [id]: round((data[id] || 0) + Math.sign(remaining) * 0.01) });
+		handler({ ...data, [id]: round((data[id] || 0) + step) });
 	}
 
 	function handleGroupSubmit(event: FormEvent<HTMLFormElement>) {
@@ -209,11 +191,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 
 	function membersList(listType: ListType) {
 		const style = COLUMN_STYLE[listType];
-		const { remaining, evenlyDivisible } = remainderInfo(listType);
-		// Even leftovers are handled by the "split equally" action; only an indivisible
-		// remainder needs the per-member one-cent nudges to choose who absorbs it.
-		const showCent = remaining !== 0 && !evenlyDivisible;
-		const cent = Math.sign(remaining) * 0.01;
+		const step = stepFor(listType); // 0 when balanced
 		return group?.members?.map(({ id, name }) => {
 			const data = PAID_BY === listType ? paidBy : paidFor;
 			const checked = id in data;
@@ -233,12 +211,12 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						onChange={(e) => handleMemberChange(listType, id, 0, e.target.checked)}
 					/>
 					<span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
-					{checked && showCent && (
+					{checked && step !== 0 && (
 						<button
 							type="button"
 							onClick={(e) => {
 								e.preventDefault();
-								addCent(listType, id);
+								applyStep(listType, id);
 							}}
 							className="text-muted-foreground hover:text-foreground inline-flex shrink-0 cursor-pointer items-center gap-1 text-[10px] font-medium underline-offset-2 hover:underline"
 							title={t('ADD_REMAINING_TO_MEMBER')}
@@ -247,8 +225,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 							<Wand2 className="size-3" />
 							{t('ADD')}{' '}
 							<span className="tnum">
-								{cent > 0 ? '+' : ''}
-								{formatMoney(cent, i18n.language)}
+								{step > 0 ? '+' : ''}
+								{formatMoney(step, i18n.language)}
 							</span>
 						</button>
 					)}
@@ -273,7 +251,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	}
 
 	function remainingRow(listType: ListType) {
-		const { remaining, evenlyDivisible, shareCents } = remainderInfo(listType);
+		const remaining = getRemainingValue(listType);
 		const balanced = remaining === 0;
 		const invalid = attempted && !balanced; // flagged after a blocked save until balanced
 		return (
@@ -283,26 +261,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					invalid ? 'bg-destructive/10 rounded-md px-3 py-2' : 'border-t border-dashed pt-3',
 				)}
 			>
-				<span className="flex items-center gap-3">
-					<span className={invalid ? 'text-destructive' : 'text-muted-foreground'}>{t('REMAINING')}</span>
-					{!balanced && (
-						<button
-							type="button"
-							onClick={() => distributeRemaining(listType)}
-							className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1 text-[10px] font-medium underline-offset-2 hover:underline"
-						>
-							<Wand2 className="size-3" />
-							{t('SPLIT_EQUALLY')}
-							{evenlyDivisible && (
-								<span className="tnum">
-									{' '}
-									{shareCents > 0 ? '+' : ''}
-									{formatMoney(shareCents / 100, i18n.language)}
-								</span>
-							)}
-						</button>
-					)}
-				</span>
+				<span className={invalid ? 'text-destructive' : 'text-muted-foreground'}>{t('REMAINING')}</span>
 				<span
 					className={cn(
 						'tnum inline-flex items-center gap-1 font-semibold',
