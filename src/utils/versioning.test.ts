@@ -11,7 +11,7 @@ function core(partial: Partial<VersionedCore>): VersionedCore {
 }
 
 function version(v: number, before: VersionedCore, after: VersionedCore): EventVersion {
-	return { v, ts: '', changes: [], author: '', delta: differ.diff(before, after)! };
+	return { v, id: `v${v}`, ts: '', changes: [], author: '', delta: differ.diff(before, after)! };
 }
 
 describe('reconstructCore', () => {
@@ -37,6 +37,7 @@ describe('shouldConsolidate', () => {
 	const now = 1_000_000;
 	const recent = (): EventVersion => ({
 		v: 1,
+		id: 'v1',
 		ts: new Date(now - 1000).toISOString(),
 		changes: [{ key: 'TX_ADDED' }],
 		author: 'Ana',

@@ -15,6 +15,7 @@ import { create } from 'jsondiffpatch';
 import type { Delta } from 'jsondiffpatch';
 
 import type { Group, GroupConfig, Member, Transaction } from '../types';
+import { generateId } from './id';
 
 const historyStore = localforage.createInstance({ name: 'history' });
 
@@ -68,6 +69,8 @@ export interface ChangeEntry {
 
 export interface EventVersion {
 	v: number;
+	/** Stable global id — the idempotency key when syncing this version to the backend. */
+	id: string;
 	ts: string;
 	/** Per-action changes for this save, as translatable key+params. */
 	changes: ChangeEntry[];
@@ -199,6 +202,7 @@ export async function recordVersion(
 	const entries: ChangeEntry[] = changes.length ? changes : [{ key: 'EVENT_UPDATED' }];
 	const version: EventVersion = {
 		v: (last?.v || 0) + 1,
+		id: generateId(),
 		ts: new Date().toISOString(),
 		changes: entries,
 		author,

@@ -3,6 +3,7 @@ import { Moon, Sun, Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { useThemeContext } from '../../context/ThemeContext';
+import { SyncIndicator } from '../SyncIndicator';
 import { Button } from '@/components/ui/button';
 
 function Header() {
@@ -35,6 +36,7 @@ function Header() {
 				</nav>
 
 				<div className="flex items-center gap-1">
+					<SyncIndicator />
 					<Button
 						variant="ghost"
 						size="sm"

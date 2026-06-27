@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import localforage from 'localforage';
 
 import type { Group, GroupListItem } from '../types';
-import { recordVersion } from './versioning';
+import { recordVersion, coreOf } from './versioning';
 import type { ChangeEntry } from './versioning';
+import { enqueue } from './sync';
 import { getEventMemberId } from './identity';
 
 export interface SaveMeta {
@@ -132,7 +133,9 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 				const memberId = getEventMemberId(groupId);
 				const author = dataToSave.meta?.author || toSave.members?.find((m) => m.id === memberId)?.name || '';
 				// recordVersion derives change lines from the state diff (and logs creation on the first save).
-				await recordVersion(groupId, prev, toSave, { change: dataToSave.meta?.change, author });
+				const version = await recordVersion(groupId, prev, toSave, { change: dataToSave.meta?.change, author });
+				// Queue for background sync (durable outbox; flushes when online).
+				if (version) void enqueue(groupId, version, coreOf(toSave));
 				if (!abort) setDataToSave(null);
 				if (!abort) await updateGroupIndex(toSave, groupId);
 			}

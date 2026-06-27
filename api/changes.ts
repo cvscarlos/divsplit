@@ -1,19 +1,32 @@
+import { createHash } from 'node:crypto';
 import { connectDb } from './_lib/db';
 import { Change, EventDoc } from './_lib/models';
 
 /**
  * /api/changes
  *   GET  ?eventId=…&since=<ISO>  → changes for an event the device hasn't seen yet
- *   POST { change, core }        → append one change (insert-only, idempotent) and
- *                                  refresh the projection cache from the resulting core
+ *   POST { change, core }        → append one change and refresh the projection cache
  *
- * Slice-1 contract: the client sends the resulting `core` (config/members/transactions)
- * alongside the change, so the projection is a trivial upsert. Folding the delta
- * server-side and DAG conflict handling come in a later pass.
+ * The server owns the tamper-evidence chain: the client never sends a hash. The server
+ * chains the change onto the event's current head and computes hash = H(parents + payload),
+ * so the integrity of the log can't depend on trusting the client.
+ *
+ * Slice: the client also sends the resulting `core` (config/members/transactions), so the
+ * projection is a trivial upsert. Server-side delta-folding and DAG fork/conflict handling
+ * come in a later pass.
  */
 
+type InboundChange = {
+	id?: string; // stable change id (client generateId) → idempotency key
+	eventId?: string;
+	author?: string;
+	ts?: string; // when the action happened on the author's device
+	delta?: unknown; // reversible jsondiffpatch delta of the event core
+	summary?: { key: string; params?: unknown }[]; // translatable ChangeEntry[]
+};
+
 type PostBody = {
-	change?: { _id?: string; eventId?: string; hash?: string; [k: string]: unknown };
+	change?: InboundChange;
 	core?: { config?: unknown; members?: unknown[]; transactions?: unknown[] };
 };
 
@@ -35,13 +48,28 @@ export default async function handler(req: Request): Promise<Response> {
 
 	if (req.method === 'POST') {
 		const { change, core } = (await req.json()) as PostBody;
-		if (!change?._id || !change.eventId || !change.hash) {
-			return Response.json({ error: 'change { _id, eventId, hash } is required' }, { status: 400 });
+		if (!change?.id || !change.eventId) {
+			return Response.json({ error: 'change { id, eventId } is required' }, { status: 400 });
 		}
 
-		// Append-only + idempotent: a re-synced change (same _id or hash) is a no-op.
+		// Chain onto the event's current head; the server computes the hash.
+		const projection = await EventDoc.findById(change.eventId).lean<{ headHash?: string } | null>();
+		const parents = projection?.headHash ? [projection.headHash] : [];
+		const ts = change.ts ? new Date(change.ts) : new Date();
+		const payload = {
+			parents,
+			eventId: change.eventId,
+			id: change.id,
+			author: change.author || '',
+			ts,
+			delta: change.delta,
+			summary: change.summary || [],
+		};
+		const hash = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+
+		// Append-only + idempotent: a re-synced change (same id) is a no-op.
 		try {
-			await Change.create(change);
+			await Change.create({ _id: change.id, ...payload, hash });
 		} catch (err) {
 			if ((err as { code?: number }).code === 11000) {
 				return Response.json({ ok: true, duplicate: true });
@@ -59,14 +87,14 @@ export default async function handler(req: Request): Promise<Response> {
 						config: core.config || {},
 						members: core.members || [],
 						transactions: core.transactions || [],
-						headHash: change.hash,
+						headHash: hash,
 					},
 				},
 				{ upsert: true },
 			);
 		}
 
-		return Response.json({ ok: true });
+		return Response.json({ ok: true, hash });
 	}
 
 	return Response.json({ error: 'method not allowed' }, { status: 405 });
