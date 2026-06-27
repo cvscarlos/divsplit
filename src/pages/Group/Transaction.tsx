@@ -271,6 +271,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		const remaining = getRemainingValue(listType);
 		const balanced = remaining === 0;
 		const invalid = attempted && !balanced; // flagged after a blocked save until balanced
+		const memberCount = Object.keys(PAID_BY === listType ? paidBy : paidFor).length;
+		const perEach = memberCount ? round(remaining / memberCount) : 0;
 		return (
 			<div
 				className={cn(
@@ -287,7 +289,11 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 							className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1 text-[10px] font-medium underline-offset-2 hover:underline"
 						>
 							<Wand2 className="size-3" />
-							{t('SPLIT_EQUALLY')}
+							{t('SPLIT_EQUALLY')}{' '}
+							<span className="tnum">
+								({perEach > 0 ? '+' : ''}
+								{formatMoney(perEach, i18n.language)})
+							</span>
 						</button>
 					)}
 				</span>
