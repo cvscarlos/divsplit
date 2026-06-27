@@ -217,8 +217,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		return (
 			<div
 				className={cn(
-					'mt-3 flex items-center justify-between border-t border-dashed pt-3 text-sm',
-					invalid && 'bg-destructive/10 -mx-2 rounded-md px-2',
+					'mt-3 flex items-center justify-between text-sm',
+					invalid ? 'bg-destructive/10 rounded-md px-3 py-2' : 'border-t border-dashed pt-3',
 				)}
 			>
 				<span className={invalid ? 'text-destructive' : 'text-muted-foreground'}>{t('REMAINING')}</span>
