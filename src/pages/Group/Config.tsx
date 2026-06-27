@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, UserPlus, Save } from 'lucide-react';
+import { Trash2, UserPlus, Save, Download } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { useToast } from '../../components/Toast';
@@ -9,6 +9,7 @@ import { Avatar } from '../../components/Avatar';
 import { generateId } from '../../utils/id';
 import { EVENT_ICONS } from '../../utils/event-icons';
 import { memberInTransactions, reassignMember } from '../../utils/members';
+import { eventToTsv, downloadTsv } from '../../utils/export';
 import type { Group, Member, Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,8 +28,13 @@ export function GroupConfig() {
 	// The member pending deletion that still has transactions to reassign, and the target.
 	const [reassignFrom, setReassignFrom] = useState<Member | null>(null);
 	const [reassignTo, setReassignTo] = useState<string>('');
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const toast = useToast();
+
+	function exportTsv() {
+		const name = group.config?.name || 'divsplit';
+		downloadTsv(`${name}.tsv`, eventToTsv(group, t, i18n.language));
+	}
 
 	useEffect(() => {
 		setFormFields({ name: group.config?.name || '---' });
@@ -182,7 +188,10 @@ export function GroupConfig() {
 				</Card>
 			</div>
 
-			<div className="flex items-center justify-end gap-3">
+			<div className="flex items-center justify-between gap-3">
+				<Button type="button" variant="outline" onClick={exportTsv} title={t('EXPORT')}>
+					<Download /> {t('EXPORT')}
+				</Button>
 				<Button type="submit" size="lg">
 					<Save /> {t('SAVE')}
 				</Button>
