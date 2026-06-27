@@ -11,24 +11,24 @@ export function GroupHeader() {
 	const { groupId, section } = useParams();
 
 	const tabs = [
-		{ key: 'transactions', label: t('Transactions'), icon: Receipt },
-		{ key: 'settlement', label: t('Settle up'), icon: ArrowLeftRight },
-		{ key: 'config', label: t('Config'), icon: Settings2 },
-		{ key: 'history', label: t('History'), icon: History },
+		{ key: 'transactions', label: t('TRANSACTIONS'), icon: Receipt },
+		{ key: 'settlement', label: t('SETTLE_UP'), icon: ArrowLeftRight },
+		{ key: 'config', label: t('CONFIG'), icon: Settings2 },
+		{ key: 'history', label: t('HISTORY'), icon: History },
 	];
 
 	return (
 		<div className="mb-9">
-			<p className="text-muted-foreground text-center text-xs font-semibold tracking-[0.2em] uppercase">{t('Event')}</p>
+			<p className="text-muted-foreground text-center text-xs font-semibold tracking-[0.2em] uppercase">{t('EVENT')}</p>
 			<h1 className="mt-1.5 text-center font-sans text-4xl font-semibold tracking-tight sm:text-5xl">
-				{group.config?.name || t('Untitled event')}
+				{group.config?.name || t('UNTITLED_EVENT')}
 			</h1>
 
 			{currentMember && (
 				<p className="text-muted-foreground mt-2 text-center text-xs">
-					{t('You')}: <span className="text-foreground font-medium">{currentMember.name}</span> ·{' '}
+					{t('YOU')}: <span className="text-foreground font-medium">{currentMember.name}</span> ·{' '}
 					<button type="button" onClick={clearIdentity} className="hover:text-foreground underline">
-						{t('change')}
+						{t('CHANGE')}
 					</button>
 				</p>
 			)}

@@ -51,10 +51,10 @@ export function IdentityGate() {
 			<Card className="w-full max-w-md">
 				<CardHeader>
 					<CardTitle className="text-center text-2xl">
-						{isNewEvent ? t('Welcome to DivSplit') : t('Who are you?')}
+						{isNewEvent ? t('WELCOME_TO_DIV_SPLIT') : t('WHO_ARE_YOU')}
 					</CardTitle>
 					<p className="text-muted-foreground text-center text-sm">
-						{isNewEvent ? t("What's your name?") : t('Pick your name to continue')}
+						{isNewEvent ? t('WHATS_YOUR_NAME') : t('PICK_YOUR_NAME_TO_CONTINUE')}
 					</p>
 				</CardHeader>
 				<CardContent className="space-y-5">
@@ -75,11 +75,11 @@ export function IdentityGate() {
 					)}
 
 					<form onSubmit={join} className="space-y-2">
-						{!isNewEvent && <p className="text-muted-foreground text-center text-xs">{t("I'm not listed")}</p>}
+						{!isNewEvent && <p className="text-muted-foreground text-center text-xs">{t('IM_NOT_LISTED')}</p>}
 						<div className="flex gap-2">
-							<Input type="text" placeholder={t('Your name')} value={name} onChange={(e) => setName(e.target.value)} />
+							<Input type="text" placeholder={t('YOUR_NAME')} value={name} onChange={(e) => setName(e.target.value)} />
 							<Button type="submit" disabled={!name.trim()}>
-								<UserPlus /> {isNewEvent ? t('Continue') : t('Join')}
+								<UserPlus /> {isNewEvent ? t('CONTINUE') : t('JOIN')}
 							</Button>
 						</div>
 					</form>

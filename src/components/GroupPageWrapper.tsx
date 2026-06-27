@@ -54,9 +54,9 @@ function GroupContent() {
 			{needsSampleData && (
 				<div className="border-border bg-muted/40 mx-auto mt-8 flex max-w-md flex-col items-center gap-3 rounded-xl border border-dashed p-6 text-center">
 					<Sparkles className="text-primary size-6" />
-					<p className="text-muted-foreground text-sm">{t('Need some data to get started?')}</p>
+					<p className="text-muted-foreground text-sm">{t('NEED_SOME_DATA_TO_GET_STARTED')}</p>
 					<Button variant="outline" size="sm" onClick={loadDemo}>
-						{t('Load sample data')}
+						{t('LOAD_SAMPLE_DATA')}
 					</Button>
 				</div>
 			)}

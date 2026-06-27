@@ -86,11 +86,11 @@ export function GroupListTransactions() {
 	return (
 		<Card>
 			<CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
-				<CardTitle>{t('Transactions')}</CardTitle>
+				<CardTitle>{t('TRANSACTIONS')}</CardTitle>
 				{hasTransactions && (
 					<Button asChild size="sm">
 						<Link to={`/group/${groupId}/transactions/new`}>
-							<Plus /> {t('Add Transaction')}
+							<Plus /> {t('ADD_TRANSACTION')}
 						</Link>
 					</Button>
 				)}
@@ -100,10 +100,10 @@ export function GroupListTransactions() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<SortHead col="date" label={t('Date')} />
-								<SortHead col="description" label={t('Description')} />
-								<SortHead col="total" label={t('Total')} align="right" />
-								<TableHead className="text-right">{t('Edit')}</TableHead>
+								<SortHead col="date" label={t('DATE')} />
+								<SortHead col="description" label={t('DESCRIPTION')} />
+								<SortHead col="total" label={t('TOTAL')} align="right" />
+								<TableHead className="text-right">{t('EDIT')}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>{sorted.map(renderTransaction)}</TableBody>
@@ -113,10 +113,10 @@ export function GroupListTransactions() {
 						<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
 							<ReceiptText className="size-7" />
 						</span>
-						<p className="text-muted-foreground">{t('No transactions found')}</p>
+						<p className="text-muted-foreground">{t('NO_TRANSACTIONS_FOUND')}</p>
 						<Button asChild>
 							<Link to={`/group/${groupId}/transactions/new`}>
-								<Plus /> {t('Add Transaction')}
+								<Plus /> {t('ADD_TRANSACTION')}
 							</Link>
 						</Button>
 					</div>

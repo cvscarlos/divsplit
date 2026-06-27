@@ -27,7 +27,7 @@ export function GroupTopUp() {
 	if (members.length === 0) {
 		return (
 			<Card className="mx-auto max-w-md text-center">
-				<CardContent className="text-muted-foreground py-10">{t('No transactions found')}</CardContent>
+				<CardContent className="text-muted-foreground py-10">{t('NO_TRANSACTIONS_FOUND')}</CardContent>
 			</Card>
 		);
 	}
@@ -35,7 +35,7 @@ export function GroupTopUp() {
 	function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		if (!memberId || !amount) {
-			setError(t('Please choose a member and an amount.'));
+			setError(t('PLEASE_CHOOSE_A_MEMBER_AND_AN_AMOUNT'));
 			return;
 		}
 		const txn: Transaction = {
@@ -57,13 +57,13 @@ export function GroupTopUp() {
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						<PiggyBank className="text-primary size-5" /> {t('Top up')}
+						<PiggyBank className="text-primary size-5" /> {t('TOP_UP')}
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div>
 						<Label htmlFor="topup-member" className="mb-1.5">
-							{t('Member')}
+							{t('MEMBER')}
 						</Label>
 						<select
 							id="topup-member"
@@ -73,14 +73,14 @@ export function GroupTopUp() {
 						>
 							{members.map((m) => (
 								<option key={m.id} value={m.id}>
-									{m.name || t('Name')}
+									{m.name || t('NAME')}
 								</option>
 							))}
 						</select>
 					</div>
 					<div>
 						<Label htmlFor="topup-amount" className="mb-1.5">
-							{t('Amount')}
+							{t('AMOUNT')}
 						</Label>
 						<div className="relative">
 							<span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
@@ -98,12 +98,12 @@ export function GroupTopUp() {
 					</div>
 					<div>
 						<Label htmlFor="topup-note" className="mb-1.5">
-							{t('Note')}
+							{t('NOTE')}
 						</Label>
 						<Input
 							id="topup-note"
 							type="text"
-							placeholder={t('TypeHere')}
+							placeholder={t('TYPE_HERE')}
 							value={note}
 							onChange={(e) => setNote(e.target.value)}
 						/>
@@ -115,7 +115,7 @@ export function GroupTopUp() {
 							</p>
 						)}
 						<Button type="submit">
-							<PiggyBank /> {t('Top up')}
+							<PiggyBank /> {t('TOP_UP')}
 						</Button>
 					</div>
 				</CardContent>

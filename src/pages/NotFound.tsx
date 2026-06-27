@@ -13,7 +13,7 @@ export function NotFound() {
 				<Compass className="size-8" />
 			</span>
 			<p className="font-sans text-7xl font-semibold tracking-tight">404</p>
-			<p className="text-muted-foreground max-w-sm">{t('Content not found')}</p>
+			<p className="text-muted-foreground max-w-sm">{t('CONTENT_NOT_FOUND')}</p>
 			<Button asChild variant="outline">
 				<Link to="/">DivSplit</Link>
 			</Button>

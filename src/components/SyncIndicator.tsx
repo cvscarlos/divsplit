@@ -14,10 +14,10 @@ export function SyncIndicator() {
 	const status = useSyncExternalStore(subscribeSync, getSyncStatus, getSyncStatus);
 
 	const map = {
-		synced: { Icon: CloudCheck, label: t('All changes saved'), spin: false },
-		syncing: { Icon: RefreshCw, label: t('Syncing…'), spin: true },
-		pending: { Icon: Cloud, label: t('Waiting to sync'), spin: false },
-		offline: { Icon: CloudOff, label: t('Offline — saved on this device'), spin: false },
+		synced: { Icon: CloudCheck, label: t('ALL_CHANGES_SAVED'), spin: false },
+		syncing: { Icon: RefreshCw, label: t('SYNCING'), spin: true },
+		pending: { Icon: Cloud, label: t('WAITING_TO_SYNC'), spin: false },
+		offline: { Icon: CloudOff, label: t('OFFLINE_SAVED_ON_THIS_DEVICE'), spin: false },
 	} as const;
 	const { Icon, label, spin } = map[status];
 

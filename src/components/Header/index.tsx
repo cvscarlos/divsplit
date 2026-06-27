@@ -31,7 +31,7 @@ function Header() {
 						to="/"
 						className="text-muted-foreground hover:text-foreground text-sm tracking-[0.2em] uppercase transition-colors"
 					>
-						{t('Events')}
+						{t('EVENTS')}
 					</Link>
 				</nav>
 

@@ -57,14 +57,14 @@ function HomePage() {
 
 					<div className="space-y-6">
 						<h1 className="text-foreground text-5xl font-extralight tracking-tight md:text-7xl">
-							{t('HeroLine1')}
+							{t('HERO_LINE1')}
 							<br />
 							<span className="from-primary to-secondary bg-gradient-to-r bg-clip-text font-bold text-transparent">
-								{t('HeroAccent')}
+								{t('HERO_ACCENT')}
 							</span>
 						</h1>
 						<p className="text-muted-foreground mx-auto max-w-xl text-lg font-light text-pretty md:text-xl">
-							{t('HeroSubtitle')}
+							{t('HERO_SUBTITLE')}
 						</p>
 					</div>
 
@@ -74,18 +74,18 @@ function HomePage() {
 							onClick={createGroup}
 							className="group rounded-full px-12 py-7 text-base font-semibold tracking-wider uppercase shadow-[0_18px_50px_-12px_color-mix(in_srgb,var(--primary)_55%,transparent)] transition-transform hover:-translate-y-1"
 						>
-							{t('Create an event')}
+							{t('CREATE_AN_EVENT')}
 							<ArrowUpRight className="transition-transform group-hover:rotate-45" />
 						</Button>
 						<div className="text-muted-foreground/50 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] tracking-[0.3em] uppercase">
 							<span className="flex items-center gap-2">
-								<ShieldCheck className="size-4" /> {t('Secure')}
+								<ShieldCheck className="size-4" /> {t('SECURE')}
 							</span>
 							<span className="flex items-center gap-2">
-								<Gauge className="size-4" /> {t('Real-time')}
+								<Gauge className="size-4" /> {t('REAL_TIME')}
 							</span>
 							<span className="flex items-center gap-2">
-								<FileSpreadsheet className="size-4" /> {t('No spreadsheets')}
+								<FileSpreadsheet className="size-4" /> {t('NO_SPREADSHEETS')}
 							</span>
 						</div>
 					</div>
@@ -96,41 +96,41 @@ function HomePage() {
 			<section className="mx-auto max-w-3xl space-y-20 px-6 py-24 text-center">
 				<div>
 					<ShieldCheck className="text-secondary mx-auto size-8" />
-					<h2 className="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{t('PrivacyHeadline')}</h2>
-					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg text-pretty">{t('PrivacyBody')}</p>
+					<h2 className="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{t('PRIVACY_HEADLINE')}</h2>
+					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg text-pretty">{t('PRIVACY_BODY')}</p>
 				</div>
 				<div>
 					<Sparkles className="text-primary mx-auto size-8" />
-					<h2 className="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{t('MomentHeadline')}</h2>
-					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg text-pretty">{t('MomentBody')}</p>
+					<h2 className="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{t('MOMENT_HEADLINE')}</h2>
+					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg text-pretty">{t('MOMENT_BODY')}</p>
 				</div>
 				<div>
 					<History className="text-secondary mx-auto size-8" />
-					<h2 className="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{t('TrustHeadline')}</h2>
-					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg text-pretty">{t('TrustBody')}</p>
+					<h2 className="mt-4 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{t('TRUST_HEADLINE')}</h2>
+					<p className="text-muted-foreground mx-auto mt-4 max-w-xl text-lg text-pretty">{t('TRUST_BODY')}</p>
 				</div>
 			</section>
 
 			<section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
 				{loading ? (
 					<div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
-						<Loader2 className="size-5 animate-spin" /> {t('Loading')}
+						<Loader2 className="size-5 animate-spin" /> {t('LOADING')}
 					</div>
 				) : groupList.length === 0 ? (
 					<div className="border-border bg-card/50 flex flex-col items-center gap-3 rounded-2xl border border-dashed p-12 text-center">
 						<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
 							<Users className="size-7" />
 						</span>
-						<p className="text-muted-foreground">{t('No events yet')}</p>
+						<p className="text-muted-foreground">{t('NO_EVENTS_YET')}</p>
 						<Button onClick={createGroup}>
-							<Plus /> {t('createGroup')}
+							<Plus /> {t('CREATE_GROUP')}
 						</Button>
 					</div>
 				) : (
 					<>
 						<div className="mb-6 flex flex-col gap-1">
-							<h2 className="font-sans text-2xl font-semibold tracking-tight">{t('GenGroupTitle')}</h2>
-							<p className="text-muted-foreground text-sm">{t('GenGroupSubTitle')}</p>
+							<h2 className="font-sans text-2xl font-semibold tracking-tight">{t('GEN_GROUP_TITLE')}</h2>
+							<p className="text-muted-foreground text-sm">{t('GEN_GROUP_SUB_TITLE')}</p>
 						</div>
 						<CardContainer>
 							{groupList.map((groupItem) => (
@@ -144,7 +144,7 @@ function HomePage() {
 								<span className="bg-muted group-hover:bg-primary/10 flex size-12 items-center justify-center rounded-full transition-colors">
 									<Plus className="size-6" />
 								</span>
-								<span className="text-sm font-medium">{t('createGroup')}</span>
+								<span className="text-sm font-medium">{t('CREATE_GROUP')}</span>
 							</button>
 						</CardContainer>
 					</>
@@ -154,14 +154,14 @@ function HomePage() {
 			<footer className="border-border border-t border-dashed">
 				<div className="text-muted-foreground mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 py-8 text-xs sm:flex-row sm:px-6">
 					<span>
-						© {new Date().getFullYear()} DivSplit — {t('All rights reserved')}.
+						© {new Date().getFullYear()} DivSplit — {t('ALL_RIGHTS_RESERVED')}.
 					</span>
 					<div className="flex gap-4">
 						<button type="button" className="hover:text-primary transition-colors hover:underline">
-							{t('Privacy Policy')}
+							{t('PRIVACY_POLICY')}
 						</button>
 						<button type="button" className="hover:text-primary transition-colors hover:underline">
-							{t('Terms of Service')}
+							{t('TERMS_OF_SERVICE')}
 						</button>
 					</div>
 				</div>

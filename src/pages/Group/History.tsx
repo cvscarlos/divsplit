@@ -43,7 +43,7 @@ export function GroupHistory() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t('History')}</CardTitle>
+				<CardTitle>{t('HISTORY')}</CardTitle>
 			</CardHeader>
 			<CardContent>
 				{versions.length === 0 ? (
@@ -51,8 +51,8 @@ export function GroupHistory() {
 						<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
 							<GitCommitVertical className="size-7" />
 						</span>
-						<p className="text-muted-foreground">{t('No history yet')}</p>
-						<p className="text-muted-foreground/70 max-w-xs text-sm">{t('VersionsHint')}</p>
+						<p className="text-muted-foreground">{t('NO_HISTORY_YET')}</p>
+						<p className="text-muted-foreground/70 max-w-xs text-sm">{t('VERSIONS_HINT')}</p>
 					</div>
 				) : (
 					<ul className="divide-border divide-y">
@@ -72,16 +72,16 @@ export function GroupHistory() {
 										<p className="text-muted-foreground mt-1 text-xs">
 											v{version.v}
 											{version.author ? ` · ${version.author}` : ''} · {relativeTime(version.ts, i18n.language)}
-											{isHead ? ` · ${t('Current')}` : ''}
+											{isHead ? ` · ${t('CURRENT')}` : ''}
 										</p>
 										{version.v !== genesis && (
 											<button
 												type="button"
 												className="text-primary mt-1.5 inline-flex items-center gap-1 text-xs hover:underline"
 												onClick={() => revert(version.v)}
-												aria-label={t('Revert this change')}
+												aria-label={t('REVERT_THIS_CHANGE')}
 											>
-												<RotateCcw className="size-3.5" /> {t('Revert')}
+												<RotateCcw className="size-3.5" /> {t('REVERT')}
 											</button>
 										)}
 									</div>

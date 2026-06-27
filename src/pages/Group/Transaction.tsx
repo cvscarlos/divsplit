@@ -128,7 +128,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				updatedGroup.transactions = newTransactions;
 			}
 			updateGroup(updatedGroup);
-			toast(t('Saved'));
+			toast(t('SAVED'));
 			navigate(`/group/${groupId}/transactions`);
 		} catch (err) {
 			console.error('Error submitting transaction:', err);
@@ -143,7 +143,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			transactions: (group.transactions || []).filter((tx) => tx.id !== existingTransaction.id),
 		};
 		updateGroup(updatedGroup);
-		toast(t('Deleted'));
+		toast(t('DELETED'));
 		navigate(`/group/${groupId}/transactions`);
 	}
 
@@ -192,7 +192,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		const balanced = remaining === 0;
 		return (
 			<div className="mt-3 flex items-center justify-between border-t border-dashed pt-3 text-sm">
-				<span className="text-muted-foreground">{t('Remaining')}</span>
+				<span className="text-muted-foreground">{t('REMAINING')}</span>
 				<span
 					className={cn(
 						'tnum inline-flex items-center gap-1 font-semibold',
@@ -211,7 +211,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		return (
 			<Card className="mx-auto max-w-md text-center">
 				<CardHeader>
-					<CardTitle>{t('Transaction')}</CardTitle>
+					<CardTitle>{t('TRANSACTION')}</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<p className="text-muted-foreground text-sm">No members found in this group.</p>
@@ -227,12 +227,12 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 		<form onSubmit={handleGroupSubmit} className="space-y-6">
 			<Card>
 				<CardHeader>
-					<CardTitle>{t('Transaction')}</CardTitle>
+					<CardTitle>{t('TRANSACTION')}</CardTitle>
 				</CardHeader>
 				<CardContent className="grid gap-4 sm:grid-cols-3">
 					<div>
 						<Label htmlFor="tx-date" className="mb-1.5">
-							{t('Date')}
+							{t('DATE')}
 						</Label>
 						<Input
 							id="tx-date"
@@ -245,7 +245,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					</div>
 					<div>
 						<Label htmlFor="tx-total" className="mb-1.5">
-							{t('Total')}
+							{t('TOTAL')}
 						</Label>
 						<div className="relative">
 							<span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
@@ -265,13 +265,13 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					</div>
 					<div>
 						<Label htmlFor="tx-desc" className="mb-1.5">
-							{t('Description')}
+							{t('DESCRIPTION')}
 						</Label>
 						<Input
 							id="tx-desc"
 							type="text"
 							name="description"
-							placeholder={t('TypeHere')}
+							placeholder={t('TYPE_HERE')}
 							aria-invalid={Boolean(error) && !description}
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
@@ -284,7 +284,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-lg">
-							<Wallet className="text-primary size-5" /> {t('Paid by')}
+							<Wallet className="text-primary size-5" /> {t('PAID_BY')}
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
@@ -296,7 +296,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-lg">
-							<HandCoins className="text-primary size-5" /> {t('Paid for')}
+							<HandCoins className="text-primary size-5" /> {t('PAID_FOR')}
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
@@ -314,7 +314,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						className="text-muted-foreground hover:text-destructive"
 						onClick={() => setConfirmingDelete(true)}
 					>
-						<Trash2 /> {t('Delete')}
+						<Trash2 /> {t('DELETE')}
 					</Button>
 				) : (
 					<span />
@@ -326,7 +326,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						</p>
 					)}
 					<Button type="submit" size="lg">
-						<Save /> {t('Save')}
+						<Save /> {t('SAVE')}
 					</Button>
 				</div>
 			</div>
@@ -339,15 +339,15 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 				>
 					<Card className="w-full max-w-sm">
 						<CardHeader>
-							<CardTitle>{t('Delete this transaction?')}</CardTitle>
-							<CardDescription>{t('DeleteTransactionHint')}</CardDescription>
+							<CardTitle>{t('DELETE_THIS_TRANSACTION')}</CardTitle>
+							<CardDescription>{t('DELETE_TRANSACTION_HINT')}</CardDescription>
 						</CardHeader>
 						<CardContent className="flex justify-end gap-2">
 							<Button type="button" variant="outline" onClick={() => setConfirmingDelete(false)}>
-								{t('Cancel')}
+								{t('CANCEL')}
 							</Button>
 							<Button type="button" variant="destructive" onClick={confirmDelete}>
-								<Trash2 /> {t('Delete')}
+								<Trash2 /> {t('DELETE')}
 							</Button>
 						</CardContent>
 					</Card>

@@ -83,7 +83,7 @@ export function GroupConfig() {
 		};
 
 		updateGroup(updatedGroup);
-		toast(t('Saved'));
+		toast(t('SAVED'));
 	}
 
 	return (
@@ -91,24 +91,24 @@ export function GroupConfig() {
 			<div className="grid gap-6 md:grid-cols-5">
 				<Card className="md:col-span-2">
 					<CardHeader>
-						<CardTitle>{t('GroupInformation')}</CardTitle>
-						<CardDescription>{t('GroupName')}</CardDescription>
+						<CardTitle>{t('GROUP_INFORMATION')}</CardTitle>
+						<CardDescription>{t('GROUP_NAME')}</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<Label htmlFor="group-name" className="mb-2">
-							{t('GroupName')}
+							{t('GROUP_NAME')}
 						</Label>
 						<Input
 							id="group-name"
 							type="text"
-							placeholder={t('TypeHere')}
+							placeholder={t('TYPE_HERE')}
 							value={formFields.name}
 							name="name"
 							onChange={handleFieldChange}
 						/>
 
 						<Label htmlFor="group-holder" className="mt-4 mb-2">
-							{t('Top-holder')}
+							{t('TOP_HOLDER')}
 						</Label>
 						<select
 							id="group-holder"
@@ -118,13 +118,13 @@ export function GroupConfig() {
 						>
 							{members.map((member) => (
 								<option key={member.id} value={member.id}>
-									{member.name || t('Name')}
+									{member.name || t('NAME')}
 								</option>
 							))}
 						</select>
-						<p className="text-muted-foreground mt-1.5 text-xs">{t('HolderHint')}</p>
+						<p className="text-muted-foreground mt-1.5 text-xs">{t('HOLDER_HINT')}</p>
 
-						<Label className="mt-4 mb-2">{t('Icon')}</Label>
+						<Label className="mt-4 mb-2">{t('ICON')}</Label>
 						<div className="flex flex-wrap gap-1.5">
 							{Object.entries(EVENT_ICONS).map(([name, Ico]) => (
 								<button
@@ -147,7 +147,7 @@ export function GroupConfig() {
 
 				<Card className="md:col-span-3">
 					<CardHeader>
-						<CardTitle>{t('Members')}</CardTitle>
+						<CardTitle>{t('MEMBERS')}</CardTitle>
 						<CardDescription>{members.length}</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
@@ -155,10 +155,10 @@ export function GroupConfig() {
 							<div key={member.id} className="flex items-end gap-3">
 								<Avatar name={member.name || '?'} className="mb-1.5" />
 								<div className="flex-1">
-									<Label className="text-muted-foreground mb-1.5 text-xs">{t('Name')}</Label>
+									<Label className="text-muted-foreground mb-1.5 text-xs">{t('NAME')}</Label>
 									<Input
 										type="text"
-										placeholder={t('TypeHere')}
+										placeholder={t('TYPE_HERE')}
 										value={member.name}
 										onChange={(event) => handleMemberName(member, event)}
 									/>
@@ -176,7 +176,7 @@ export function GroupConfig() {
 							</div>
 						))}
 						<Button type="button" variant="outline" size="sm" onClick={addMember}>
-							<UserPlus /> {t('addMember')}
+							<UserPlus /> {t('ADD_MEMBER')}
 						</Button>
 					</CardContent>
 				</Card>
@@ -184,7 +184,7 @@ export function GroupConfig() {
 
 			<div className="flex items-center justify-end gap-3">
 				<Button type="submit" size="lg">
-					<Save /> {t('Save')}
+					<Save /> {t('SAVE')}
 				</Button>
 			</div>
 
@@ -196,8 +196,8 @@ export function GroupConfig() {
 				>
 					<Card className="w-full max-w-sm">
 						<CardHeader>
-							<CardTitle>{t('Move transactions')}</CardTitle>
-							<CardDescription>{t('MoveTransactionsHint', { name: reassignFrom.name || t('Name') })}</CardDescription>
+							<CardTitle>{t('MOVE_TRANSACTIONS')}</CardTitle>
+							<CardDescription>{t('MOVE_TRANSACTIONS_HINT', { name: reassignFrom.name || t('NAME') })}</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<select
@@ -209,16 +209,16 @@ export function GroupConfig() {
 									.filter((m) => m.id !== reassignFrom.id)
 									.map((m) => (
 										<option key={m.id} value={m.id}>
-											{m.name || t('Name')}
+											{m.name || t('NAME')}
 										</option>
 									))}
 							</select>
 							<div className="flex justify-end gap-2">
 								<Button type="button" variant="outline" onClick={() => setReassignFrom(null)}>
-									{t('Cancel')}
+									{t('CANCEL')}
 								</Button>
 								<Button type="button" onClick={confirmReassign} disabled={!reassignTo}>
-									{t('Move and remove')}
+									{t('MOVE_AND_REMOVE')}
 								</Button>
 							</div>
 						</CardContent>

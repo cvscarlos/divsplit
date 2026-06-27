@@ -30,7 +30,7 @@ function UndoRow({ children, amount, onUndo }: { children: ReactNode; amount: nu
 				className="text-muted-foreground hover:text-destructive shrink-0"
 				onClick={onUndo}
 			>
-				<Undo2 /> {t('Undo')}
+				<Undo2 /> {t('UNDO')}
 			</Button>
 		</li>
 	);
@@ -73,7 +73,7 @@ export function GroupSettlement() {
 	if (!group.members || group.members.length === 0) {
 		return (
 			<Card className="mx-auto max-w-md text-center">
-				<CardContent className="text-muted-foreground py-10">{t('No transactions found')}</CardContent>
+				<CardContent className="text-muted-foreground py-10">{t('NO_TRANSACTIONS_FOUND')}</CardContent>
 			</Card>
 		);
 	}
@@ -83,7 +83,7 @@ export function GroupSettlement() {
 			<div className="flex justify-end">
 				<Button asChild variant="outline" size="sm">
 					<Link to={`/group/${groupId}/topup`}>
-						<PiggyBank /> {t('Top up')}
+						<PiggyBank /> {t('TOP_UP')}
 					</Link>
 				</Button>
 			</div>
@@ -91,7 +91,7 @@ export function GroupSettlement() {
 			<div className="grid gap-6 md:grid-cols-2">
 				<Card>
 					<CardHeader>
-						<CardTitle>{t('Balances')}</CardTitle>
+						<CardTitle>{t('BALANCES')}</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-1">
 						{balances.map((b) => {
@@ -106,11 +106,11 @@ export function GroupSettlement() {
 									<span className="min-w-0 flex-1">
 										<span className="flex items-center gap-2 text-sm font-medium">
 											<span className="truncate">{b.name}</span>
-											{b.memberId === holderId && <Badge variant="muted">{t('Holder')}</Badge>}
+											{b.memberId === holderId && <Badge variant="muted">{t('HOLDER')}</Badge>}
 										</span>
 										{deposited[b.memberId] ? (
 											<span className="text-muted-foreground tnum block text-xs">
-												{t('Deposited')} {formatMoney(deposited[b.memberId], i18n.language)}
+												{t('DEPOSITED')} {formatMoney(deposited[b.memberId], i18n.language)}
 											</span>
 										) : null}
 									</span>
@@ -120,10 +120,10 @@ export function GroupSettlement() {
 											settled ? 'text-muted-foreground' : positive ? 'text-primary' : 'text-foreground',
 										)}
 									>
-										{settled ? t('settled') : formatMoney(Math.abs(b.balance), i18n.language)}
+										{settled ? t('SETTLED') : formatMoney(Math.abs(b.balance), i18n.language)}
 									</span>
 									{!settled && (
-										<Badge variant={positive ? 'default' : 'secondary'}>{positive ? t('gets back') : t('owes')}</Badge>
+										<Badge variant={positive ? 'default' : 'secondary'}>{positive ? t('GETS_BACK') : t('OWES')}</Badge>
 									)}
 								</div>
 							);
@@ -133,7 +133,7 @@ export function GroupSettlement() {
 
 				<Card>
 					<CardHeader>
-						<CardTitle>{t('Transfers')}</CardTitle>
+						<CardTitle>{t('TRANSFERS')}</CardTitle>
 					</CardHeader>
 					<CardContent>
 						{transfers.length === 0 ? (
@@ -141,7 +141,7 @@ export function GroupSettlement() {
 								<span className="bg-muted text-muted-foreground flex size-14 items-center justify-center rounded-full">
 									<ArrowLeftRight className="size-7" />
 								</span>
-								<p className="text-muted-foreground">{t('Everyone is settled up')}</p>
+								<p className="text-muted-foreground">{t('EVERYONE_IS_SETTLED_UP')}</p>
 							</div>
 						) : (
 							<ul className="space-y-2">
@@ -163,7 +163,7 @@ export function GroupSettlement() {
 											className="ml-1 shrink-0"
 											onClick={() => markPaid(tr)}
 										>
-											<Check /> {t('Mark paid')}
+											<Check /> {t('MARK_PAID')}
 										</Button>
 									</li>
 								))}
@@ -176,7 +176,7 @@ export function GroupSettlement() {
 			{recordedTopups.length > 0 && (
 				<Card>
 					<CardHeader>
-						<CardTitle>{t('Top-ups')}</CardTitle>
+						<CardTitle>{t('TOP_UPS')}</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<ul className="space-y-2">
@@ -197,7 +197,7 @@ export function GroupSettlement() {
 			{recordedTransfers.length > 0 && (
 				<Card>
 					<CardHeader>
-						<CardTitle>{t('Recorded payments')}</CardTitle>
+						<CardTitle>{t('RECORDED_PAYMENTS')}</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<ul className="space-y-2">
