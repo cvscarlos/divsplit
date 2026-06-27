@@ -6,7 +6,7 @@ import { Wallet, HandCoins, Save, Check, Trash2 } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { useToast } from '../../components/Toast';
-import { getTransactionError, autoSplit, round } from '../../utils/transaction';
+import { getTransactionError, autoSplit, round, isTransactionBalanced } from '../../utils/transaction';
 import { formatMoney } from '../../utils/money';
 import { generateId } from '../../utils/id';
 import type { AmountMap, Group, Transaction } from '../../types';
@@ -112,6 +112,12 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			setError(validationError);
 			return;
 		}
+		// Both sides must add up to the total — block saving a split that leaves money
+		// unassigned (e.g. a rounding remainder), even when editing a previously-bad row.
+		if (!isTransactionBalanced(total, paidBy, paidFor)) {
+			setError(t('SPLIT_NOT_BALANCED'));
+			return;
+		}
 		setError(null);
 
 		try {
@@ -181,8 +187,8 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 						checked={checked}
 						onChange={(e) => handleMemberChange(listType, id, 0, e.target.checked)}
 					/>
-					<span className="flex-1 text-sm font-medium">{name}</span>
-					<div className="relative w-28">
+					<span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
+					<div className="relative w-36 shrink-0">
 						<span className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm">
 							$
 						</span>

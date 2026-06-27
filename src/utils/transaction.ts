@@ -10,6 +10,16 @@ export function round(value: number): number {
 	return Math.round(value * 100) / 100;
 }
 
+const sumAmounts = (m: AmountMap = {}): number => Object.values(m).reduce((sum, v) => sum + v, 0);
+
+/**
+ * A transaction is balanced when both sides add up to the total: the payers (`paidBy`)
+ * cover it and the consumers (`paidFor`) account for all of it. Cent-rounding tolerated.
+ */
+export function isTransactionBalanced(total: number, paidBy: AmountMap, paidFor: AmountMap): boolean {
+	return round(total - sumAmounts(paidBy)) === 0 && round(total - sumAmounts(paidFor)) === 0;
+}
+
 /**
  * Distribute `total` across the members present in `amounts`: members the user
  * typed an amount for (flagged in `manual`) keep their value; everyone else

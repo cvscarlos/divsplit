@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { getTransactionError, autoSplit } from './transaction';
+import { getTransactionError, autoSplit, isTransactionBalanced } from './transaction';
 
 describe('getTransactionError', () => {
 	it('returns null when date, total and description are all present and valid', () => {
@@ -43,5 +43,27 @@ describe('autoSplit', () => {
 
 	it('never assigns a negative share when manual amounts exceed the total', () => {
 		expect(autoSplit({ a: 50, b: 0 }, { a: true }, 40)).toEqual({ a: 50, b: 0 });
+	});
+});
+
+describe('isTransactionBalanced', () => {
+	it('is balanced when both sides sum to the total', () => {
+		expect(isTransactionBalanced(40, { a: 40 }, { a: 20, b: 20 })).toBe(true);
+	});
+
+	it('flags a few cents left unassigned on the consumed side', () => {
+		// Regression: 236,55 split into 7×33,79 = 236,53 leaves 0,02 → invalid.
+		expect(
+			isTransactionBalanced(
+				236.55,
+				{ a: 236.55 },
+				{ a: 33.79, b: 33.79, c: 33.79, d: 33.79, e: 33.79, f: 33.79, g: 33.79 },
+			),
+		).toBe(false);
+	});
+
+	it('flags when nobody paid or nobody consumed', () => {
+		expect(isTransactionBalanced(40, {}, { a: 40 })).toBe(false);
+		expect(isTransactionBalanced(40, { a: 40 }, {})).toBe(false);
 	});
 });

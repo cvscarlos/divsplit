@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Pencil, Plus, ReceiptText, ArrowUp, ArrowDown } from 'lucide-react';
+import { Pencil, Plus, ReceiptText, ArrowUp, ArrowDown, TriangleAlert } from 'lucide-react';
 
 import { useGroupContext } from '../../context/GroupContext';
 import { formatMoney } from '../../utils/money';
+import { isTransactionBalanced } from '../../utils/transaction';
 import type { Transaction } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,12 +33,22 @@ export function GroupListTransactions() {
 
 	function renderTransaction(transaction: Transaction) {
 		const { id, total, date, description } = transaction;
+		const invalid = !isTransactionBalanced(total, transaction.paidBy, transaction.paidFor);
 		return (
 			<TableRow key={id} className="cursor-pointer" onClick={() => navigate(`/group/${groupId}/transactions/${id}`)}>
 				<TableCell className="text-muted-foreground tnum">
 					{date ? new Date(date).toLocaleDateString(locale) : '—'}
 				</TableCell>
-				<TableCell className="font-medium">{description}</TableCell>
+				<TableCell className="font-medium">
+					<span className="inline-flex items-center gap-1.5">
+						{invalid && (
+							<span title={t('TX_INVALID')} aria-label={t('TX_INVALID')} className="text-amber-500">
+								<TriangleAlert className="size-4 shrink-0" />
+							</span>
+						)}
+						{description}
+					</span>
+				</TableCell>
 				<TableCell className="tnum text-right font-semibold">{formatMoney(total, i18n.language)}</TableCell>
 				<TableCell className="w-12 text-right">
 					<Button
