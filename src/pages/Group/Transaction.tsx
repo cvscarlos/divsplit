@@ -213,13 +213,19 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	function remainingRow(listType: ListType) {
 		const remaining = getRemainingValue(listType);
 		const balanced = remaining === 0;
+		const invalid = attempted && !balanced; // flagged after a blocked save until balanced
 		return (
-			<div className="mt-3 flex items-center justify-between border-t border-dashed pt-3 text-sm">
-				<span className="text-muted-foreground">{t('REMAINING')}</span>
+			<div
+				className={cn(
+					'mt-3 flex items-center justify-between border-t border-dashed pt-3 text-sm',
+					invalid && 'bg-destructive/10 -mx-2 rounded-md px-2',
+				)}
+			>
+				<span className={invalid ? 'text-destructive' : 'text-muted-foreground'}>{t('REMAINING')}</span>
 				<span
 					className={cn(
 						'tnum inline-flex items-center gap-1 font-semibold',
-						balanced ? 'text-muted-foreground' : COLUMN_STYLE[listType].tint,
+						balanced ? 'text-muted-foreground' : invalid ? 'text-destructive' : COLUMN_STYLE[listType].tint,
 					)}
 				>
 					{balanced && <Check className="size-4" />}
