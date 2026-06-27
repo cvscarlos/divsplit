@@ -192,49 +192,55 @@ export async function pull(eventId: string): Promise<boolean> {
 	await flush(); // push pending local edits first
 	if (await outboxHas(eventId)) return false; // still unsynced → retry on the next tick
 
-	let projection: { config?: unknown; members?: unknown[]; transactions?: unknown[] } | undefined;
-	let changes: RemoteChange[];
+	setStatus('syncing'); // any Mongo round-trip shows the spinning cloud
 	try {
-		const [pRes, cRes] = await Promise.all([
-			fetch(`/api/event?id=${encodeURIComponent(eventId)}`),
-			fetch(`/api/changes?eventId=${encodeURIComponent(eventId)}`),
-		]);
-		if (!pRes.ok || !cRes.ok) return false;
-		projection = ((await pRes.json()) as { event?: typeof projection }).event;
-		changes = ((await cRes.json()) as { changes?: RemoteChange[] }).changes || [];
-	} catch {
-		return false; // offline / backend down
+		let projection: { config?: unknown; members?: unknown[]; transactions?: unknown[] } | undefined;
+		let changes: RemoteChange[];
+		try {
+			const [pRes, cRes] = await Promise.all([
+				fetch(`/api/event?id=${encodeURIComponent(eventId)}`),
+				fetch(`/api/changes?eventId=${encodeURIComponent(eventId)}`),
+			]);
+			if (!cRes.ok || (!pRes.ok && pRes.status !== 404)) return false; // real error → bail
+			changes = ((await cRes.json()) as { changes?: RemoteChange[] }).changes || [];
+			// 404 = the event isn't on the server yet (not an error) → leave projection undefined.
+			projection = pRes.status === 404 ? undefined : ((await pRes.json()) as { event?: typeof projection }).event;
+		} catch {
+			return false; // offline / backend down
+		}
+		if (!projection) {
+			await backfillToServer(eventId); // server doesn't have it but we do → upload our copy
+			return false;
+		}
+
+		const core = {
+			config: projection.config || {},
+			members: projection.members || [],
+			transactions: projection.transactions || [],
+		};
+		const versions = remoteChangesToVersions(changes);
+
+		// Skip the write (and the re-render) when nothing changed.
+		const prev = await groupStore.getItem<Group>(eventId);
+		const prevV = await historyStore.getItem<EventVersion[]>(eventId);
+		const sameCore =
+			!!prev &&
+			JSON.stringify({
+				config: prev.config || {},
+				members: prev.members || [],
+				transactions: prev.transactions || [],
+			}) === JSON.stringify(core);
+		const sameLog =
+			(prevV?.length || 0) === versions.length && prevV?.[prevV.length - 1]?.id === versions[versions.length - 1]?.id;
+		if (sameCore && sameLog) return false;
+
+		await groupStore.setItem(eventId, core);
+		await historyStore.setItem(eventId, versions);
+		bumpData(); // signal open views to re-read
+		return true;
+	} finally {
+		await refreshStatus();
 	}
-	if (!projection) {
-		await backfillToServer(eventId); // server doesn't have it but we do → upload our copy
-		return false;
-	}
-
-	const core = {
-		config: projection.config || {},
-		members: projection.members || [],
-		transactions: projection.transactions || [],
-	};
-	const versions = remoteChangesToVersions(changes);
-
-	// Skip the write (and the re-render) when nothing changed.
-	const prev = await groupStore.getItem<Group>(eventId);
-	const prevV = await historyStore.getItem<EventVersion[]>(eventId);
-	const sameCore =
-		!!prev &&
-		JSON.stringify({
-			config: prev.config || {},
-			members: prev.members || [],
-			transactions: prev.transactions || [],
-		}) === JSON.stringify(core);
-	const sameLog =
-		(prevV?.length || 0) === versions.length && prevV?.[prevV.length - 1]?.id === versions[versions.length - 1]?.id;
-	if (sameCore && sameLog) return false;
-
-	await groupStore.setItem(eventId, core);
-	await historyStore.setItem(eventId, versions);
-	bumpData(); // signal open views to re-read
-	return true;
 }
 
 /** Manual sync (header cloud): push the outbox, then pull the open event if there is one. */
