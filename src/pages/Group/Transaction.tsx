@@ -61,6 +61,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 	const [date, setDate] = useState<string>(formatDateForInput(existingTransaction?.date || new Date()));
 	const manuallyChanged = useRef<Record<string, boolean>>(existingTransaction?.manuallyChanged || {});
 	const [error, setError] = useState<string | null>(null);
+	const [attempted, setAttempted] = useState(false);
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
 	// Update state when transaction changes (e.g., navigating between transactions)
@@ -112,13 +113,14 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			setError(validationError);
 			return;
 		}
+		setError(null);
 		// Both sides must add up to the total — block saving a split that leaves money
 		// unassigned (e.g. a rounding remainder), even when editing a previously-bad row.
+		// `attempted` lights up the offending column until it's balanced.
 		if (!isTransactionBalanced(total, paidBy, paidFor)) {
-			setError(t('SPLIT_NOT_BALANCED'));
+			setAttempted(true);
 			return;
 		}
-		setError(null);
 
 		try {
 			const updatedGroup: Group = { ...group };
@@ -302,7 +304,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 			</Card>
 
 			<div className="grid gap-6 md:grid-cols-2">
-				<Card>
+				<Card className={cn(attempted && getRemainingValue(PAID_BY) !== 0 && 'border-destructive')}>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-lg">
 							<Wallet className={cn('size-5', COLUMN_STYLE[PAID_BY].tint)} /> {t('PAID_BY')}
@@ -314,7 +316,7 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					</CardContent>
 				</Card>
 
-				<Card>
+				<Card className={cn(attempted && getRemainingValue(PAID_FOR) !== 0 && 'border-destructive')}>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-lg">
 							<HandCoins className={cn('size-5', COLUMN_STYLE[PAID_FOR].tint)} /> {t('PAID_FOR')}
@@ -341,9 +343,9 @@ export function GroupTransaction({ transactionId }: { transactionId: string }) {
 					<span />
 				)}
 				<div className="flex items-center gap-4">
-					{error && (
-						<p role="alert" className="text-destructive text-sm font-medium">
-							{error}
+					{(error || (attempted && !isTransactionBalanced(total, paidBy, paidFor))) && (
+						<p role="alert" className="bg-destructive/10 text-destructive rounded-md px-3 py-1.5 text-sm font-medium">
+							{error || t('SPLIT_NOT_BALANCED')}
 						</p>
 					)}
 					<Button type="submit" size="lg">
