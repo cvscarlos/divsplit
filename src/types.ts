@@ -48,10 +48,19 @@ export interface GroupConfig {
 	bankerId?: string;
 }
 
+/** The versioned root keys of a group, each carrying an offline-first last-modified stamp. */
+export type RootKey = 'config' | 'members' | 'transactions';
+
 export interface Group {
 	config: GroupConfig;
 	members?: Member[];
 	transactions?: Transaction[];
+	/**
+	 * Device-generated (ms) timestamp of the last local change to each root key. Used for
+	 * per-key last-writer-wins on sync, so a stale or empty server value never clobbers a
+	 * newer local one. Not part of the versioned core — metadata only.
+	 */
+	keyUpdatedAt?: Partial<Record<RootKey, number>>;
 }
 
 export interface GroupListItem {

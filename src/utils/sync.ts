@@ -2,7 +2,10 @@ import localforage from 'localforage';
 import { coreOf } from './versioning';
 import type { EventVersion, VersionedCore } from './versioning';
 import { generateId } from './id';
-import type { Group } from '../types';
+import type { Group, RootKey } from '../types';
+
+type KeyTimestamps = Partial<Record<RootKey, number>>;
+const ROOT_KEYS: RootKey[] = ['config', 'members', 'transactions'];
 
 /**
  * Offline-first background sync (Google-Docs style), bidirectional.
@@ -31,6 +34,7 @@ type Outbound = {
 	queuedAt: number;
 	change: { id: string; eventId: string; author: string; ts: string; delta: unknown; summary: unknown };
 	core: VersionedCore;
+	keyUpdatedAt?: KeyTimestamps;
 };
 
 // --- status store (consumed by the UI via useSyncExternalStore) ---
@@ -101,7 +105,7 @@ export async function flush(): Promise<void> {
 				res = await fetch('/api/changes', {
 					method: 'POST',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({ change: payload.change, core: payload.core }),
+					body: JSON.stringify({ change: payload.change, core: payload.core, keyUpdatedAt: payload.keyUpdatedAt }),
 				});
 			} catch {
 				break; // network dropped mid-flush — stop, retry on the next trigger
@@ -116,7 +120,12 @@ export async function flush(): Promise<void> {
 }
 
 /** Append a saved version to the outbox and kick a flush (best-effort). */
-export async function enqueue(eventId: string, version: EventVersion, core: VersionedCore): Promise<void> {
+export async function enqueue(
+	eventId: string,
+	version: EventVersion,
+	core: VersionedCore,
+	keyUpdatedAt?: KeyTimestamps,
+): Promise<void> {
 	const item: Outbound = {
 		queuedAt: Date.now(),
 		change: {
@@ -128,6 +137,7 @@ export async function enqueue(eventId: string, version: EventVersion, core: Vers
 			summary: version.changes,
 		},
 		core,
+		keyUpdatedAt,
 	};
 	await outbox.setItem(version.id, item);
 	setStatus(online() ? 'pending' : 'offline');
@@ -177,7 +187,7 @@ async function backfillToServer(eventId: string): Promise<void> {
 		author: '',
 		delta: {},
 	};
-	await enqueue(eventId, last, coreOf(group as Group));
+	await enqueue(eventId, last, coreOf(group as Group), group!.keyUpdatedAt);
 	await flush();
 }
 
@@ -194,7 +204,8 @@ export async function pull(eventId: string): Promise<boolean> {
 
 	setStatus('syncing'); // any Mongo round-trip shows the spinning cloud
 	try {
-		let projection: { config?: unknown; members?: unknown[]; transactions?: unknown[] } | undefined;
+		let projection:
+			{ config?: unknown; members?: unknown[]; transactions?: unknown[]; keyUpdatedAt?: KeyTimestamps } | undefined;
 		let changes: RemoteChange[];
 		try {
 			const [pRes, cRes] = await Promise.all([
@@ -213,28 +224,36 @@ export async function pull(eventId: string): Promise<boolean> {
 			return false;
 		}
 
-		const core = {
+		// Per-key last-writer-wins: keep the local value of a root key unless the server's stamp
+		// for it is strictly newer. Shields a fresh local edit from a stale server read (e.g. Atlas
+		// read-after-write replica lag returning an older projection right after a push).
+		const prev = await groupStore.getItem<Group>(eventId);
+		const cloud: Record<RootKey, unknown> = {
 			config: projection.config || {},
 			members: projection.members || [],
 			transactions: projection.transactions || [],
 		};
+		const cloudTs = projection.keyUpdatedAt || {};
+		const localTs = prev?.keyUpdatedAt || {};
+		const merged: Group = { config: {}, members: [], transactions: [], keyUpdatedAt: {} };
+		for (const key of ROOT_KEYS) {
+			const takeCloud = prev?.[key] === undefined || (cloudTs[key] || 0) > (localTs[key] || 0);
+			const value = (takeCloud ? cloud[key] : prev[key]) ?? (key === 'config' ? {} : []);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			(merged as any)[key] = value;
+			const ts = takeCloud ? cloudTs[key] : localTs[key];
+			if (ts) merged.keyUpdatedAt![key] = ts;
+		}
 		const versions = remoteChangesToVersions(changes);
 
 		// Skip the write (and the re-render) when nothing changed.
-		const prev = await groupStore.getItem<Group>(eventId);
 		const prevV = await historyStore.getItem<EventVersion[]>(eventId);
-		const sameCore =
-			!!prev &&
-			JSON.stringify({
-				config: prev.config || {},
-				members: prev.members || [],
-				transactions: prev.transactions || [],
-			}) === JSON.stringify(core);
+		const sameCore = !!prev && JSON.stringify(coreOf(prev)) === JSON.stringify(coreOf(merged));
 		const sameLog =
 			(prevV?.length || 0) === versions.length && prevV?.[prevV.length - 1]?.id === versions[versions.length - 1]?.id;
 		if (sameCore && sameLog) return false;
 
-		await groupStore.setItem(eventId, core);
+		await groupStore.setItem(eventId, merged);
 		await historyStore.setItem(eventId, versions);
 		bumpData(); // signal open views to re-read
 		return true;

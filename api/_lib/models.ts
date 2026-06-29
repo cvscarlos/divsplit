@@ -57,6 +57,10 @@ const eventSchema = new Schema(
 		transactions: { type: [Schema.Types.Mixed], default: [] },
 		// Recomputed server-side from transactions; never accepted from the client.
 		balanceCache: { type: Schema.Types.Mixed },
+		// Device-generated (ms) last-modified stamp per root key (config/members/transactions),
+		// for per-key last-writer-wins; the API only overwrites a key when the incoming stamp is
+		// newer, so a late or stale write can't roll a key back.
+		keyUpdatedAt: { type: Schema.Types.Mixed, default: {} },
 		// Hash of the most recently folded change — the DAG head for this projection.
 		headHash: { type: String },
 	},

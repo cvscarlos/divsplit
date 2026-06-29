@@ -27,9 +27,13 @@ type InboundChange = {
 	summary?: { key: string; params?: unknown }[]; // translatable ChangeEntry[]
 };
 
+type RootKey = 'config' | 'members' | 'transactions';
+
 type PostBody = {
 	change?: InboundChange;
 	core?: { config?: unknown; members?: unknown[]; transactions?: unknown[] };
+	// Device-generated (ms) last-modified stamp per root key, for per-key last-writer-wins.
+	keyUpdatedAt?: Partial<Record<RootKey, number>>;
 };
 
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
@@ -52,14 +56,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
 	}
 
 	if (req.method === 'POST') {
-		const { change, core } = (req.body || {}) as PostBody;
+		const { change, core, keyUpdatedAt } = (req.body || {}) as PostBody;
 		if (!change?.id || !change.eventId) {
 			res.status(400).json({ error: 'change { id, eventId } is required' });
 			return;
 		}
 
 		// Chain onto the event's current head; the server computes the hash.
-		const projection = await EventDoc.findById(change.eventId).lean<{ headHash?: string } | null>();
+		const projection = await EventDoc.findById(change.eventId).lean<{
+			headHash?: string;
+			keyUpdatedAt?: Partial<Record<RootKey, number>>;
+		} | null>();
 		const parents = projection?.headHash ? [projection.headHash] : [];
 		const ts = change.ts ? new Date(change.ts) : new Date();
 		const payload = {
@@ -84,21 +91,27 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
 			throw err;
 		}
 
-		// Refresh the projection cache. balanceCache is intentionally NOT taken from the
-		// client — it's recomputed server-side later, never trusted as input.
+		// Refresh the projection cache with per-key last-writer-wins: only overwrite a root key
+		// when the incoming device stamp is at least as new as the stored one, so a late or stale
+		// write can't roll a key back. balanceCache is never taken from the client (recomputed later).
 		if (core) {
-			await EventDoc.findByIdAndUpdate(
-				change.eventId,
-				{
-					$set: {
-						config: core.config || {},
-						members: core.members || [],
-						transactions: core.transactions || [],
-						headHash: hash,
-					},
-				},
-				{ upsert: true },
-			);
+			const incoming = keyUpdatedAt || {};
+			const existingTs = projection?.keyUpdatedAt || {};
+			const coreByKey: Record<RootKey, unknown> = {
+				config: core.config || {},
+				members: core.members || [],
+				transactions: core.transactions || [],
+			};
+			const set: Record<string, unknown> = { headHash: hash };
+			const mergedTs: Partial<Record<RootKey, number>> = { ...existingTs };
+			for (const key of ['config', 'members', 'transactions'] as RootKey[]) {
+				if ((incoming[key] || 0) >= (existingTs[key] || 0)) {
+					set[key] = coreByKey[key];
+					if (incoming[key]) mergedTs[key] = incoming[key];
+				}
+			}
+			set.keyUpdatedAt = mergedTs;
+			await EventDoc.findByIdAndUpdate(change.eventId, { $set: set }, { upsert: true });
 		}
 
 		res.status(200).json({ ok: true, hash });

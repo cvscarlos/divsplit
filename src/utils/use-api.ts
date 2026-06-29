@@ -1,7 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import localforage from 'localforage';
 
-import type { Group, GroupListItem } from '../types';
+import type { Group, GroupListItem, RootKey } from '../types';
 import { recordVersion, coreOf } from './versioning';
 import type { ChangeEntry } from './versioning';
 import { enqueue, pull, subscribeData, getDataRevision } from './sync';
@@ -120,16 +120,19 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 	// covers both the background loop and a manual sync triggered from the header.
 	const dataRevision = useSyncExternalStore(subscribeData, getDataRevision, getDataRevision);
 
-	// Background pull: mirror the server's full state (projection + history) into local storage when online.
+	// Pull the server's full state into local storage on meaningful moments only — opening the
+	// event, reconnecting, or returning to the tab. No idle polling: when the user isn't
+	// interacting we don't hit the server (use the header cloud to force a manual sync).
 	useEffect(() => {
 		if (!groupId) return;
 		const run = () => void pull(groupId);
 		run();
+		const onFocus = () => document.visibilityState === 'visible' && run();
 		window.addEventListener('online', run);
-		const iv = setInterval(run, 20000);
+		window.addEventListener('visibilitychange', onFocus);
 		return () => {
 			window.removeEventListener('online', run);
-			clearInterval(iv);
+			window.removeEventListener('visibilitychange', onFocus);
 		};
 	}, [groupId]);
 
@@ -144,13 +147,21 @@ export function useApiGetGroup(groupId: string | undefined): UseApiGetGroup {
 			if (dataToSave) {
 				const prev = await groupStore.getItem<Group>(groupId);
 				const toSave = dataToSave.group;
+				// Stamp each root key the user actually changed (device clock) so sync can do per-key
+				// last-writer-wins and a stale server read never clobbers a newer local value.
+				const now = Date.now();
+				const keyUpdatedAt: Partial<Record<RootKey, number>> = { ...(prev?.keyUpdatedAt || {}) };
+				(['config', 'members', 'transactions'] as RootKey[]).forEach((k) => {
+					if (JSON.stringify(prev?.[k] ?? null) !== JSON.stringify(toSave[k] ?? null)) keyUpdatedAt[k] = now;
+				});
+				toSave.keyUpdatedAt = keyUpdatedAt;
 				await groupStore.setItem(groupId, toSave);
 				const memberId = getEventMemberId(groupId);
 				const author = dataToSave.meta?.author || toSave.members?.find((m) => m.id === memberId)?.name || '';
 				// recordVersion derives change lines from the state diff (and logs creation on the first save).
 				const version = await recordVersion(groupId, prev, toSave, { change: dataToSave.meta?.change, author });
 				// Queue for background sync (durable outbox; flushes when online).
-				if (version) void enqueue(groupId, version, coreOf(toSave));
+				if (version) void enqueue(groupId, version, coreOf(toSave), keyUpdatedAt);
 				if (!abort) setDataToSave(null);
 				if (!abort) await updateGroupIndex(toSave, groupId);
 			}
