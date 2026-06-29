@@ -191,13 +191,25 @@ async function backfillToServer(eventId: string): Promise<void> {
 	await flush();
 }
 
+// Coalesce concurrent pulls for the same event (e.g. the on-open trigger and the empty-seed
+// load path both fire on mount) into one network round-trip; callers share the result.
+const pullInFlight = new Map<string, Promise<boolean>>();
+
 /**
  * Pull the server's full state for one event into local storage. Returns true when local
  * data actually changed (so the caller can re-render). No-op when offline or while local
  * edits are still queued (avoids clobbering them). If the server doesn't know the event yet
  * but we hold it locally, push it up first (backfill) so it can sync from then on.
  */
-export async function pull(eventId: string): Promise<boolean> {
+export function pull(eventId: string): Promise<boolean> {
+	const existing = pullInFlight.get(eventId);
+	if (existing) return existing;
+	const run = runPull(eventId).finally(() => pullInFlight.delete(eventId));
+	pullInFlight.set(eventId, run);
+	return run;
+}
+
+async function runPull(eventId: string): Promise<boolean> {
 	if (!eventId || !online()) return false;
 	await flush(); // push pending local edits first
 	if (await outboxHas(eventId)) return false; // still unsynced → retry on the next tick
