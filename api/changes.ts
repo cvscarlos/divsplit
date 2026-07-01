@@ -80,15 +80,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
 		};
 		const hash = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 
-		// Append-only + idempotent: a re-synced change (same id) is a no-op.
+		// Append-only + idempotent for the LOG: a re-synced change id isn't inserted twice. But we
+		// still refresh the projection below even on a duplicate — a client-side consolidation can
+		// re-push the same change id carrying a fuller core, and skipping the update would silently
+		// drop those edits (name/transactions folded into an already-synced version).
+		let duplicate = false;
 		try {
 			await Change.create({ _id: change.id, ...payload, hash });
 		} catch (err) {
-			if ((err as { code?: number }).code === 11000) {
-				res.status(200).json({ ok: true, duplicate: true });
-				return;
-			}
-			throw err;
+			if ((err as { code?: number }).code === 11000) duplicate = true;
+			else throw err;
 		}
 
 		// Refresh the projection cache with per-key last-writer-wins: only overwrite a root key
@@ -114,7 +115,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
 			await EventDoc.findByIdAndUpdate(change.eventId, { $set: set }, { upsert: true });
 		}
 
-		res.status(200).json({ ok: true, hash });
+		res.status(200).json({ ok: true, hash, duplicate });
 		return;
 	}
 

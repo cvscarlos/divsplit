@@ -19,8 +19,10 @@ const ROOT_KEYS: RootKey[] = ['config', 'members', 'transactions'];
  * same data and history. Pull is skipped while local edits are still queued, then runs once
  * they've flushed, so it never clobbers unsynced work.
  *
- * ponytail: conflict resolution is last-writer-wins on the projection (the server folds each
- * POST's full core). Real DAG merge would go here if concurrent offline editing matters.
+ * **Conflicts:** per-key last-writer-wins using device-generated stamps (`keyUpdatedAt`). Each
+ * root key syncs independently; a newer local key is never overwritten by a stale server read,
+ * and if the server is behind we push our copy back up (self-heal). Full DAG merge would go here
+ * only if concurrent offline editing of the *same* key ever needs true reconciliation.
  */
 export type SyncStatus = 'synced' | 'syncing' | 'pending' | 'offline';
 
@@ -170,10 +172,44 @@ export function remoteChangesToVersions(changes: RemoteChange[]): EventVersion[]
 
 const hasLocalData = (g?: Group | null): boolean => !!g && (!!g.members?.length || !!g.config?.name);
 
+type CloudCore = { config?: unknown; members?: unknown[]; transactions?: unknown[]; keyUpdatedAt?: KeyTimestamps };
+
 /**
- * Push a locally-held event the server doesn't know about yet (created offline, or before
- * sync worked) so other devices can load it. Enqueues the current state through the durable
- * outbox; future edits sync normally. Idempotent — the server dedupes by change id.
+ * Per-key last-writer-wins merge of the local group against the server projection. For each root
+ * key, keep the local value unless the server's stamp is strictly newer (shields a fresh local
+ * edit from a stale server read, e.g. replica lag). A brand-new local key (undefined) always takes
+ * the cloud value. `serverBehind` is true when we hold a newer value the server is missing, so the
+ * caller can push it back up (self-heal an edit the server dropped). Pure — the regression guard.
+ */
+export function mergeByKey(
+	local: Group | null | undefined,
+	cloud: CloudCore,
+): { merged: Group; serverBehind: boolean } {
+	const cloudTs = cloud.keyUpdatedAt || {};
+	const localTs = local?.keyUpdatedAt || {};
+	const cloudVal: Record<RootKey, unknown> = {
+		config: cloud.config || {},
+		members: cloud.members || [],
+		transactions: cloud.transactions || [],
+	};
+	const merged: Group = { config: {}, members: [], transactions: [], keyUpdatedAt: {} };
+	let serverBehind = false;
+	for (const key of ROOT_KEYS) {
+		const takeCloud = local?.[key] === undefined || (cloudTs[key] || 0) > (localTs[key] || 0);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		(merged as any)[key] = (takeCloud ? cloudVal[key] : local![key]) ?? (key === 'config' ? {} : []);
+		const ts = takeCloud ? cloudTs[key] : localTs[key];
+		if (ts) merged.keyUpdatedAt![key] = ts;
+		if (!takeCloud && (localTs[key] || 0) > (cloudTs[key] || 0)) serverBehind = true;
+	}
+	return { merged, serverBehind };
+}
+
+/**
+ * Push the local copy up when the server is missing or behind it — a brand-new event the server
+ * doesn't have yet (created offline / before sync worked), or a key we hold newer than the server
+ * (self-heal after `mergeByKey` finds it behind). Enqueues the current state through the durable
+ * outbox; the server's per-key LWW keeps whichever side is newer.
  */
 async function backfillToServer(eventId: string): Promise<void> {
 	const group = await groupStore.getItem<Group>(eventId);
@@ -236,26 +272,11 @@ async function runPull(eventId: string): Promise<boolean> {
 			return false;
 		}
 
-		// Per-key last-writer-wins: keep the local value of a root key unless the server's stamp
-		// for it is strictly newer. Shields a fresh local edit from a stale server read (e.g. Atlas
-		// read-after-write replica lag returning an older projection right after a push).
 		const prev = await groupStore.getItem<Group>(eventId);
-		const cloud: Record<RootKey, unknown> = {
-			config: projection.config || {},
-			members: projection.members || [],
-			transactions: projection.transactions || [],
-		};
-		const cloudTs = projection.keyUpdatedAt || {};
-		const localTs = prev?.keyUpdatedAt || {};
-		const merged: Group = { config: {}, members: [], transactions: [], keyUpdatedAt: {} };
-		for (const key of ROOT_KEYS) {
-			const takeCloud = prev?.[key] === undefined || (cloudTs[key] || 0) > (localTs[key] || 0);
-			const value = (takeCloud ? cloud[key] : prev[key]) ?? (key === 'config' ? {} : []);
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(merged as any)[key] = value;
-			const ts = takeCloud ? cloudTs[key] : localTs[key];
-			if (ts) merged.keyUpdatedAt![key] = ts;
-		}
+		const { merged, serverBehind } = mergeByKey(prev, projection);
+		// Self-heal: if we hold a newer value the server missed (e.g. an edit dropped by an earlier
+		// consolidation), push our state up so the server catches up on the next tick.
+		if (serverBehind) await backfillToServer(eventId);
 		const versions = remoteChangesToVersions(changes);
 
 		// Skip the write (and the re-render) when nothing changed.
