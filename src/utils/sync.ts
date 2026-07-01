@@ -196,11 +196,15 @@ export function mergeByKey(
 	let serverBehind = false;
 	for (const key of ROOT_KEYS) {
 		const takeCloud = local?.[key] === undefined || (cloudTs[key] || 0) > (localTs[key] || 0);
+		const chosen = (takeCloud ? cloudVal[key] : local![key]) ?? (key === 'config' ? {} : []);
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		(merged as any)[key] = (takeCloud ? cloudVal[key] : local![key]) ?? (key === 'config' ? {} : []);
+		(merged as any)[key] = chosen;
 		const ts = takeCloud ? cloudTs[key] : localTs[key];
 		if (ts) merged.keyUpdatedAt![key] = ts;
-		if (!takeCloud && (localTs[key] || 0) > (cloudTs[key] || 0)) serverBehind = true;
+		// Server is behind whenever we kept a local value that differs from the server's — not just
+		// when the local stamp is newer. Catches pre-timestamp (legacy) local edits the server never
+		// got, so the caller pushes them up (an equal/identical value never re-pushes → no loop).
+		if (!takeCloud && JSON.stringify(chosen) !== JSON.stringify(cloudVal[key])) serverBehind = true;
 	}
 	return { merged, serverBehind };
 }

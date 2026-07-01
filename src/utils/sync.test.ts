@@ -36,6 +36,14 @@ describe('mergeByKey (per-key last-writer-wins — the sync regression guard)', 
 		expect(serverBehind).toBe(false);
 	});
 
+	it('pushes local data the server lacks even without a timestamp (legacy pre-stamp edits)', () => {
+		// No keyUpdatedAt at all, but local has transactions the server is missing → must self-heal.
+		const prev = local({ transactions: [{ id: 't1' }] });
+		const { merged, serverBehind } = mergeByKey(prev, { transactions: [], keyUpdatedAt: {} });
+		expect(merged.transactions).toEqual([{ id: 't1' }]);
+		expect(serverBehind).toBe(true);
+	});
+
 	it('keeps local on equal stamps and does not flag the server behind (no ping-pong)', () => {
 		const prev = local({ transactions: [{ id: 't1' }], keyUpdatedAt: { transactions: 100 } });
 		const { merged, serverBehind } = mergeByKey(prev, {
