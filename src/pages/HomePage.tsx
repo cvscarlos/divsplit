@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ShieldCheck, Gauge, Sparkles, FileSpreadsheet, History } from 'lucide-react';
 
 import { EventsGrid } from '../components/EventsGrid';
@@ -107,15 +107,18 @@ function HomePage() {
 			<footer className="border-border border-t border-dashed">
 				<div className="text-muted-foreground mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 py-8 text-xs sm:flex-row sm:px-6">
 					<span>
-						© {new Date().getFullYear()} DivSplit — {t('ALL_RIGHTS_RESERVED')}.
+						© {new Date().getFullYear()} DivSplit — {t('ALL_RIGHTS_RESERVED')}.{' '}
+						<span className="text-muted-foreground/50 tnum" title="Build version">
+							· {__BUILD_ID__}
+						</span>
 					</span>
 					<div className="flex gap-4">
-						<button type="button" className="hover:text-primary transition-colors hover:underline">
+						<Link to="/privacy" className="hover:text-primary transition-colors hover:underline">
 							{t('PRIVACY_POLICY')}
-						</button>
-						<button type="button" className="hover:text-primary transition-colors hover:underline">
+						</Link>
+						<Link to="/terms" className="hover:text-primary transition-colors hover:underline">
 							{t('TERMS_OF_SERVICE')}
-						</button>
+						</Link>
 					</div>
 				</div>
 			</footer>

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import HomePage from '../pages/HomePage';
 import EventsPage from '../pages/EventsPage';
+import { PrivacyPage, TermsPage } from '../pages/Legal';
 import Header from '../components/Header';
 import { GroupPageWrapper } from '../components/GroupPageWrapper';
 import { NotFound } from '../pages/NotFound';
@@ -19,6 +20,22 @@ const AppRouter = () => {
 			<Routes>
 				<Route path="/" element={<HomePage />} />
 				<Route path="/events" element={<EventsPage />} />
+				<Route
+					path="/privacy"
+					element={
+						<Boxed>
+							<PrivacyPage />
+						</Boxed>
+					}
+				/>
+				<Route
+					path="/terms"
+					element={
+						<Boxed>
+							<TermsPage />
+						</Boxed>
+					}
+				/>
 				{/* Short share link → land on the transactions tab. */}
 				<Route path="/group/:groupId" element={<Navigate to="transactions" replace />} />
 				<Route

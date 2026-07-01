@@ -1,0 +1,4 @@
+User-agent: *
+# Event links are private (anyone with the link can view/edit) — keep them out of search engines.
+Disallow: /group/
+Allow: /
