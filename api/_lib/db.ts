@@ -26,6 +26,7 @@ export function connectDb(): Promise<typeof mongoose> {
 
 	cached = mongoose
 		.connect(uri, {
+			dbName: 'divsplit_db', // pin the database in code so local and prod never diverge (was the URI default, 'test')
 			serverSelectionTimeoutMS: 8000, // fail fast instead of hanging the function if Atlas is waking
 			maxPoolSize: 5, // a mostly-idle serverless backend never needs a big pool
 		})
