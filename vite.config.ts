@@ -1,10 +1,24 @@
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 
+// A short build id shown subtly in the header, so a stale (service-worker-cached) client is
+// easy to spot. Vercel provides the commit SHA; locally we read git; otherwise 'dev'.
+const buildId =
+	process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
+	(() => {
+		try {
+			return execSync('git rev-parse --short HEAD').toString().trim();
+		} catch {
+			return 'dev';
+		}
+	})();
+
 export default defineConfig({
+	define: { __BUILD_ID__: JSON.stringify(buildId) },
 	plugins: [
 		react(),
 		tailwindcss(),

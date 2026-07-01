@@ -36,6 +36,9 @@ function Header() {
 				</nav>
 
 				<div className="flex items-center gap-1">
+					<span className="text-muted-foreground/40 tnum mr-1 text-[10px]" title="Build version">
+						{__BUILD_ID__}
+					</span>
 					<SyncIndicator />
 					<Button
 						variant="ghost"

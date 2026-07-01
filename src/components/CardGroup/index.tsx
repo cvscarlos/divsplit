@@ -1,31 +1,27 @@
 import { useNavigate } from 'react-router-dom';
-import { Plane, UtensilsCrossed, Car, Home } from 'lucide-react';
+import { Plane, UtensilsCrossed, Car, Home, PartyPopper, Tent } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { EVENT_ICONS } from '../../utils/event-icons';
 import type { GroupListItem } from '../../types';
 
-// Vibrant solid-card palette; color + icon are paired and chosen deterministically
-// from the group id so each group keeps a stable look across sessions.
+// Vibrant solid-card palette; colour + fallback icon are paired and assigned by position so
+// neighbouring cards always differ, cycling every 6 (the 7th card reuses the 1st colour).
 const VARIANTS: { bg: string; icon: LucideIcon }[] = [
 	{ bg: '#1DE9B6', icon: Plane }, // mint
 	{ bg: '#FFEA00', icon: UtensilsCrossed }, // yellow
 	{ bg: '#FF2D78', icon: Car }, // pink
 	{ bg: '#00E5FF', icon: Home }, // cyan
+	{ bg: '#B388FF', icon: PartyPopper }, // violet
+	{ bg: '#FF9E40', icon: Tent }, // orange
 ];
 
-function variantFor(id: string) {
-	let hash = 0;
-	for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
-	return VARIANTS[hash % VARIANTS.length];
-}
-
-function CardGroup({ group }: { group: GroupListItem }) {
+function CardGroup({ group, index = 0 }: { group: GroupListItem; index?: number }) {
 	const navigate = useNavigate();
 	const open = () => navigate(`/group/${group.id}/transactions`);
-	const variant = variantFor(group.id);
+	const variant = VARIANTS[index % VARIANTS.length];
 	const bg = variant.bg;
-	// User-chosen icon if set, else the deterministic one from the id.
+	// User-chosen icon if set, else the paired one for this card's colour slot.
 	const Icon = (group.icon && EVENT_ICONS[group.icon]) || variant.icon;
 
 	return (

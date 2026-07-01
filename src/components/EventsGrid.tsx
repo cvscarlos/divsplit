@@ -16,7 +16,7 @@ export function EventsGrid() {
 	const createGroup = () => navigate(`/group/${generateId()}/config`);
 
 	return (
-		<section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+		<section id="events-grid" className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
 			{loading ? (
 				<div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
 					<Loader2 className="size-5 animate-spin" /> {t('LOADING')}
@@ -38,8 +38,8 @@ export function EventsGrid() {
 						<p className="text-muted-foreground text-sm">{t('GEN_GROUP_SUB_TITLE')}</p>
 					</div>
 					<CardContainer>
-						{groupList.map((groupItem) => (
-							<CardGroup key={groupItem.id} group={groupItem} />
+						{groupList.map((groupItem, index) => (
+							<CardGroup key={groupItem.id} group={groupItem} index={index} />
 						))}
 						<button
 							type="button"

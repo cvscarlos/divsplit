@@ -4,17 +4,21 @@ import { ArrowUpRight, ShieldCheck, Gauge, Sparkles, FileSpreadsheet, History } 
 
 import { EventsGrid } from '../components/EventsGrid';
 import { generateId } from '../utils/id';
+import { useApiListGroups } from '../utils/use-api';
 import { Button } from '@/components/ui/button';
 
 function HomePage() {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const { groupList } = useApiListGroups();
+	const hasGroups = groupList.length > 0;
 
 	const createGroup = () => navigate(`/group/${generateId()}/config`);
+	const seeGroups = () => document.getElementById('events-grid')?.scrollIntoView({ behavior: 'smooth' });
 
 	return (
 		<div>
-			<section className="bg-background relative flex min-h-[calc(100vh-4rem)] w-full flex-col items-center justify-center overflow-hidden px-6 py-20 text-center">
+			<section className="bg-background relative flex w-full flex-col items-center overflow-hidden px-6 py-20 text-center">
 				{/* static "liquid" gradient glows (theme-aware tints) */}
 				<div
 					aria-hidden
@@ -58,10 +62,10 @@ function HomePage() {
 					<div className="flex flex-col items-center gap-10">
 						<Button
 							size="lg"
-							onClick={createGroup}
+							onClick={hasGroups ? seeGroups : createGroup}
 							className="group rounded-full px-12 py-7 text-base font-semibold tracking-wider uppercase shadow-[0_18px_50px_-12px_color-mix(in_srgb,var(--primary)_55%,transparent)] transition-transform hover:-translate-y-1"
 						>
-							{t('CREATE_AN_EVENT')}
+							{hasGroups ? t('SEE_YOUR_EVENTS') : t('CREATE_AN_EVENT')}
 							<ArrowUpRight className="transition-transform group-hover:rotate-45" />
 						</Button>
 						<div className="text-muted-foreground/50 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] tracking-[0.3em] uppercase">
